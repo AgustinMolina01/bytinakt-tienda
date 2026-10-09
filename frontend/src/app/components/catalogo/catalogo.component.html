@@ -1,11 +1,13 @@
 <h2>Catálogo de Productos</h2>
 
 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-  <div *ngFor="let producto of productos" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 200px;">
+  <div *ngFor="let producto of productos" style="border: 1px solid #6b0b0b; padding: 15px; border-radius: 8px; width: 200px;">
     <img [src]="producto.imagenUrl" [alt]="producto.nombre" style="width: 100%; height: 150px; object-fit: cover;">
     <h3>{{ producto.nombre }}</h3>
     <p><strong>Categoría:</strong> {{ producto.categoria }}</p>
     <p><strong>Talle:</strong> {{ producto.talle }}</p>
     <p><strong>Precio:</strong> ${{ producto.precio }}</p>
+  
   </div>
 </div>
+
