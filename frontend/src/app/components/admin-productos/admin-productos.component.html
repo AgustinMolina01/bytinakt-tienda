@@ -1,0 +1,20 @@
+<h2>Administración de Productos</h2>
+
+<form (ngSubmit)="agregar()" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; max-width: 300px;">
+  <input type="text" [(ngModel)]="nuevoProducto.nombre" name="nombre" placeholder="Nombre" required>
+  <input type="text" [(ngModel)]="nuevoProducto.categoria" name="categoria" placeholder="Categoría">
+  <input type="number" [(ngModel)]="nuevoProducto.precio" name="precio" placeholder="Precio" required>
+  <input type="text" [(ngModel)]="nuevoProducto.talle" name="talle" placeholder="Talle">
+  <input type="text" [(ngModel)]="nuevoProducto.imagenUrl" name="imagenUrl" placeholder="URL de Imagen">
+  <button type="submit">Agregar Producto</button>
+</form>
+
+<hr>
+
+<h3>Lista de Productos</h3>
+<ul>
+  <li *ngFor="let p of productos" style="margin-bottom: 10px;">
+    {{ p.nombre }} - ${{ p.precio }}
+    <button (click)="eliminar(p.id)" style="margin-left: 10px; color: red;">Eliminar</button>
+  </li>
+</ul>
