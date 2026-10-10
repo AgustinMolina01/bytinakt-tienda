@@ -1,33 +1,58 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router'; // <-- AGREGAR ESTA IMPORTACIÓN
-import { ProductoService } from '../../services/producto.service';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Producto } from '../../models/producto.model';
+import { ProductoService } from '../../services/producto.service';
 
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule, RouterLink], // <-- AGREGAR RouterLink AQUÍ
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './catalogo.component.html',
-  styleUrls: ['./catalogo.component.css']
+  styleUrl: './catalogo.component.css'
 })
 export class CatalogoComponent implements OnInit {
   productos: Producto[] = [];
+  categoriaSeleccionada: string = 'TODAS';
   menuAbierto: boolean = false;
+  
+  categoriasDisponibles: string[] = [
+    'REMERAS',
+    'BUZOS Y CAMPERAS',
+    'PANTALONES',
+    'ACCESORIOS'
+  ];
 
   constructor(private productoService: ProductoService) {}
 
   ngOnInit(): void {
-    this.productos = this.productoService.getProductos();
+    this.cargarProductos();
+  }
+
+  cargarProductos(): void {
+    this.productos = this.productoService.obtenerProductos();
   }
 
   toggleMenu(): void {
     this.menuAbierto = !this.menuAbierto;
   }
 
+  filtrarCategoria(cat: string): void {
+    this.categoriaSeleccionada = cat;
+    if (this.menuAbierto) {
+      this.menuAbierto = false; // Cierra el menú al elegir una categoría en mobile
+    }
+  }
+
+  productosFiltrados(): Producto[] {
+    if (this.categoriaSeleccionada === 'TODAS') {
+      return this.productos;
+    }
+    return this.productos.filter(p => p.categoria === this.categoriaSeleccionada);
+  }
+
   comprarProducto(producto: Producto): void {
-    const mensaje = `Hola! Me interesa comprar ${producto.nombre} (Talle: ${producto.talle}) a $${producto.precio}`;
-    const url = `https://wa.me/5492230000000?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
+    alert(`¡Gracias por tu interés! Seleccionaste: ${producto.nombre} (Talle: ${producto.talle || 'Único'}) a $${producto.precio}`);
   }
 }

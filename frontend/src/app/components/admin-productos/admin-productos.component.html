@@ -1,19 +1,81 @@
-<!-- Botones de categorías fijas para filtrar la vista -->
-      <div class="botones-categorias-filtro">
-        <button 
-          type="button" 
-          class="btn-filtro" 
-          [class.activo]="categoriaSeleccionada === 'TODAS'" 
-          (click)="filtrarCategoria('TODAS')">
-          TODAS
-        </button>
-        
-        <button 
-          type="button" 
-          class="btn-filtro" 
-          *ngFor="let cat of categoriasDisponibles" 
-          [class.activo]="categoriaSeleccionada === cat" 
-          (click)="filtrarCategoria(cat)">
-          {{ cat }}
-        </button>
+<div class="admin-container">
+  <h2>Panel de Administración - Bytinakt</h2>
+
+  <!-- Formulario para agregar producto -->
+  <form (ngSubmit)="agregarProducto()" class="form-producto">
+    <h3>Agregar Nuevo Producto</h3>
+    
+    <div class="form-group">
+      <label>Nombre:</label>
+      <input type="text" [(ngModel)]="nuevoProducto.nombre" name="nombre" required placeholder="Ej: Remera Oversize">
+    </div>
+
+    <div class="form-group">
+      <label>Precio ($):</label>
+      <input type="number" [(ngModel)]="nuevoProducto.precio" name="precio" required placeholder="25000">
+    </div>
+
+    <div class="form-group">
+      <label>Categoría:</label>
+      <select [(ngModel)]="nuevoProducto.categoria" name="categoria" required>
+        <option value="">Seleccionar categoría</option>
+        <option *ngFor="let cat of categoriasDisponibles" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Talle:</label>
+      <input type="text" [(ngModel)]="nuevoProducto.talle" name="talle" placeholder="Ej: S, M, L, XL">
+    </div>
+
+    <div class="form-group">
+      <label>Imagen de la prenda:</label>
+      <input type="file" (change)="onFileSelected($event)" accept="image/*">
+    </div>
+
+    <button type="submit" class="btn-guardar">Guardar Producto</button>
+  </form>
+
+  <hr class="divider">
+
+  <!-- Listado y Filtros -->
+  <div class="listado-seccion">
+    <h3>Inventario de Productos</h3>
+
+    <!-- Botones de categorías fijas para filtrar la vista -->
+    <div class="botones-categorias-filtro">
+      <button 
+        type="button" 
+        class="btn-filtro" 
+        [class.activo]="categoriaSeleccionada === 'TODAS'" 
+        (click)="filtrarCategoria('TODAS')">
+        TODAS
+      </button>
+      
+      <button 
+        type="button" 
+        class="btn-filtro" 
+        *ngFor="let cat of categoriasDisponibles" 
+        [class.activo]="categoriaSeleccionada === cat" 
+        (click)="filtrarCategoria(cat)">
+        {{ cat }}
+      </button>
+    </div>
+
+    <!-- Grilla de productos filtrados -->
+    <div class="productos-grid">
+      <div *ngFor="let producto of productosFiltrados()" class="producto-card">
+        <img [src]="producto.imagenUrl || 'https://via.placeholder.com/300'" [alt]="producto.nombre">
+        <div class="producto-info">
+          <h4>{{ producto.nombre }}</h4>
+          <p class="precio">${{ producto.precio }}</p>
+          <p class="detalle">
+            {{ producto.categoria }} 
+            <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span>
+          </p>
+          <button type="button" class="btn-eliminar" (click)="eliminarProducto(producto)">Eliminar</button>
+        </div>
       </div>
+    </div>
+  </div>
+</div>

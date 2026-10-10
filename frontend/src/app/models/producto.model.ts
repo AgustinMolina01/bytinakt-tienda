@@ -1,8 +1,10 @@
 export interface Producto {
-  id?: number;
+  id?: string;
   nombre: string;
   precio: number;
-  categoria: string;
-  talle: string;
+  categoria: 'REMERAS' | 'BUZOS Y CAMPERAS' | 'PANTALONES' | 'ACCESORIOS' | '';
+  descripcion?: string;
+  talle?: string;
   imagenUrl?: string;
+  imagenes?: string[];
 }

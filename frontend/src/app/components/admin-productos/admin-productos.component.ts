@@ -1,14 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { ProductoService } from '../../services/producto.service';
 import { Producto } from '../../models/producto.model';
 
 @Component({
   selector: 'app-admin-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './admin-productos.component.html',
   styleUrls: ['./admin-productos.component.css']
 })
@@ -39,7 +38,7 @@ export class AdminProductosComponent implements OnInit {
   }
 
   cargarProductos(): void {
-    this.productos = this.productoService.getProductos();
+    this.productos = this.productoService.obtenerProductos();
   }
 
   agregarProducto(): void {

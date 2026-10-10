@@ -4,23 +4,17 @@
   <button class="btn-menu-toggle" (click)="toggleMenu()">
     <span>☰ {{ menuAbierto ? 'CERRAR' : 'MENÚ' }}</span>
   </button>
-
-
   
   <!-- Título central que actúa como botón para volver al inicio -->
   <h1 class="logo-tienda">
-    <a routerLink="/" class="link-logo">BYTINAKT</a>
+    <a routerLink="/" class="link-logo" (click)="filtrarCategoria('TODAS')">BYTINAKT</a>
   </h1>
-
-
 
   <!-- Opciones de cuenta / acceso a la derecha -->
   <div class="acciones-header">
-    <a routerLink="/auth" class="link-auth">Registrarse / Iniciar Sesión</a>
+    <a routerLink="/admin" class="link-auth">Panel Admin</a>
   </div>
 </header>
-
-
 
 <div class="tienda-layout">
   
@@ -29,34 +23,32 @@
     <div class="contenido-sidebar">
       <h3>Navegación</h3>
       <ul class="lista-categorias">
-        <li class="activo">THE NEW: COLECCIÓN</li>
-        <li>GUÍA DE REGALOS</li>
-        <li>REMERAS</li>
-        <li>BUZOS Y CAMPERAS</li>
-        <li>PANTALONES</li>
-        <li>ACCESORIOS</li>
-        <li>GIFT CARDS</li>
+        <li [class.activo]="categoriaSeleccionada === 'TODAS'" (click)="filtrarCategoria('TODAS')">TODAS LAS PRENDAS</li>
+        <li *ngFor="let cat of categoriasDisponibles" 
+            [class.activo]="categoriaSeleccionada === cat" 
+            (click)="filtrarCategoria(cat)">
+          {{ cat }}
+        </li>
       </ul>
     </div>
   </aside>
 
   <!-- CONTENIDO PRINCIPAL (CATÁLOGO) -->
   <main class="catalogo-contenido">
-    <h2 class="titulo-catalogo">Catálogo de Indumentaria</h2>
+    <h2 class="titulo-catalogo">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h2>
 
     <div class="grilla-productos">
-      <div class="tarjeta-producto" *ngFor="let producto of productos">
+      <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
         <div class="contenedor-imagen">
           <img [src]="producto.imagenUrl || 'https://via.placeholder.com/400x500?text=Sin+Imagen'" [alt]="producto.nombre" />
         </div>
         <div class="info-producto">
           <h3 class="nombre-producto">{{ producto.nombre }}</h3>
-          <p class="detalles-producto">{{ producto.categoria }} • Talle {{ producto.talle }}</p>
+          <p class="detalles-producto">{{ producto.categoria }} <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span></p>
           <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
           <button class="btn-comprar" (click)="comprarProducto(producto)">Comprar / Consultar</button>
         </div>
       </div>
     </div>
   </main>
-
 </div>

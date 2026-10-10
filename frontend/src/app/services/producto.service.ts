@@ -5,38 +5,28 @@ import { Producto } from '../models/producto.model';
   providedIn: 'root'
 })
 export class ProductoService {
-  private storageKey = 'productos_bytinakt';
-  private productos: Producto[] = [];
-
-  constructor() {
-    this.cargarDeLocalStorage();
-  }
-
-  private cargarDeLocalStorage(): void {
-    const datos = localStorage.getItem(this.storageKey);
-    if (datos) {
-      this.productos = JSON.parse(datos);
-    } else {
-      this.productos = [];
+  private productos: Producto[] = [
+    {
+      id: '1',
+      nombre: 'Remera Oversize Black',
+      precio: 25000,
+      categoria: 'REMERAS',
+      talle: 'L',
+      descripcion: 'Remera 100% algodón.',
+      imagenUrl: 'https://via.placeholder.com/300'
     }
-  }
+  ];
 
-  private guardarEnLocalStorage(): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.productos));
-  }
-
-  getProductos(): Producto[] {
+  obtenerProductos(): Producto[] {
     return this.productos;
   }
 
   agregarProducto(producto: Producto): void {
-    producto.id = Date.now();
+    producto.id = Date.now().toString(); // Asignación limpia como string
     this.productos.push(producto);
-    this.guardarEnLocalStorage(); // <-- Guarda cada vez que agregás
   }
 
-  eliminarProducto(id: number): void {
+  eliminarProducto(id: string): void {
     this.productos = this.productos.filter(p => p.id !== id);
-    this.guardarEnLocalStorage(); // <-- Actualiza al eliminar
   }
 }
