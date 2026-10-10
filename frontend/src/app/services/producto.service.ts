@@ -1,25 +1,42 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
 import { Producto } from '../models/producto.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductoService {
-  private apiUrl = 'http://localhost:3000/api/productos';
+  private storageKey = 'productos_bytinakt';
+  private productos: Producto[] = [];
 
-  constructor(private http: HttpClient) {}
-
-  getProductos(): Observable<Producto[]> {
-    return this.http.get<Producto[]>(this.apiUrl);
+  constructor() {
+    this.cargarDeLocalStorage();
   }
 
-  agregarProducto(producto: Producto): Observable<Producto> {
-    return this.http.post<Producto>(this.apiUrl, producto);
+  private cargarDeLocalStorage(): void {
+    const datos = localStorage.getItem(this.storageKey);
+    if (datos) {
+      this.productos = JSON.parse(datos);
+    } else {
+      this.productos = [];
+    }
   }
 
-  eliminarProducto(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+  private guardarEnLocalStorage(): void {
+    localStorage.setItem(this.storageKey, JSON.stringify(this.productos));
+  }
+
+  getProductos(): Producto[] {
+    return this.productos;
+  }
+
+  agregarProducto(producto: Producto): void {
+    producto.id = Date.now();
+    this.productos.push(producto);
+    this.guardarEnLocalStorage(); // <-- Guarda cada vez que agregás
+  }
+
+  eliminarProducto(id: number): void {
+    this.productos = this.productos.filter(p => p.id !== id);
+    this.guardarEnLocalStorage(); // <-- Actualiza al eliminar
   }
 }

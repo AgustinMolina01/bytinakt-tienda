@@ -1,0 +1,130 @@
+.auth-contenedor {
+  min-height: 100vh;
+  background-color: #f7f7f8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  font-family: inherit;
+}
+
+.auth-header {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.btn-volver {
+  align-self: flex-start;
+  text-decoration: none;
+  color: #666;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+
+.btn-volver:hover {
+  color: #000;
+}
+
+.logo-tienda {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  margin: 0;
+  color: #000;
+}
+
+.auth-card {
+  background: #ffffff;
+  padding: 40px 32px;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.auth-card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.auth-subtitulo {
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.campo-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.campo-grupo label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #333;
+}
+
+.campo-grupo input {
+  padding: 12px 14px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.campo-grupo input:focus {
+  border-color: #000;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: opacity 0.2s;
+}
+
+.btn-submit:hover {
+  opacity: 0.85;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #000;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 13px;
+}

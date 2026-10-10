@@ -1,5 +1,127 @@
-.catalogo-container {
-  background-color: #630d0d;
-  padding: 20px;
-  min-height: 100vh;
+/* Header superior */
+.header-tienda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #eaeaea;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.btn-menu-toggle {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+  color: #111;
+}
+
+.logo-tienda {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.link-logo {
+  text-decoration: none;
+  color: #000000;
+}
+
+.link-logo:hover {
+  opacity: 0.8;
+}
+
+.acciones-header .link-auth {
+  text-decoration: none;
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.acciones-header .link-auth:hover {
+  color: #000000;
+}
+
+/*================================================================================*/
+
+
+
+/* Layout Principal */
+.tienda-layout {
+  display: flex;
+  position: relative;
+  min-height: calc(100vh - 70px);
+  background-color: #f7f7f8;
+}
+
+/* Sidebar lateral oculto por defecto */
+.sidebar-lateral {
+  position: fixed;
+  top: 70px;
+  left: -300px; /* Escondido fuera de la pantalla a la izquierda */
+  width: 280px;
+  height: calc(100vh - 70px);
+  background-color: #ffffff;
+  border-right: 1px solid #eaeaea;
+  transition: left 0.3s ease-in-out;
+  z-index: 99;
+  box-shadow: 4px 0 15px rgba(179, 36, 36, 0.05);
+  overflow-y: auto;
+}
+
+/* Cuando la variable menuAbierto sea true, se desliza y aparece */
+.sidebar-lateral.abierto {
+  left: 0;
+}
+
+.contenido-sidebar {
+  padding: 30px 24px;
+}
+
+.sidebar-lateral h3 {
+  font-size: 12px;
+  color: #888;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.lista-categorias {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lista-categorias li {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.lista-categorias li:hover,
+.lista-categorias li.activo {
+  color: #000;
+  font-weight: 700;
+}
+
+/* Catálogo principal ocupa todo el ancho cuando está cerrado */
+.catalogo-contenido {
+  flex-grow: 1;
+  padding: 40px;
+  width: 100%;
 }

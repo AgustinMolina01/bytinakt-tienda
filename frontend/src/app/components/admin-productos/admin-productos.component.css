@@ -1,0 +1,192 @@
+.admin-contenedor {
+  padding: 30px 20px;
+  background-color: #f7f7f8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: inherit;
+}
+
+.admin-header-top {
+  width: 100%;
+  max-width: 650px;
+  margin-bottom: 15px;
+}
+
+.btn-volver-tienda {
+  text-decoration: none;
+  color: #555;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.btn-volver-tienda:hover {
+  color: #000;
+}
+
+.admin-card {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 650px;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.admin-card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.form-admin input, .select-categoria {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.select-categoria {
+  background: #fff;
+}
+
+.input-archivo {
+  margin-bottom: 15px;
+  font-size: 12px;
+  color: #555;
+}
+
+.botones-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.btn-agregar {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.btn-limpiar {
+  background: #eee;
+  color: #333;
+  border: none;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+/* Botones de filtro por categoría */
+.botones-categorias-filtro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 15px 0 20px 0;
+}
+
+.btn-filtro {
+  background: #f1f1f1;
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.btn-filtro.activo {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+/* Lista de productos prolija */
+.seccion-lista h3 {
+  font-size: 14px;
+  font-weight: 700;
+  border-top: 1px solid #eaeaea;
+  padding-top: 20px;
+}
+
+.lista-items-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item-producto-admin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafafa;
+  padding: 10px 15px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-miniatura {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+}
+
+.detalles-texto {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-nombre {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.admin-detalle {
+  font-size: 12px;
+  color: #666;
+}
+
+.btn-eliminar {
+  background: #d9534f;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.btn-eliminar:hover {
+  opacity: 0.85;
+}
+
+.sin-productos {
+  font-size: 13px;
+  color: #777;
+  font-style: italic;
+  padding: 10px 0;
+}
