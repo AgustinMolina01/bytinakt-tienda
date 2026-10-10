@@ -1,11 +1,13 @@
-import { Routes } from '@angular/router';
-import { CatalogoComponent } from './components/catalogo/catalogo.component';
-import { AdminProductosComponent } from './components/admin-productos/admin-productos.component';
-import { AuthComponent } from './components/auth/auth.component';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
-export const routes: Routes = [
-  { path: '', component: CatalogoComponent },
-  { path: 'auth', component: AuthComponent },
-  { path: 'admin', component: AdminProductosComponent },
-  { path: '**', redirectTo: '' }
-];
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css'
+})
+export class AppComponent { // <-- Asegurate de que diga 'export class'
+  title = 'frontend';
+}
