@@ -1,37 +1,68 @@
-<div class="auth-wrapper">
+<div class="auth-contenedor">
+  <div class="auth-header">
+    <a routerLink="/" class="btn-volver">← Volver al catálogo</a>
+    <h1 class="logo-tienda">BYTINAKT</h1>
+  </div>
+
   <div class="auth-card">
-    <h2 class="auth-title">{{ isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
-    
-    <form (ngSubmit)="onSubmit()" class="auth-form">
-      <div class="form-group" *ngIf="isRegisterMode">
-        <label>Nombre completo</label>
-        <input type="text" [(ngModel)]="nombre" name="nombre" placeholder="Tu nombre" required>
+    <h2>{{ isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
+    <p class="auth-subtitulo">
+      {{ isRegisterMode ? 'Ingresá tus datos personales para registrarte' : 'Ingresá a tu cuenta para continuar' }}
+    </p>
+
+    <!-- Cartel de Error -->
+    <div class="alerta alerta-error" *ngIf="mensajeError">
+      {{ mensajeError }}
+    </div>
+
+    <!-- Cartel de Éxito -->
+    <div class="alerta alerta-exito" *ngIf="mensajeExito">
+      {{ mensajeExito }}
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="campo-grupo" *ngIf="isRegisterMode">
+        <label>Nombre Completo</label>
+        <input 
+          type="text" 
+          [(ngModel)]="nombre" 
+          name="nombre" 
+          placeholder="Ej: Juan Pérez" 
+          required>
       </div>
 
-      <div class="form-group">
-        <label>Correo electrónico</label>
-        <input type="email" [(ngModel)]="email" name="email" placeholder="correo@ejemplo.com" required>
+      <div class="campo-grupo">
+        <label>Correo Electrónico</label>
+        <input 
+          type="email" 
+          [(ngModel)]="email" 
+          name="email" 
+          placeholder="correo@ejemplo.com" 
+          required>
       </div>
 
-      <div class="form-group">
+      <div class="campo-grupo">
         <label>Contraseña</label>
-        <input type="password" [(ngModel)]="password" name="password" placeholder="********" required>
+        <input 
+          type="password" 
+          [(ngModel)]="password" 
+          name="password" 
+          placeholder="********" 
+          required>
       </div>
 
       <button type="submit" class="btn-submit">
-        {{ isRegisterMode ? 'Registrarse' : 'Ingresar' }}
+        {{ isRegisterMode ? 'REGISTRARME' : 'INGRESAR' }}
       </button>
     </form>
 
-    <p class="auth-toggle-text">
-      {{ isRegisterMode ? '¿Ya tenés una cuenta?' : '¿No tenés cuenta?' }}
-      <span (click)="toggleMode()" class="toggle-link">
-        {{ isRegisterMode ? 'Iniciá sesión' : 'Registrate aquí' }}
-      </span>
-    </p>
-
-    <div class="volver-home">
-      <a routerLink="/">← Volver al catálogo</a>
+    <div class="auth-footer">
+      <p>
+        {{ isRegisterMode ? '¿Ya tenés una cuenta?' : '¿No tenés cuenta?' }}
+        <button type="button" class="btn-link" (click)="toggleMode()">
+          {{ isRegisterMode ? 'Iniciá sesión aquí' : 'Registrate aquí' }}
+        </button>
+      </p>
     </div>
   </div>
 </div>

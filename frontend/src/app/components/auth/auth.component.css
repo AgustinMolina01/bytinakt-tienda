@@ -14,18 +14,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 30px;
-  position: relative;
+  margin-bottom: 24px;
 }
 
 .btn-volver {
   align-self: flex-start;
   text-decoration: none;
   color: #666;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 1px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .btn-volver:hover {
@@ -42,34 +40,56 @@
 
 .auth-card {
   background: #ffffff;
-  padding: 40px 32px;
-  border-radius: 4px;
+  padding: 36px 30px;
+  border-radius: 6px;
   width: 100%;
   max-width: 420px;
   border: 1px solid #eaeaea;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .auth-card h2 {
   font-size: 18px;
   font-weight: 700;
-  letter-spacing: 1.5px;
-  margin: 0 0 8px 0;
+  letter-spacing: 1px;
+  margin: 0 0 6px 0;
   text-align: center;
 }
 
 .auth-subtitulo {
-  font-size: 13px;
+  font-size: 12px;
   color: #666;
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
+}
+
+/* Alertas de Error y Éxito */
+.alerta {
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.alerta-error {
+  background-color: #fde8e8;
+  color: #9b1c1c;
+  border: 1px solid #f8b4b4;
+}
+
+.alerta-exito {
+  background-color: #def7ec;
+  color: #03543f;
+  border: 1px solid #84e1bc;
 }
 
 .campo-grupo {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .campo-grupo label {
@@ -81,12 +101,11 @@
 }
 
 .campo-grupo input {
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid #ccc;
-  border-radius: 2px;
-  font-size: 14px;
+  border-radius: 4px;
+  font-size: 13px;
   outline: none;
-  transition: border-color 0.2s;
 }
 
 .campo-grupo input:focus {
@@ -95,16 +114,16 @@
 
 .btn-submit {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background-color: #000;
   color: #fff;
   border: none;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   cursor: pointer;
-  margin-top: 10px;
-  transition: opacity 0.2s;
+  border-radius: 4px;
+  margin-top: 8px;
 }
 
 .btn-submit:hover {
@@ -112,9 +131,9 @@
 }
 
 .auth-footer {
-  margin-top: 24px;
+  margin-top: 20px;
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   color: #666;
 }
 
@@ -126,5 +145,5 @@
   cursor: pointer;
   text-decoration: underline;
   padding: 0;
-  font-size: 13px;
+  font-size: 12px;
 }
