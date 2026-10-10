@@ -1,30 +1,23 @@
 <div class="auth-container">
-  <div class="auth-card">
-    <h2 class="auth-titulo">{{ esRegistro ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
-    
-    <form (ngSubmit)="onSubmit()" class="auth-form">
-      <div class="form-group">
-        <label>Correo Electrónico:</label>
-        <input type="email" [(ngModel)]="email" name="email" required placeholder="tucorreo@email.com">
-      </div>
-
-      <div class="form-group">
-        <label>Contraseña:</label>
-        <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••">
-      </div>
-
-      <button type="submit" class="btn-submit">
-        {{ esRegistro ? 'Registrarse' : 'Ingresar' }}
-      </button>
-    </form>
-
-    <div class="auth-switch">
-      <p *ngIf="!esRegistro">¿No tenés cuenta? <span (click)="alternarModo()">Registrate acá</span></p>
-      <p *ngIf="esRegistro">¿Ya tenés una cuenta? <span (click)="alternarModo()">Iniciá sesión</span></p>
+  <h2>{{ isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
+  
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label>Correo Electrónico:</label>
+      <input type="email" [(ngModel)]="email" name="email" required placeholder="correo@ejemplo.com">
     </div>
 
-    <div class="volver-catalogo">
-      <a routerLink="/">← Volver al Catálogo</a>
+    <div class="form-group">
+      <label>Contraseña:</label>
+      <input type="password" [(ngModel)]="password" name="password" required placeholder="********">
     </div>
-  </div>
+
+    <button type="submit" class="btn-submit">
+      {{ isRegisterMode ? 'Registrarse' : 'Ingresar' }}
+    </button>
+  </form>
+
+  <p (click)="toggleMode()" class="toggle-link">
+    {{ isRegisterMode ? '¿Ya tenés cuenta? Iniciá sesión' : '¿No tenés cuenta? Registrate' }}
+  </p>
 </div>
