@@ -1,23 +1,37 @@
-<div class="auth-container">
-  <h2>{{ isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
-  
-  <form (ngSubmit)="onSubmit()">
-    <div class="form-group">
-      <label>Correo Electrónico:</label>
-      <input type="email" [(ngModel)]="email" name="email" required placeholder="correo@ejemplo.com">
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <h2 class="auth-title">{{ isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
+    
+    <form (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group" *ngIf="isRegisterMode">
+        <label>Nombre completo</label>
+        <input type="text" [(ngModel)]="nombre" name="nombre" placeholder="Tu nombre" required>
+      </div>
+
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" [(ngModel)]="email" name="email" placeholder="correo@ejemplo.com" required>
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" [(ngModel)]="password" name="password" placeholder="********" required>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        {{ isRegisterMode ? 'Registrarse' : 'Ingresar' }}
+      </button>
+    </form>
+
+    <p class="auth-toggle-text">
+      {{ isRegisterMode ? '¿Ya tenés una cuenta?' : '¿No tenés cuenta?' }}
+      <span (click)="toggleMode()" class="toggle-link">
+        {{ isRegisterMode ? 'Iniciá sesión' : 'Registrate aquí' }}
+      </span>
+    </p>
+
+    <div class="volver-home">
+      <a routerLink="/">← Volver al catálogo</a>
     </div>
-
-    <div class="form-group">
-      <label>Contraseña:</label>
-      <input type="password" [(ngModel)]="password" name="password" required placeholder="********">
-    </div>
-
-    <button type="submit" class="btn-submit">
-      {{ isRegisterMode ? 'Registrarse' : 'Ingresar' }}
-    </button>
-  </form>
-
-  <p (click)="toggleMode()" class="toggle-link">
-    {{ isRegisterMode ? '¿Ya tenés cuenta? Iniciá sesión' : '¿No tenés cuenta? Registrate' }}
-  </p>
+  </div>
 </div>
