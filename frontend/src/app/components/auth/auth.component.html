@@ -1,70 +1,30 @@
-<div class="auth-contenedor">
-  <!-- Botón Volver -->
-  <div class="auth-header">
-    <a routerLink="/" class="btn-volver">← VOLVER A LA TIENDA</a>
-    <h1 class="logo-tienda">BYTINAKT</h1>
-  </div>
-
+<div class="auth-container">
   <div class="auth-card">
-    <h2>{{ esModoLogin ? 'INICIAR SESIÓN' : 'CREAR CUENTA' }}</h2>
-    <p class="auth-subtitulo">
-      {{ esModoLogin ? 'Ingresá a tu cuenta de ByTinakt' : 'Completá tus datos para registrarte' }}
-    </p>
-
-    <form (ngSubmit)="onSubmit()" #authForm="ngForm">
-      <!-- Nombre (solo en Registro) -->
-      <div class="campo-grupo" *ngIf="!esModoLogin">
-        <label for="nombre">Nombre completo</label>
-        <input 
-          type="text" 
-          id="nombre" 
-          name="nombre" 
-          [(ngModel)]="nombre" 
-          placeholder="Tu nombre" 
-          required 
-        />
+    <h2 class="auth-titulo">{{ esRegistro ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
+    
+    <form (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group">
+        <label>Correo Electrónico:</label>
+        <input type="email" [(ngModel)]="email" name="email" required placeholder="tucorreo@email.com">
       </div>
 
-      <!-- Email -->
-      <div class="campo-grupo">
-        <label for="email">Correo electrónico</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          [(ngModel)]="email" 
-          placeholder="ejemplo@correo.com" 
-          required 
-        />
-      </div>
-
-      <!-- Contraseña -->
-      <div class="campo-grupo">
-        <label for="password">Contraseña</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          [(ngModel)]="password" 
-          placeholder="••••••••" 
-          required 
-        />
+      <div class="form-group">
+        <label>Contraseña:</label>
+        <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••">
       </div>
 
       <button type="submit" class="btn-submit">
-        {{ esModoLogin ? 'INGRESAR' : 'REGISTRARME' }}
+        {{ esRegistro ? 'Registrarse' : 'Ingresar' }}
       </button>
     </form>
 
-    <div class="auth-footer">
-      <p *ngIf="esModoLogin">
-        ¿No tenés cuenta? 
-        <button type="button" class="btn-link" (click)="toggleModo()">Registrate acá</button>
-      </p>
-      <p *ngIf="!esModoLogin">
-        ¿Ya tenés cuenta? 
-        <button type="button" class="btn-link" (click)="toggleModo()">Iniciá sesión</button>
-      </p>
+    <div class="auth-switch">
+      <p *ngIf="!esRegistro">¿No tenés cuenta? <span (click)="alternarModo()">Registrate acá</span></p>
+      <p *ngIf="esRegistro">¿Ya tenés una cuenta? <span (click)="alternarModo()">Iniciá sesión</span></p>
+    </div>
+
+    <div class="volver-catalogo">
+      <a routerLink="/">← Volver al Catálogo</a>
     </div>
   </div>
 </div>
