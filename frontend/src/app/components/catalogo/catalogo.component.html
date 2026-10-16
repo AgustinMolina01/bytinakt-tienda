@@ -53,3 +53,30 @@
     </div>
   </main>
 </div>
+
+<div class="catalogo-container">
+  <!-- Botones de categorías -->
+  <nav class="categorias-nav">
+    <button 
+      *ngFor="let cat of categoriasDisponibles" 
+      (click)="filtrarCategoria(cat)"
+      [class.activo]="categoriaSeleccionada === cat">
+      {{ cat }}
+    </button>
+    <button (click)="filtrarCategoria('TODAS')" [class.activo]="categoriaSeleccionada === 'TODAS'">
+      TODAS
+    </button>
+  </nav>
+
+  <!-- Grilla de productos -->
+  <div class="productos-grid">
+    <div *ngFor="let producto of productosFiltrados()" class="producto-card">
+      <img [src]="producto.imagenUrl" [alt]="producto.nombre">
+      <h3>{{ producto.nombre }}</h3>
+      <p class="precio">${{ producto.precio }}</p>
+      <p class="talle">Talle: {{ producto.talle || 'Único' }}</p>
+      <p class="descripcion">{{ producto.descripcion }}</p>
+      <button (click)="comprarProducto(producto)">Comprar / Consultar</button>
+    </div>
+  </div>
+</div>
