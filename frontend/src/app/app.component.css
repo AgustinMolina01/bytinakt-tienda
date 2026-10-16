@@ -1,0 +1,8 @@
+header, .navbar {
+  background-color: #113457; /* Acá elegís el color que quieras (ej: un gris suave, #222 para oscuro, etc.) */
+  padding: 20px 30px;        /* Esto le da altura y espacio arriba y abajo */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #b92f2f;
+}
