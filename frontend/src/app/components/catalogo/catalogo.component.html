@@ -1,22 +1,29 @@
 <!-- HEADER PRINCIPAL DE LA TIENDA -->
 <header class="header-tienda">
-  <!-- Botón Menú / Hamburguesa a la izquierda -->
   <button class="btn-menu-toggle" (click)="toggleMenu()">
     <span>☰ {{ menuAbierto ? 'CERRAR' : 'MENÚ' }}</span>
   </button>
   
-  <!-- Título central que actúa como botón para volver al inicio -->
   <h1 class="logo-tienda">
-    <a routerLink="/" class="link-logo" (click)="filtrarCategoria('TODAS')">BYTINAKT</a>
+    <a routerLink="/" class="link-logo" (click)="filtrarCategoria('TODAS')">BYTINAKT.</a>
   </h1>
 
-  <!-- Opciones de cuenta / acceso a la derecha -->
   <div class="acciones-header">
-<a routerLink="/auth" class="link-auth">Iniciar Sesión</a>  
-</div>
-
+    <a routerLink="/auth" class="link-auth">INICIAR SESIÓN</a>
+  </div>
 </header>
 
+<!-- BANNER PRINCIPAL (HERO CON ELLAS DOS) -->
+<section class="banner-hero">
+  <div class="hero-overlay"></div>
+  <div class="contenido-banner">
+    <span class="subtitulo-coleccion">COLECCIÓN ELEGANCIA REFINADA</span>
+    <h2>DESCUBRE LA SOFISTICACIÓN DIARIA</h2>
+    <button class="btn-hero" (click)="filtrarCategoria('TODAS')">COMPRAR AHORA</button>
+  </div>
+</section>
+
+<!-- LAYOUT PRINCIPAL CON SIDEBAR Y CATÁLOGO -->
 <div class="tienda-layout">
   
   <!-- MENÚ LATERAL DESPLEGABLE -->
@@ -36,16 +43,21 @@
 
   <!-- CONTENIDO PRINCIPAL (CATÁLOGO) -->
   <main class="catalogo-contenido">
-    <h2 class="titulo-catalogo">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h2>
+    <div class="encabezado-catalogo">
+      <h2 class="titulo-catalogo">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h2>
+    </div>
 
+    <!-- GRILLA DE PRODUCTOS -->
     <div class="grilla-productos">
       <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
         <div class="contenedor-imagen">
-          <img [src]="producto.imagenUrl || 'https://via.placeholder.com/400x500?text=Sin+Imagen'" [alt]="producto.nombre" />
+          <img [src]="producto.imagenUrl || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=600&auto=format&fit=crop'" [alt]="producto.nombre" />
         </div>
         <div class="info-producto">
           <h3 class="nombre-producto">{{ producto.nombre }}</h3>
-          <p class="detalles-producto">{{ producto.categoria }} <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span></p>
+          <p class="detalles-producto">
+            {{ producto.categoria }} <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span>
+          </p>
           <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
           <button class="btn-comprar" (click)="comprarProducto(producto)">Comprar / Consultar</button>
         </div>
@@ -54,29 +66,17 @@
   </main>
 </div>
 
-<div class="catalogo-container">
-  <!-- Botones de categorías -->
-  <nav class="categorias-nav">
-    <button 
-      *ngFor="let cat of categoriasDisponibles" 
-      (click)="filtrarCategoria(cat)"
-      [class.activo]="categoriaSeleccionada === cat">
-      {{ cat }}
-    </button>
-    <button (click)="filtrarCategoria('TODAS')" [class.activo]="categoriaSeleccionada === 'TODAS'">
-      TODAS
-    </button>
-  </nav>
-
-  <!-- Grilla de productos -->
-  <div class="productos-grid">
-    <div *ngFor="let producto of productosFiltrados()" class="producto-card">
-      <img [src]="producto.imagenUrl" [alt]="producto.nombre">
-      <h3>{{ producto.nombre }}</h3>
-      <p class="precio">${{ producto.precio }}</p>
-      <p class="talle">Talle: {{ producto.talle || 'Único' }}</p>
-      <p class="descripcion">{{ producto.descripcion }}</p>
-      <button (click)="comprarProducto(producto)">Comprar / Consultar</button>
-    </div>
+<!-- PIE DE PÁGINA (FOOTER) -->
+<footer class="footer-tienda">
+  <div class="enlaces-footer">
+    <a routerLink="/ayuda">AYUDA</a>
+    <a routerLink="/nosotros">NOSOTROS</a>
+    <a routerLink="/contacto">CONTACTO</a>
   </div>
-</div>
+  <div class="redes-footer">
+    <a href="#" aria-label="Facebook">f</a>
+    <a href="#" aria-label="Twitter">𝕏</a>
+    <a href="#" aria-label="Instagram">📷</a>
+    <a href="#" aria-label="YouTube">▶</a>
+  </div>
+</footer>

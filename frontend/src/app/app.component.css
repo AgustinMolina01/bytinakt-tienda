@@ -1,8 +1,17 @@
 header, .navbar {
-  background-color: #113457; /* Acá elegís el color que quieras (ej: un gris suave, #222 para oscuro, etc.) */
-  padding: 20px 30px;        /* Esto le da altura y espacio arriba y abajo */
+  background-color: #113457; /* Azul copado */
+  padding: 20px 30px;        /* Agrandar la barra */
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 2px solid #b92f2f;
+}
+
+.logo-tienda {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #F4D6D6; /* El color claro que combina con el bordó */
 }

@@ -3,9 +3,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 40px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #eaeaea;
+  padding: 30px 40px;
+  background-color: #803A3A; /* El color exacto de la imagen */
+  color: #F4D6D6;            /* Color para las letras */
+  border-bottom: 1px solid #6A2E2E;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -18,7 +19,7 @@
   font-weight: 600;
   cursor: pointer;
   letter-spacing: 1px;
-  color: #111;
+  color: #fdfbfb;
 }
 
 .logo-tienda {
@@ -30,7 +31,7 @@
 
 .link-logo {
   text-decoration: none;
-  color: #000000;
+  color: #fffdfd;
 }
 
 .link-logo:hover {
@@ -39,7 +40,7 @@
 
 .acciones-header .link-auth {
   text-decoration: none;
-  color: #333;
+  color: #fffcfc; /* aca es el color del boton de iniciar sesion*/
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
