@@ -1,11 +1,11 @@
 .admin-contenedor {
   padding: 30px 20px;
-  background-color: #f7f7f8;
+  background-color: #F8F6F3;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: inherit;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .admin-header-top {
@@ -16,14 +16,15 @@
 
 .btn-volver-tienda {
   text-decoration: none;
-  color: #555;
+  color: #666;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
+  transition: color 0.2s;
 }
 
 .btn-volver-tienda:hover {
-  color: #000;
+  color: #803A3A;
 }
 
 .admin-card {
@@ -32,7 +33,7 @@
   border-radius: 6px;
   width: 100%;
   max-width: 650px;
-  border: 1px solid #eaeaea;
+  border: 1px solid #EAE6E1;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
@@ -41,19 +42,33 @@
   font-weight: 700;
   margin-bottom: 20px;
   letter-spacing: 1px;
+  color: #111;
+  border-bottom: 2px solid #803A3A;
+  padding-bottom: 8px;
+  display: inline-block;
 }
 
 .form-admin input, .select-categoria {
   width: 100%;
   padding: 10px 12px;
   margin-bottom: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #CCC;
   border-radius: 4px;
   font-size: 13px;
+  background-color: #FAFAFA;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.form-admin input:focus, .select-categoria:focus {
+  outline: none;
+  border-color: #803A3A;
+  background-color: #FFF;
+  box-shadow: 0 0 0 3px rgba(128, 58, 58, 0.1);
 }
 
 .select-categoria {
-  background: #fff;
+  background: #FFF;
 }
 
 .input-archivo {
@@ -69,7 +84,7 @@
 }
 
 .btn-agregar {
-  background: #000;
+  background: #803A3A;
   color: #fff;
   border: none;
   padding: 10px 16px;
@@ -78,10 +93,15 @@
   letter-spacing: 1px;
   cursor: pointer;
   border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.btn-agregar:hover {
+  background: #662E2E;
 }
 
 .btn-limpiar {
-  background: #eee;
+  background: #EAE6E1;
   color: #333;
   border: none;
   padding: 10px 16px;
@@ -89,6 +109,11 @@
   font-weight: 700;
   cursor: pointer;
   border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.btn-limpiar:hover {
+  background: #D5CEC5;
 }
 
 /* Botones de filtro por categoría */
@@ -100,8 +125,8 @@
 }
 
 .btn-filtro {
-  background: #f1f1f1;
-  border: 1px solid #ddd;
+  background: #F0F0F0;
+  border: 1px solid #DDD;
   padding: 6px 12px;
   font-size: 11px;
   font-weight: 700;
@@ -111,17 +136,23 @@
 }
 
 .btn-filtro.activo {
-  background: #000;
+  background: #803A3A;
   color: #fff;
-  border-color: #000;
+  border-color: #803A3A;
+}
+
+.btn-filtro:hover:not(.activo) {
+  background: #E5E0D8;
 }
 
 /* Lista de productos prolija */
 .seccion-lista h3 {
   font-size: 14px;
   font-weight: 700;
-  border-top: 1px solid #eaeaea;
+  border-top: 1px solid #EAE6E1;
   padding-top: 20px;
+  color: #111;
+  letter-spacing: 0.5px;
 }
 
 .lista-items-admin {
@@ -134,9 +165,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fafafa;
+  background: #FAFAFA;
   padding: 10px 15px;
-  border: 1px solid #eee;
+  border: 1px solid #EAE6E1;
   border-radius: 4px;
 }
 
@@ -151,7 +182,8 @@
   height: 45px;
   object-fit: cover;
   border-radius: 3px;
-  border: 1px solid #ddd;
+  border: 1px solid #DDD;
+  background-color: #EAE6E1;
 }
 
 .detalles-texto {
@@ -162,6 +194,7 @@
 .admin-nombre {
   font-weight: 700;
   font-size: 13px;
+  color: #111;
 }
 
 .admin-detalle {
@@ -170,7 +203,7 @@
 }
 
 .btn-eliminar {
-  background: #d9534f;
+  background: #C94A4A;
   color: white;
   border: none;
   padding: 6px 10px;
@@ -178,6 +211,7 @@
   font-weight: 700;
   cursor: pointer;
   border-radius: 3px;
+  transition: opacity 0.2s;
 }
 
 .btn-eliminar:hover {

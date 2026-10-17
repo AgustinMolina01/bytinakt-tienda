@@ -18,6 +18,9 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   categoriaSeleccionada: string = 'TODAS';
   menuAbierto: boolean = false;
   
+  // Variable para conectar con el input [(ngModel)]="busqueda"
+  busqueda: string = '';
+
   categoriasDisponibles: string[] = [
     'REMERAS',
     'BUZOS Y CAMPERAS',
@@ -85,14 +88,48 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Método que ejecuta el evento (input) del buscador
+  filtrarProductos(): void {
+    // La plantilla llama a este método para refrescar los resultados dinámicamente
+  }
+
+  // Método usado en el HTML (*ngFor="let producto of productosFiltrados()")
   productosFiltrados(): Producto[] {
-    if (this.categoriaSeleccionada === 'TODAS') {
-      return this.productos;
-    }
-    return this.productos.filter(p => p.categoria === this.categoriaSeleccionada);
+    return this.productos.filter(producto => {
+      // 1. Filtrar por categoría
+      const coincideCategoria = this.categoriaSeleccionada === 'TODAS' || 
+                                producto.categoria === this.categoriaSeleccionada;
+      
+      // 2. Filtrar por texto ingresado en la lupa
+      const texto = this.busqueda.trim().toLowerCase();
+      const coincideBusqueda = !texto || 
+                               producto.nombre.toLowerCase().includes(texto) ||
+                               (producto.descripcion && producto.descripcion.toLowerCase().includes(texto));
+
+      return coincideCategoria && coincideBusqueda;
+    });
   }
 
   comprarProducto(producto: Producto): void {
     alert(`¡Gracias por tu interés! Seleccionaste: ${producto.nombre} (Talle: ${producto.talle || 'Único'}) a $${producto.precio}`);
   }
+
+// Devuelve true si hay una sesión activa en el navegador
+  estaAutenticado(): boolean {
+    return localStorage.getItem('usuario_actual') !== null;
+  }
+
+  // Obtiene el nombre del usuario logueado para mostrarlo en el header
+  obtenerNombreUsuario(): string {
+    const user = localStorage.getItem('usuario_actual');
+    if (user) {
+      const data = JSON.parse(user);
+      return data.nombre ? data.nombre.split(' ')[0] : 'MI CUENTA';
+    }
+    return 'MI CUENTA';
+  }
+
+
+
+
 }

@@ -15,8 +15,12 @@ export class AuthComponent {
 
   // Campos del formulario
   nombre: string = '';
+  apellido: string = '';
+  genero: string = '';
   email: string = '';
   password: string = '';
+  confirmPassword: string = '';
+  mostrarPassword: boolean = false;
 
   // Mensajes de error y éxito
   mensajeError: string = '';
@@ -35,6 +39,10 @@ export class AuthComponent {
     const passLimpia = this.password.trim();
 
     if (this.isRegisterMode) {
+      if (passLimpia !== this.confirmPassword.trim()) {
+        this.mensajeError = 'Las contraseñas no coinciden.';
+        return;
+      }
       this.registrarUsuario(emailLimpio, passLimpia);
     } else {
       this.iniciarSesion(emailLimpio, passLimpia);
@@ -42,7 +50,6 @@ export class AuthComponent {
   }
 
   iniciarSesion(email: string, pass: string): void {
-    // 1. Verificación de Administrador
     if (email === this.ADMIN_EMAIL) {
       if (pass === this.ADMIN_PASS) {
         this.router.navigate(['/admin']);
@@ -52,7 +59,6 @@ export class AuthComponent {
       return;
     }
 
-    // 2. Verificación de Usuario Normal registrado
     const usuarios = JSON.parse(localStorage.getItem('usuarios_bytinakt') || '[]');
     const usuarioEncontrado = usuarios.find((u: any) => u.email === email);
 
@@ -66,14 +72,13 @@ export class AuthComponent {
       return;
     }
 
-    // Login exitoso para cliente
     localStorage.setItem('usuario_actual', JSON.stringify(usuarioEncontrado));
     this.router.navigate(['/']);
   }
 
   registrarUsuario(email: string, pass: string): void {
-    if (!this.nombre.trim()) {
-      this.mensajeError = 'Por favor ingresá tu nombre completo.';
+    if (!this.nombre.trim() || !this.apellido.trim() || !this.genero) {
+      this.mensajeError = 'Por favor completá todos los campos personales.';
       return;
     }
 
@@ -90,9 +95,9 @@ export class AuthComponent {
       return;
     }
 
-    // Registrar nuevo usuario
     const nuevoUsuario = {
-      nombre: this.nombre.trim(),
+      nombre: `${this.nombre.trim()} ${this.apellido.trim()}`,
+      genero: this.genero,
       email: email,
       password: pass
     };
@@ -103,6 +108,7 @@ export class AuthComponent {
     this.mensajeExito = '¡Cuenta creada con éxito! Ahora podés iniciar sesión.';
     this.isRegisterMode = false;
     this.password = '';
+    this.confirmPassword = '';
   }
 
   toggleMode(): void {

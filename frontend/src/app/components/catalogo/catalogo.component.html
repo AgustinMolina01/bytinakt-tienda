@@ -9,6 +9,23 @@
   </h1>
 
   <div class="acciones-header">
+    <!-- BUSCADOR CON LUPA -->
+    <div class="buscador-contenedor">
+      <input 
+        type="text" 
+        placeholder="Buscar..." 
+        class="input-buscador" 
+        [(ngModel)]="busqueda" 
+        (input)="filtrarProductos()" 
+      />
+      <button class="boton-lupa" aria-label="Buscar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+
     <a routerLink="/auth" class="link-auth">INICIAR SESIÓN</a>
   </div>
 </header>
@@ -62,34 +79,34 @@
     </section>
 
     <div class="catalogo-container">
-  <h3 class="titulo-seccion">ROPA MUJER: CAMPERAS, SATREROS Y MÁS</h3>
+      <h3 class="titulo-seccion">ROPA MUJER: CAMPERAS, SATREROS Y MÁS</h3>
 
-  <!-- CARRUSEL DE 2 PRODUCTOS GIGANTES EN PANTALLA -->
-  <div class="grid-productos">
-    <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()" (click)="comprarProducto(producto)">
-      
-      <!-- Foto Gigante Vertical -->
-      <div class="imagen-contenedor">
-        <img [src]="producto.imagenUrl || 'https://via.placeholder.com/600x900?text=Sin+Imagen'" [alt]="producto.nombre" />
-      </div>
+      <!-- CARRUSEL DE PRODUCTOS -->
+      <div class="grid-productos">
+        <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()" (click)="comprarProducto(producto)">
+          
+          <!-- Foto Gigante Vertical -->
+          <div class="imagen-contenedor">
+            <img [src]="producto.imagenUrl || 'https://via.placeholder.com/600x900?text=Sin+Imagen'" [alt]="producto.nombre" />
+          </div>
 
-      <!-- Nombre + Círculos de color -->
-      <div class="info-encabezado">
-        <h4 class="nombre-producto">{{ producto.nombre }}</h4>
-        <div class="variantes-color">
-          <span class="circulo-color" style="background-color: #111111;"></span>
-          <span class="circulo-color" style="background-color: #556B2F;"></span>
-          <span class="circulo-color" style="background-color: #800020;"></span>
+          <!-- Nombre + Círculos de color -->
+          <div class="info-encabezado">
+            <h4 class="nombre-producto">{{ producto.nombre }}</h4>
+            <div class="variantes-color">
+              <span class="circulo-color" style="background-color: #111111;"></span>
+              <span class="circulo-color" style="background-color: #556B2F;"></span>
+              <span class="circulo-color" style="background-color: #800020;"></span>
+            </div>
+          </div>
+
+          <!-- Precio y Cuotas -->
+          <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
+          <p class="cuotas-producto">3 cuotas de ${{ (producto.precio / 3) | number:'1.0-0' }}</p>
+
         </div>
       </div>
-
-      <!-- Precio y Cuotas -->
-      <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
-      <p class="cuotas-producto">3 cuotas de ${{ (producto.precio / 3) | number:'1.0-0' }}</p>
-
     </div>
-  </div>
-</div>
   </main>
 
 </div>
@@ -98,11 +115,63 @@
 <footer class="footer-tienda">
   <div class="enlaces-footer">
     <a routerLink="/ayuda">AYUDA</a>
-    <a routerLink="/nosotros">NOSOTROS</a>
+    <a routerLink="/nosotros">NOSOTRAS</a>
     <a routerLink="/contacto">CONTACTO</a>
   </div>
+
   <div class="redes-footer">
-    <a href="#" aria-label="Facebook">f</a>
-    <a href="#" aria-label="Instagram">📷</a>
+    <!-- Enlace a Instagram con el logo SVG oficial -->
+    <a href="https://www.instagram.com/bytinakt?utm_source=ig_web_button_share_sheet&srtk=ZDNlZDc0MzIxNw==" 
+       target="_blank" 
+       rel="noopener noreferrer" 
+       aria-label="Instagram">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+      </svg>
+    </a>
+      
+    <!-- Enlace a Facebook con el logo SVG oficial -->
+    <a href="https://www.facebook.com/karina.tissone?locale=pt_BR" 
+       target="_blank" 
+       rel="noopener noreferrer" 
+       aria-label="Facebook">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+      </svg>
+    </a>
+      
   </div>
+
+<div class="acciones-header">
+  <!-- BUSCADOR CON LUPA -->
+  <div class="buscador-contenedor">
+    <input 
+      type="text" 
+      placeholder="Buscar..." 
+      class="input-buscador" 
+      [(ngModel)]="busqueda" 
+      (input)="filtrarProductos()" 
+    />
+    <button class="boton-lupa" aria-label="Buscar">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Si no inició sesión -->
+  <a *ngIf="!estaAutenticado()" routerLink="/auth" class="link-auth">INICIAR SESIÓN</a>
+
+  <!-- Si ya inició sesión o se registró -->
+  <a *ngIf="estaAutenticado()" routerLink="/mi-cuenta" class="link-auth">
+    {{ obtenerNombreUsuario() | uppercase }}
+  </a>
+</div>
+
+
+
+
 </footer>

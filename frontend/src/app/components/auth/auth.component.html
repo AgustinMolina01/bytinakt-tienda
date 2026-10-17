@@ -21,16 +21,41 @@
     </div>
 
     <form (ngSubmit)="onSubmit()">
-      <div class="campo-grupo" *ngIf="isRegisterMode">
-        <label>Nombre Completo</label>
-        <input 
-          type="text" 
-          [(ngModel)]="nombre" 
-          name="nombre" 
-          placeholder="Ej: Juan Pérez" 
-          required>
-      </div>
+      
+      <!-- CAMPOS EXCLUSIVOS DE REGISTRO -->
+      <ng-container *ngIf="isRegisterMode">
+        <div class="campo-grupo">
+          <label>Nombre</label>
+          <input 
+            type="text" 
+            [(ngModel)]="nombre" 
+            name="nombre" 
+            placeholder="Ej: Juan" 
+            required>
+        </div>
 
+        <div class="campo-grupo">
+          <label>Apellido</label>
+          <input 
+            type="text" 
+            [(ngModel)]="apellido" 
+            name="apellido" 
+            placeholder="Ej: Pérez" 
+            required>
+        </div>
+
+        <div class="campo-grupo">
+          <label>Género</label>
+          <select [(ngModel)]="genero" name="genero" class="select-categoria" required>
+            <option value="" disabled selected>Seleccionar género</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Otro">Otro / Prefiero no decir</option>
+          </select>
+        </div>
+      </ng-container>
+
+      <!-- CORREO ELECTRÓNICO -->
       <div class="campo-grupo">
         <label>Correo Electrónico</label>
         <input 
@@ -41,18 +66,38 @@
           required>
       </div>
 
+      <!-- CONTRASEÑA -->
       <div class="campo-grupo">
         <label>Contraseña</label>
         <input 
-          type="password" 
+          [type]="mostrarPassword ? 'text' : 'password'" 
           [(ngModel)]="password" 
           name="password" 
           placeholder="********" 
           required>
       </div>
 
+      <!-- CONFIRMAR CONTRASEÑA (Solo en modo registro) -->
+      <div class="campo-grupo" *ngIf="isRegisterMode">
+        <label>Confirmar contraseña</label>
+        <input 
+          [type]="mostrarPassword ? 'text' : 'password'" 
+          [(ngModel)]="confirmPassword" 
+          name="confirmPassword" 
+          placeholder="********" 
+          required>
+      </div>
+
+      <!-- BOTÓN MOSTRAR CONTRASEÑA -->
+      <div class="checkbox-grupo" *ngIf="isRegisterMode || !isRegisterMode">
+        <label class="label-checkbox">
+          <input type="checkbox" [(ngModel)]="mostrarPassword" name="mostrarPassword">
+          <span>Mostrar contraseña</span>
+        </label>
+      </div>
+
       <button type="submit" class="btn-submit">
-        {{ isRegisterMode ? 'REGISTRARME' : 'INGRESAR' }}
+        {{ isRegisterMode ? 'CREAR UNA CUENTA' : 'INGRESAR' }}
       </button>
     </form>
 

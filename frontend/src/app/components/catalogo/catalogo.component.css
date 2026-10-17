@@ -141,6 +141,8 @@
 /* ==========================================
    BANNER HERO PANORÁMICO
    ========================================== */
+
+   /* eso es la parte del cartel de la palaBRA BIENVENIDO*/
 .banner-hero {
   position: relative !important;
   width: 100% !important;
@@ -150,11 +152,21 @@
   background-repeat: no-repeat !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
   color: #FFFFFF !important;
   transition: background-image 0.5s ease-in-out !important;
   margin-bottom: 35px !important;
+}
+
+.contenido-banner {
+  position: relative !important;
+  z-index: 2 !important;
+  max-width: 700px !important;
+  padding: 0 20px !important;
+
+  margin-left: 170px !important;
+
 }
 
 .hero-overlay {
@@ -164,13 +176,6 @@
   width: 100% !important;
   height: 100% !important;
   background-color: rgba(0, 0, 0, 0.3) !important;
-}
-
-.contenido-banner {
-  position: relative !important;
-  z-index: 2 !important;
-  max-width: 700px !important;
-  padding: 0 20px !important;
 }
 
 .subtitulo-coleccion {
@@ -212,7 +217,7 @@
   position: absolute !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  background-color: rgba(0, 0, 0, 0.3) !important;
+  background-color: rgba(0, 0, 0, 0) !important;
   color: #FFFFFF !important;
   border: none !important;
   font-size: 18px !important;
@@ -223,8 +228,8 @@
 }
 
 .btn-slider:hover {
-  background-color: rgba(255, 255, 255, 0.8) !important;
-  color: #1A1A1A !important;
+  background-color: rgba(15, 15, 15, 0) !important;
+  color: #f3f1f1 !important;
 }
 
 .btn-prev { left: 15px !important; }
@@ -295,7 +300,7 @@
   cursor: pointer !important;
 }
 
-/* Foto Vertical Ampliada y Estilizada (Ratio 3:4) */
+/* Foto Vertical Ampliada y Estilizada */
 .imagen-contenedor {
   position: relative !important;
   width: 125% !important;
@@ -373,17 +378,19 @@
 }
 
 /* ==========================================
-   FOOTER
+   FOOTER de la barra de abajo DE TODO 
    ========================================== */
 .footer-tienda {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   padding: 30px 40px !important;
-  background-color: #111111 !important;
-  color: #FFFFFF !important;
+  background-color: #FDFBF7 !important;
+  color: #faf8f8 !important;
   font-size: 11px !important;
   width: 100% !important;
+  box-sizing: border-box !important;
+  position: relative !important;
 }
 
 .enlaces-footer {
@@ -391,18 +398,115 @@
   gap: 20px !important;
 }
 
-.enlaces-footer a, .redes-footer a {
-  color: #FFFFFF !important;
+.enlaces-footer a {
+  color: #b61515 !important; 
   text-decoration: none !important;
   letter-spacing: 1px !important;
   transition: opacity 0.2s !important;
 }
 
-.enlaces-footer a:hover, .redes-footer a:hover {
+.enlaces-footer a:hover, 
+.redes-footer a:hover {
   opacity: 0.7 !important;
 }
 
+/* Forzamos a que las redes salgan del flujo normal y se pongan a la derecha de todo */
 .redes-footer {
   display: flex !important;
+  align-items: center !important;
   gap: 15px !important;
+  position: absolute !important;
+  right: 40px !important; /* Se pega al margen derecho exacto del footer */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.redes-footer a {
+  color: #6b0e0e !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.redes-footer svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Redes Sociales ( INSTAGRAM y FACEBOOK ) */
+
+.redes-footer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 15px !important;
+  margin-left: auto !important;
+  margin-right: 0px !important;
+}
+
+.redes-footer a {
+  color: #6b0e0e !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.redes-footer a:hover {
+  opacity: 0.7 !important;
+}
+
+.redes-footer svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+
+/* lupa */
+
+.acciones-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 20px !important;
+}
+
+.buscador-contenedor {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 160px !important;
+  transition: width 0.3s ease !important;
+}
+
+.buscador-contenedor:focus-within {
+  width: 220px !important; /* Se agranda sutilmente cuando hacés clic para escribir */
+}
+
+.input-buscador {
+  width: 100% !important;
+  padding: 6px 30px 6px 12px !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 20px !important;
+  color: #FFFFFF !important;
+  font-size: 12px !important;
+  letter-spacing: 0.5px !important;
+  outline: none !important;
+}
+
+.input-buscador::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.boton-lupa {
+  position: absolute !important;
+  right: 10px !important;
+  background: none !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
 }
