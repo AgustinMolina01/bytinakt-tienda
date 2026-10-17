@@ -13,6 +13,7 @@
   </div>
 </header>
 
+<!-- LAYOUT GENERAL -->
 <div class="tienda-layout">
   
   <!-- MENÚ LATERAL DESPLEGABLE -->
@@ -34,7 +35,9 @@
   <main class="catalogo-contenido">
     
     <!-- BANNER PRINCIPAL (CARRUSEL SLIDER) -->
-    <section class="banner-hero" [style.background-image]="'url(' + imagenesBanner[indiceBannerActual] + ')'">
+    <section class="banner-hero" 
+             *ngIf="imagenesBanner && imagenesBanner.length > 0" 
+             [style.background-image]="'url(' + imagenesBanner[indiceBannerActual] + ')'">
       <div class="hero-overlay"></div>
 
       <!-- Botón flecha izquierda -->
@@ -58,27 +61,41 @@
       </div>
     </section>
 
+    <!-- SECCIÓN DE PRODUCTOS -->
     <div class="catalogo-container">
-      <h2 class="titulo-catalogo">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h2>
+      <h3 class="titulo-seccion">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h3>
 
-      <!-- GRILLA DE PRODUCTOS -->
-      <div class="grilla-productos">
+      <!-- GRILLA DE PRODUCTOS ESTILO PORTSAID (5 COLUMNAS) -->
+      <div class="grid-productos">
         <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
-          <div class="contenedor-imagen">
-            <img [src]="producto.imagenUrl || 'https://via.placeholder.com/400x500?text=Sin+Imagen'" [alt]="producto.nombre" />
+          
+          <!-- Foto Vertical 2:3 -->
+          <div class="imagen-contenedor">
+            <img [src]="producto.imagenUrl || 'https://via.placeholder.com/400x600?text=Sin+Imagen'" [alt]="producto.nombre" />
           </div>
-          <div class="info-producto">
-            <h3 class="nombre-producto">{{ producto.nombre }}</h3>
-            <p class="detalles-producto">
-              {{ producto.categoria }} <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span>
-            </p>
-            <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
-            <button class="btn-comprar" (click)="comprarProducto(producto)">Comprar / Consultar</button>
+
+          <!-- Info Encabezado: Nombre + Swatches de color -->
+          <div class="info-encabezado">
+            <h4 class="nombre-producto">{{ producto.nombre }}</h4>
+            <div class="variantes-color">
+              <span class="circulo-color" style="background-color: #000000;"></span>
+              <span class="circulo-color" style="background-color: #803A3A;"></span>
+              <span class="mas-colores">+2</span>
+            </div>
           </div>
+
+          <!-- Precio -->
+          <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
+
+          <!-- Financiación (3 cuotas) -->
+          <p class="cuotas-producto">3 cuotas de ${{ (producto.precio / 3) | number:'1.0-0' }}</p>
+
         </div>
       </div>
     </div>
+
   </main>
+
 </div>
 
 <!-- PIE DE PÁGINA -->
@@ -91,6 +108,5 @@
   <div class="redes-footer">
     <a href="#" aria-label="Facebook">f</a>
     <a href="#" aria-label="Instagram">📷</a>
-   
   </div>
 </footer>

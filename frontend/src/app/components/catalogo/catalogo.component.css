@@ -1,11 +1,13 @@
-/* Header superior */
+/* ==========================================
+   HEADER PRINCIPAL DE LA TIENDA
+   ========================================== */
 .header-tienda {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 30px 40px;
-  background-color: #803A3A; /* El color exacto de la imagen */
-  color: #F4D6D6;            /* Color para las letras */
+  padding: 20px 40px;
+  background-color: #803A3A; /* Bordó institucional */
+  color: #FFFFFF;
   border-bottom: 1px solid #6A2E2E;
   position: sticky;
   top: 0;
@@ -15,11 +17,11 @@
 .btn-menu-toggle {
   background: none;
   border: none;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   letter-spacing: 1px;
-  color: #fdfbfb;
+  color: #FFFFFF;
 }
 
 .logo-tienda {
@@ -31,7 +33,7 @@
 
 .link-logo {
   text-decoration: none;
-  color: #fffdfd;
+  color: #FFFFFF;
 }
 
 .link-logo:hover {
@@ -40,46 +42,43 @@
 
 .acciones-header .link-auth {
   text-decoration: none;
-  color: #fffcfc; /* aca es el color del boton de iniciar sesion*/
+  color: #FFFFFF;
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  transition: color 0.2s;
+  transition: opacity 0.2s;
 }
 
 .acciones-header .link-auth:hover {
-  color: #000000;
+  opacity: 0.8;
 }
 
-/*================================================================================*/
-
-
-
-/* Layout Principal */
+/* ==========================================
+   LAYOUT PRINCIPAL (ESTILO BLANCO PORTSAID)
+   ========================================== */
 .tienda-layout {
   display: flex;
   position: relative;
   min-height: calc(100vh - 70px);
-  background-color: #f7f7f8;
+  background-color: #FFFFFF;
 }
 
 /* Sidebar lateral oculto por defecto */
 .sidebar-lateral {
   position: fixed;
   top: 70px;
-  left: -300px; /* Escondido fuera de la pantalla a la izquierda */
+  left: -300px;
   width: 280px;
   height: calc(100vh - 70px);
-  background-color: #ffffff;
+  background-color: #FFFFFF;
   border-right: 1px solid #eaeaea;
   transition: left 0.3s ease-in-out;
   z-index: 99;
-  box-shadow: 4px 0 15px rgba(179, 36, 36, 0.05);
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
   overflow-y: auto;
 }
 
-/* Cuando la variable menuAbierto sea true, se desliza y aparece */
 .sidebar-lateral.abierto {
   left: 0;
 }
@@ -90,7 +89,7 @@
 
 .sidebar-lateral h3 {
   font-size: 12px;
-  color: #888;
+  color: #888888;
   letter-spacing: 1px;
   margin-bottom: 20px;
   text-transform: uppercase;
@@ -108,7 +107,7 @@
 .lista-categorias li {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: #333333;
   cursor: pointer;
   letter-spacing: 0.5px;
   transition: color 0.2s;
@@ -116,18 +115,21 @@
 
 .lista-categorias li:hover,
 .lista-categorias li.activo {
-  color: #000;
+  color: #803A3A;
   font-weight: 700;
 }
 
-/* Catálogo principal ocupa todo el ancho cuando está cerrado */
+/* Catálogo Contenido Principal */
 .catalogo-contenido {
   flex-grow: 1;
-  padding: 40px;
+  padding: 30px 40px;
   width: 100%;
+  background-color: #FFFFFF;
 }
 
-/* BANNER HERO CARRUSEL */
+/* ==========================================
+   BANNER HERO CARRUSEL
+   ========================================== */
 .banner-hero {
   position: relative;
   height: 480px;
@@ -138,7 +140,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: #ffffff;
+  color: #FFFFFF;
   transition: background-image 0.5s ease-in-out;
   margin-bottom: 40px;
 }
@@ -168,7 +170,7 @@
 }
 
 .contenido-banner h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Playfair Display', Georgia, serif;
   font-size: 38px;
   letter-spacing: 2px;
   margin-bottom: 25px;
@@ -176,8 +178,8 @@
 }
 
 .btn-hero {
-  background-color: #ffffff;
-  color: #1a1a1a;
+  background-color: #FFFFFF;
+  color: #1A1A1A;
   border: none;
   padding: 12px 30px;
   font-size: 12px;
@@ -188,7 +190,8 @@
 }
 
 .btn-hero:hover {
-  background-color: #e8e2d9;
+  background-color: #803A3A;
+  color: #FFFFFF;
 }
 
 /* Flechas del Carrusel */
@@ -197,7 +200,7 @@
   top: 50%;
   transform: translateY(-50%);
   background-color: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: #FFFFFF;
   border: none;
   font-size: 20px;
   padding: 12px 16px;
@@ -208,18 +211,12 @@
 
 .btn-slider:hover {
   background-color: rgba(255, 255, 255, 0.6);
-  color: #1a1a1a;
+  color: #1A1A1A;
 }
 
-.btn-prev {
-  left: 20px;
-}
+.btn-prev { left: 20px; }
+.btn-next { right: 20px; }
 
-.btn-next {
-  right: 20px;
-}
-
-/* Puntitos indicadores */
 .slider-puntos {
   position: absolute;
   bottom: 20px;
@@ -240,6 +237,152 @@
 }
 
 .slider-puntos span.activo {
-  background-color: #ffffff;
+  background-color: #FFFFFF;
   transform: scale(1.2);
+}
+
+/* ==========================================
+   GRILLA DE PRODUCTOS (5 COLUMNAS - PORTSAID)
+   ========================================== */
+.titulo-seccion {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111111;
+  letter-spacing: 1px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+}
+
+.grid-productos {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  padding-bottom: 50px;
+}
+
+@media (max-width: 1280px) {
+  .grid-productos { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .grid-productos { grid-template-columns: repeat(2, 1fr); }
+}
+
+.tarjeta-producto {
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* Contenedor de Imagen Vertical (Ratio 2/3) */
+.imagen-contenedor {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background-color: #F7F7F7;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.imagen-contenedor img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.tarjeta-producto:hover .imagen-contenedor img {
+  transform: scale(1.03);
+}
+
+/* Fila de Título y Colores */
+.info-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.nombre-producto {
+  font-size: 13px;
+  font-weight: 400;
+  color: #111111;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+.variantes-color {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.circulo-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  display: inline-block;
+}
+
+.mas-colores {
+  font-size: 10px;
+  color: #666666;
+  margin-left: 2px;
+}
+
+/* Precios y Cuotas */
+.precio-producto {
+  font-size: 13px;
+  font-weight: 700;
+  color: #000000;
+  margin: 2px 0;
+}
+
+.cuotas-producto {
+  font-size: 11px;
+  color: #777777;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* ==========================================
+   PIE DE PÁGINA (FOOTER)
+   ========================================== */
+.footer-tienda {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 40px;
+  background-color: #1A1A1A;
+  color: #FFFFFF;
+  font-size: 12px;
+}
+
+.enlaces-footer {
+  display: flex;
+  gap: 20px;
+}
+
+.enlaces-footer a, .redes-footer a {
+  color: #FFFFFF;
+  text-decoration: none;
+  letter-spacing: 1px;
+  transition: opacity 0.2s;
+}
+
+.enlaces-footer a:hover, .redes-footer a:hover {
+  opacity: 0.7;
+}
+
+.redes-footer {
+  display: flex;
+  gap: 15px;
 }
