@@ -13,7 +13,7 @@
   </div>
 </header>
 
-<!-- LAYOUT GENERAL -->
+<!-- LAYOUT PRINCIPAL -->
 <div class="tienda-layout">
   
   <!-- MENÚ LATERAL DESPLEGABLE -->
@@ -34,7 +34,7 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main class="catalogo-contenido">
     
-    <!-- BANNER PRINCIPAL (CARRUSEL SLIDER) -->
+    <!-- BANNER HERO CARRUSEL SLIDER -->
     <section class="banner-hero" 
              *ngIf="imagenesBanner && imagenesBanner.length > 0" 
              [style.background-image]="'url(' + imagenesBanner[indiceBannerActual] + ')'">
@@ -52,7 +52,7 @@
       <!-- Botón flecha derecha -->
       <button class="btn-slider btn-next" (click)="siguienteBanner()">&#10095;</button>
 
-      <!-- Puntitos indicadores abajo -->
+      <!-- Puntitos indicadores -->
       <div class="slider-puntos">
         <span *ngFor="let img of imagenesBanner; let i = index" 
               [class.activo]="i === indiceBannerActual" 
@@ -61,39 +61,35 @@
       </div>
     </section>
 
-    <!-- SECCIÓN DE PRODUCTOS -->
     <div class="catalogo-container">
-      <h3 class="titulo-seccion">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h3>
+  <h3 class="titulo-seccion">ROPA MUJER: CAMPERAS, SATREROS Y MÁS</h3>
 
-      <!-- GRILLA DE PRODUCTOS ESTILO PORTSAID (5 COLUMNAS) -->
-      <div class="grid-productos">
-        <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
-          
-          <!-- Foto Vertical 2:3 -->
-          <div class="imagen-contenedor">
-            <img [src]="producto.imagenUrl || 'https://via.placeholder.com/400x600?text=Sin+Imagen'" [alt]="producto.nombre" />
-          </div>
+  <!-- CARRUSEL DE 2 PRODUCTOS GIGANTES EN PANTALLA -->
+  <div class="grid-productos">
+    <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()" (click)="comprarProducto(producto)">
+      
+      <!-- Foto Gigante Vertical -->
+      <div class="imagen-contenedor">
+        <img [src]="producto.imagenUrl || 'https://via.placeholder.com/600x900?text=Sin+Imagen'" [alt]="producto.nombre" />
+      </div>
 
-          <!-- Info Encabezado: Nombre + Swatches de color -->
-          <div class="info-encabezado">
-            <h4 class="nombre-producto">{{ producto.nombre }}</h4>
-            <div class="variantes-color">
-              <span class="circulo-color" style="background-color: #000000;"></span>
-              <span class="circulo-color" style="background-color: #803A3A;"></span>
-              <span class="mas-colores">+2</span>
-            </div>
-          </div>
-
-          <!-- Precio -->
-          <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
-
-          <!-- Financiación (3 cuotas) -->
-          <p class="cuotas-producto">3 cuotas de ${{ (producto.precio / 3) | number:'1.0-0' }}</p>
-
+      <!-- Nombre + Círculos de color -->
+      <div class="info-encabezado">
+        <h4 class="nombre-producto">{{ producto.nombre }}</h4>
+        <div class="variantes-color">
+          <span class="circulo-color" style="background-color: #111111;"></span>
+          <span class="circulo-color" style="background-color: #556B2F;"></span>
+          <span class="circulo-color" style="background-color: #800020;"></span>
         </div>
       </div>
-    </div>
 
+      <!-- Precio y Cuotas -->
+      <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
+      <p class="cuotas-producto">3 cuotas de ${{ (producto.precio / 3) | number:'1.0-0' }}</p>
+
+    </div>
+  </div>
+</div>
   </main>
 
 </div>
