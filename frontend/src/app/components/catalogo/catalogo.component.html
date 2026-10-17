@@ -13,17 +13,6 @@
   </div>
 </header>
 
-<!-- BANNER PRINCIPAL (HERO CON ELLAS DOS) -->
-<section class="banner-hero">
-  <div class="hero-overlay"></div>
-  <div class="contenido-banner">
-    <span class="subtitulo-coleccion">COLECCIÓN ELEGANCIA REFINADA</span>
-    <h2>DESCUBRE LA SOFISTICACIÓN DIARIA</h2>
-    <button class="btn-hero" (click)="filtrarCategoria('TODAS')">COMPRAR AHORA</button>
-  </div>
-</section>
-
-<!-- LAYOUT PRINCIPAL CON SIDEBAR Y CATÁLOGO -->
 <div class="tienda-layout">
   
   <!-- MENÚ LATERAL DESPLEGABLE -->
@@ -41,32 +30,58 @@
     </div>
   </aside>
 
-  <!-- CONTENIDO PRINCIPAL (CATÁLOGO) -->
+  <!-- CONTENIDO PRINCIPAL -->
   <main class="catalogo-contenido">
-    <div class="encabezado-catalogo">
-      <h2 class="titulo-catalogo">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h2>
-    </div>
+    
+    <!-- BANNER PRINCIPAL (CARRUSEL SLIDER) -->
+    <section class="banner-hero" [style.background-image]="'url(' + imagenesBanner[indiceBannerActual] + ')'">
+      <div class="hero-overlay"></div>
 
-    <!-- GRILLA DE PRODUCTOS -->
-    <div class="grilla-productos">
-      <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
-        <div class="contenedor-imagen">
-          <img [src]="producto.imagenUrl || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=600&auto=format&fit=crop'" [alt]="producto.nombre" />
-        </div>
-        <div class="info-producto">
-          <h3 class="nombre-producto">{{ producto.nombre }}</h3>
-          <p class="detalles-producto">
-            {{ producto.categoria }} <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span>
-          </p>
-          <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
-          <button class="btn-comprar" (click)="comprarProducto(producto)">Comprar / Consultar</button>
+      <!-- Botón flecha izquierda -->
+      <button class="btn-slider btn-prev" (click)="anteriorBanner()">&#10094;</button>
+
+      <div class="contenido-banner">
+        <span class="subtitulo-coleccion">COLECCIÓN ELEGANCIA REFINADA</span>
+        <h2>Bienvenido a BYTINAKT</h2>
+        <button class="btn-hero" (click)="filtrarCategoria('TODAS')">COMPRAR AHORA</button>
+      </div>
+
+      <!-- Botón flecha derecha -->
+      <button class="btn-slider btn-next" (click)="siguienteBanner()">&#10095;</button>
+
+      <!-- Puntitos indicadores abajo -->
+      <div class="slider-puntos">
+        <span *ngFor="let img of imagenesBanner; let i = index" 
+              [class.activo]="i === indiceBannerActual" 
+              (click)="seleccionarBanner(i)">
+        </span>
+      </div>
+    </section>
+
+    <div class="catalogo-container">
+      <h2 class="titulo-catalogo">Catálogo de Indumentaria ({{ categoriaSeleccionada }})</h2>
+
+      <!-- GRILLA DE PRODUCTOS -->
+      <div class="grilla-productos">
+        <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
+          <div class="contenedor-imagen">
+            <img [src]="producto.imagenUrl || 'https://via.placeholder.com/400x500?text=Sin+Imagen'" [alt]="producto.nombre" />
+          </div>
+          <div class="info-producto">
+            <h3 class="nombre-producto">{{ producto.nombre }}</h3>
+            <p class="detalles-producto">
+              {{ producto.categoria }} <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span>
+            </p>
+            <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
+            <button class="btn-comprar" (click)="comprarProducto(producto)">Comprar / Consultar</button>
+          </div>
         </div>
       </div>
     </div>
   </main>
 </div>
 
-<!-- PIE DE PÁGINA (FOOTER) -->
+<!-- PIE DE PÁGINA -->
 <footer class="footer-tienda">
   <div class="enlaces-footer">
     <a routerLink="/ayuda">AYUDA</a>
@@ -75,8 +90,7 @@
   </div>
   <div class="redes-footer">
     <a href="#" aria-label="Facebook">f</a>
-    <a href="#" aria-label="Twitter">𝕏</a>
     <a href="#" aria-label="Instagram">📷</a>
-    <a href="#" aria-label="YouTube">▶</a>
+   
   </div>
 </footer>

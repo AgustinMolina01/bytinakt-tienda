@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductoService } from '../../services/producto.service';
+import { BannerService } from '../../services/banner.service';
 import { Producto } from '../../models/producto.model';
 
 @Component({
@@ -13,9 +14,8 @@ import { Producto } from '../../models/producto.model';
 })
 export class AdminProductosComponent implements OnInit {
   productos: Producto[] = [];
-  categoriaSeleccionada: string = 'TODAS'; // Filtro activo por defecto
+  categoriaSeleccionada: string = 'TODAS';
   
-  // Lista fija de categorías oficiales de la tienda
   categoriasDisponibles: string[] = [
     'REMERAS',
     'BUZOS Y CAMPERAS',
@@ -31,10 +31,16 @@ export class AdminProductosComponent implements OnInit {
     imagenUrl: ''
   };
 
-  constructor(private productoService: ProductoService) {}
+  imagenesBanner: string[] = [];
+
+  constructor(
+    private productoService: ProductoService,
+    private bannerService: BannerService
+  ) {}
 
   ngOnInit(): void {
     this.cargarProductos();
+    this.cargarBanners();
   }
 
   cargarProductos(): void {
@@ -80,16 +86,42 @@ export class AdminProductosComponent implements OnInit {
     }
   }
 
-  // Cambia la categoría seleccionada al hacer clic en los botones
+  // --- SELECCIONAR IMAGEN DE BANNER DESDE ARCHIVOS ---
+  onBannerSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const urlImagen = reader.result as string;
+        this.bannerService.agregarBanner(urlImagen);
+        this.cargarBanners();
+        alert('¡Imagen agregada al banner con éxito!');
+      };
+      reader.readAsDataURL(file);
+    }
+    // Limpiar el input file para permitir volver a subir el mismo archivo si es necesario
+    event.target.value = '';
+  }
+
   filtrarCategoria(cat: string): void {
     this.categoriaSeleccionada = cat;
   }
 
-  // Retorna la lista filtrada según el botón de categoría presionado
   productosFiltrados(): Producto[] {
     if (this.categoriaSeleccionada === 'TODAS') {
       return this.productos;
     }
     return this.productos.filter(p => p.categoria === this.categoriaSeleccionada);
+  }
+
+  cargarBanners(): void {
+    this.imagenesBanner = this.bannerService.obtenerBanners();
+  }
+
+  eliminarBanner(index: number): void {
+    if (confirm('¿Estás seguro de eliminar esta imagen del carrusel?')) {
+      this.bannerService.eliminarBanner(index);
+      this.cargarBanners();
+    }
   }
 }

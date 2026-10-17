@@ -77,5 +77,36 @@
         </div>
       </div>
     </div>
+
+<!-- SECCIÓN DE GESTIÓN DE BANNERS -->
+<div class="seccion-admin-banner" style="margin-top: 40px; background: #ebe4db; padding: 25px; border-radius: 8px; border: 1px solid #d5cec5;">
+  <h3 style="font-family: 'Playfair Display', serif; color: #803A3A; margin-top: 0;">Gestión de Carrusel / Banner Principal</h3>
+  
+  <div style="margin-bottom: 20px;">
+    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333; font-size: 13px;">
+      Seleccionar nueva imagen desde tu equipo:
+    </label>
+    <input 
+      type="file" 
+      accept="image/*" 
+      (change)="onBannerSelected($event)" 
+      style="padding: 8px; background: white; border-radius: 4px; border: 1px solid #ccc; width: 100%; cursor: pointer;" 
+    />
+  </div>
+
+  <div class="lista-banners">
+    <div *ngFor="let img of imagenesBanner; let i = index" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #e0e0e0;">
+      <!-- Muestra una miniatura de la imagen -->
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img [src]="img" alt="Banner {{i}}" style="width: 80px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />
+        <span style="font-size: 12px; color: #666;">Imagen {{ i + 1 }}</span>
+      </div>
+      <button (click)="eliminarBanner(i)" style="background-color: #c94a4a; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>
+
   </div>
 </div>
