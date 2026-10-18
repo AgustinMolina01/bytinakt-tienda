@@ -54,3 +54,25 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
 });
 
+const Usuario = require('./models/Usuario');
+
+// Ruta para registrar un usuario nuevo
+app.post('/api/auth/registro', async (req, res) => {
+  try {
+    const { nombre, email, password } = req.body;
+
+    // Verificar si el correo ya existe
+    const usuarioExistente = await Usuario.findOne({ email });
+    if (usuarioExistente) {
+      return res.status(400).json({ error: 'El email ya está registrado' });
+    }
+
+    // Crear y guardar el nuevo usuario
+    const nuevoUsuario = new Usuario({ nombre, email, password });
+    await nuevoUsuario.save();
+
+    res.status(201).json({ message: 'Usuario registrado con éxito', usuario: nuevoUsuario });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
