@@ -420,6 +420,134 @@
   width: 20px !important;
   height: 20px !important;
 }
+
+@media (max-width: 1020px) {
+  .sidebar-lateral {
+    top: 62px !important;
+    width: min(280px, 85vw) !important;
+    height: calc(100vh - 62px) !important;
+  }
+
+  .catalogo-contenido {
+    padding: 18px 22px !important;
+  }
+
+  .banner-hero {
+    height: 360px !important;
+  }
+
+  .contenido-banner {
+    margin-left: 40px !important;
+  }
+}
+
+@media (max-width: 750px) {
+  .catalogo-contenido {
+    padding: 14px 16px !important;
+  }
+
+  .banner-hero {
+    min-height: 290px !important;
+    height: min(66vw, 340px) !important;
+    margin-bottom: 26px !important;
+  }
+
+  .contenido-banner {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    padding: 0 48px !important;
+  }
+
+  .contenido-banner h2 {
+    font-size: clamp(25px, 6vw, 34px) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.2 !important;
+  }
+
+  .subtitulo-coleccion {
+    font-size: 10px !important;
+    letter-spacing: 1.8px !important;
+  }
+
+  .btn-prev {
+    left: 4px !important;
+  }
+
+  .btn-next {
+    right: 4px !important;
+  }
+
+  .grid-productos {
+    gap: 16px !important;
+  }
+
+  .tarjeta-producto {
+    padding-right: 4px !important;
+    padding-left: 4px !important;
+  }
+
+  .footer-tienda {
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding: 24px 18px !important;
+  }
+
+  .enlaces-footer {
+    flex: 0 1 auto !important;
+    flex-wrap: nowrap !important;
+    gap: clamp(6px, 2.5vw, 12px) !important;
+  }
+
+  .redes-footer {
+    flex: 0 0 auto !important;
+    position: static !important;
+    margin-left: auto !important;
+    transform: none !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .catalogo-contenido {
+    padding: 12px 10px !important;
+  }
+
+  .banner-hero { width: calc(100% + 60px) !important; height: clamp(210px, 62vw, 270px) !important; min-height: 0 !important; margin: 0 0 22px -30px !important; }
+  .contenido-banner { padding: 0 42px !important; }
+  .contenido-banner h2 { margin: 8px 0 12px !important; font-size: clamp(22px, 7vw, 28px) !important; letter-spacing: .5px !important; text-wrap: balance; }
+  .subtitulo-coleccion { font-size: 9px !important; letter-spacing: 1.4px !important; line-height: 1.5 !important; }
+  .btn-slider { padding: 8px !important; }
+  .grid-productos { gap: 12px !important; }
+  .nombre-producto { font-size: 12px !important; }
+  .precio-producto { font-size: 14px !important; }
+  .ver-producto { font-size: 9px !important; }
+  .titulo-seccion { font-size: 12px !important; line-height: 1.5 !important; }
+  .enlaces-footer a { font-size: 10px !important; }
+}
+
+@media (max-width: 370px) {
+  .footer-tienda {
+    gap: 6px !important;
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+  }
+
+  .enlaces-footer {
+    gap: 6px !important;
+  }
+
+  .enlaces-footer a {
+    font-size: 9px !important;
+    letter-spacing: .5px !important;
+  }
+
+  .redes-footer {
+    gap: 7px !important;
+  }
+}
 /* Redes Sociales ( INSTAGRAM y FACEBOOK ) */
 
 .redes-footer {

@@ -202,32 +202,4 @@
       
   </div>
 
-<div class="acciones-header">
-  <!-- BUSCADOR CON LUPA -->
-  <div class="buscador-contenedor">
-    <input 
-      type="text" 
-      placeholder="Buscar..." 
-      class="input-buscador" 
-      [(ngModel)]="busqueda" 
-      (input)="filtrarProductos()" 
-    />
-    <button class="boton-lupa" aria-label="Buscar">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-    </button>
-  </div>
-
-  <a *ngIf="estaAutenticado() && !auth.administrador" routerLink="/perfil" class="link-auth">
-    MI PERFIL
-  </a>
-  <a *ngIf="auth.administrador" routerLink="/admin" class="link-auth">ADMINISTRACIÓN</a>
-  <button *ngIf="estaAutenticado()" type="button" class="link-auth boton-sesion" (click)="cerrarSesion()">CERRAR SESIÓN</button>
-</div>
-
-
-
-
 </footer>

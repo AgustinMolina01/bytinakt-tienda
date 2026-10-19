@@ -358,3 +358,165 @@
   display: block;
   margin-top: 10px;
 }
+
+.admin-container {
+  width: min(100%, 1180px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 30px 24px 56px;
+  color: #292525;
+}
+
+.admin-container > h2,
+.listado-seccion > h3 {
+  color: #803a3a;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.form-producto {
+  max-width: 100%;
+}
+
+.form-producto input,
+.form-producto select,
+.form-producto textarea {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.form-producto .opciones-talle {
+  width: 100%;
+  min-width: 0;
+}
+
+.divider {
+  margin: 32px 0;
+  border: 0;
+  border-top: 1px solid #e5ded9;
+}
+
+.listado-seccion {
+  width: 100%;
+}
+
+.productos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.producto-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e5ded9;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.producto-card > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #f5f2ef;
+}
+
+.producto-info {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.producto-info h4,
+.producto-info p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.producto-info .precio {
+  color: #803a3a;
+  font-weight: 700;
+}
+
+.pedidos-admin {
+  margin-top: 36px;
+}
+
+.pedido-admin {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #e5ded9;
+  background: #fff;
+}
+
+.seccion-admin-banner {
+  width: 100%;
+}
+
+.lista-banners > div {
+  gap: 12px;
+}
+
+@media (max-width: 800px) {
+  .admin-container {
+    padding: 24px 18px 40px;
+  }
+
+  .productos-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .form-producto {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-container {
+    padding: 18px 12px 32px;
+  }
+
+  .admin-container > h2 {
+    font-size: 21px;
+  }
+
+  .productos-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-producto {
+    padding: 16px 13px;
+  }
+
+  .fila-talle {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 9px 0;
+  }
+
+  .fila-talle .stock-talle {
+    justify-content: space-between;
+  }
+
+  .fila-talle .stock-talle input {
+    max-width: 110px;
+  }
+
+  .pedido-admin {
+    flex-direction: column;
+    padding: 13px;
+  }
+
+  .seccion-admin-banner {
+    padding: 16px !important;
+  }
+
+  .lista-banners > div {
+    align-items: flex-start !important;
+    padding: 10px !important;
+  }
+}

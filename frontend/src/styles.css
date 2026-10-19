@@ -288,38 +288,49 @@ body {
 
 @media (max-width: 620px) {
   .header-tienda {
-    min-height: 62px;
-    gap: 10px;
-    padding: 8px 14px;
+    position: sticky;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: 44px;
+    min-height: 60px;
+    column-gap: 8px;
+    padding: 7px 12px;
   }
 
   .identidad-tienda {
-    gap: 8px;
+    grid-column: 1;
+    justify-self: start;
+    gap: 0;
   }
 
   .btn-menu-toggle {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
   }
 
   .logo-tienda {
+    grid-column: 2;
+    justify-self: center;
     font-size: 19px;
-    letter-spacing: 1.8px;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
   }
 
   .acciones-header {
-    gap: 11px;
+    grid-column: 3;
+    justify-self: end;
+    gap: 5px;
   }
 
   .buscador-contenedor {
-    flex-basis: 34px;
+    flex: 0 0 34px;
     min-width: 34px;
     width: 34px;
     height: 34px;
   }
 
   .buscador-contenedor:focus-within {
-    flex-basis: 126px;
+    flex: 0 1 118px;
+    min-width: 34px;
   }
 
   .input-buscador {
@@ -344,36 +355,79 @@ body {
   }
 
   .acciones-header .link-auth {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    justify-content: center;
+    padding: 0;
     gap: 0;
     font-size: 0;
   }
 
   .acciones-header .link-auth svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .acciones-header .icono-header:not(.icono-carrito) {
+    width: 36px;
+    height: 36px;
+    justify-content: center;
+  }
+
+  .acciones-header .icono-header:not(.icono-carrito) span {
+    display: none;
+  }
+
+  .acciones-header .icono-carrito {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    justify-content: center;
   }
 
   .icono-carrito > span:not(.contador-carrito) {
     display: none;
   }
+
+  .contador-carrito {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 8px;
+  }
 }
 
 @media (max-width: 370px) {
   .header-tienda {
-    padding-right: 9px;
-    padding-left: 9px;
+    column-gap: 5px;
+    padding-right: 8px;
+    padding-left: 8px;
   }
 
   .acciones-header {
-    gap: 7px;
+    gap: 2px;
   }
 
   .logo-tienda {
-    font-size: 16px;
+    font-size: 13px;
+    letter-spacing: 1px;
   }
 
   .buscador-contenedor:focus-within {
-    flex-basis: 104px;
+    flex: 0 1 96px;
+  }
+
+  .acciones-header .link-auth,
+  .acciones-header .icono-header:not(.icono-carrito),
+  .acciones-header .icono-carrito {
+    width: 32px;
+    height: 34px;
+    flex-basis: 32px;
   }
 }
 

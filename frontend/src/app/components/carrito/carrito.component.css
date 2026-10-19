@@ -110,18 +110,45 @@
   font-size: 13px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .checkout-layout {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 620px) {
+  .checkout {
+    padding: 26px 14px 42px;
+  }
+
+  .checkout h1 {
+    font-size: 28px;
+  }
+
   .item-carrito {
-    grid-template-columns: 70px 1fr 78px;
-    gap: 10px;
+    grid-template-columns: 64px minmax(0, 1fr) 68px;
+    gap: 9px;
+    padding: 13px 0;
   }
+
   .item-carrito img {
-    width: 70px;
-    height: 90px;
+    width: 64px;
+    height: 82px;
   }
+
+  .datos-item h2 {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .cantidad {
+    font-size: 11px;
+  }
+
+  .form-envio {
+    padding: 18px 14px;
+  }
+
   .quitar {
     grid-column: 2 / 4;
     justify-self: start;
