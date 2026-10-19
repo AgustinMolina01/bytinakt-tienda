@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: bytinakt-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://bytinakt-tienda.vercel.app
+      - key: MONGODB_URI
+        sync: false
+      - key: AUTH_TOKEN_SECRET
+        generateValue: true
