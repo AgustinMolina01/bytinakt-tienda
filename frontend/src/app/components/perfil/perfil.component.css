@@ -1,0 +1,129 @@
+.perfil-pagina {
+  min-height: 75vh;
+  padding: 34px 20px 60px;
+  background: #fbf9f7;
+  color: #292525;
+}
+
+.volver {
+  display: block;
+  width: min(680px, 100%);
+  margin: 0 auto 18px;
+  color: #803a3a;
+}
+
+.perfil-tarjeta {
+  width: min(680px, 100%);
+  margin: 0 auto;
+  padding: 30px;
+  background: #fff;
+  border: 1px solid #e5ded9;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgb(40 25 20 / 6%);
+}
+
+.perfil-titulo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.perfil-icono {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f5ece9;
+  color: #803a3a;
+}
+
+.perfil-titulo h1 {
+  margin: 0 0 5px;
+  color: #803a3a;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.perfil-titulo p {
+  margin: 0;
+  color: #655d59;
+  font-size: 14px;
+}
+
+.perfil-tarjeta form {
+  display: grid;
+  gap: 16px;
+}
+
+.perfil-tarjeta label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.perfil-tarjeta input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #cfc5bd;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.perfil-tarjeta input[readonly] {
+  background: #f3f1ef;
+  color: #6a625e;
+}
+
+.campos-en-linea {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.perfil-tarjeta button {
+  min-height: 45px;
+  border: 0;
+  border-radius: 4px;
+  background: #803a3a;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: .5px;
+  cursor: pointer;
+}
+
+.perfil-tarjeta button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.error {
+  margin: 0;
+  color: #9b2525;
+}
+
+.exito {
+  margin: 0;
+  color: #28643c;
+}
+
+.mensaje {
+  color: #655d59;
+}
+
+.link-carrito {
+  display: inline-block;
+  margin-top: 20px;
+  color: #803a3a;
+}
+
+@media (max-width: 520px) {
+  .perfil-tarjeta {
+    padding: 22px 18px;
+  }
+
+  .campos-en-linea {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,129 @@
+.checkout {
+  max-width: 1100px;
+  min-height: 70vh;
+  margin: 0 auto;
+  padding: 36px 22px 60px;
+  color: #292525;
+}
+
+.checkout h1 {
+  color: #803a3a;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+}
+
+.volver, .vacio a {
+  color: #803a3a;
+}
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: 32px;
+}
+
+.item-carrito {
+  display: grid;
+  grid-template-columns: 90px minmax(120px, 1fr) 95px auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid #ded6d0;
+}
+
+.item-carrito img {
+  width: 90px;
+  height: 110px;
+  object-fit: cover;
+  background: #eee9e4;
+}
+
+.datos-item h2, .form-envio h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.datos-item p {
+  margin: 0 0 8px;
+  color: #666;
+  font-size: 13px;
+}
+
+.cantidad, .form-envio label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+}
+
+.cantidad input, .form-envio input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #cfc5bd;
+  border-radius: 3px;
+}
+
+.quitar {
+  border: 0;
+  background: transparent;
+  color: #803a3a;
+  cursor: pointer;
+}
+
+.total-carrito {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 0;
+  font-size: 18px;
+}
+
+.form-envio {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  background: #f5f1ed;
+  border: 1px solid #ded6d0;
+}
+
+.form-envio button {
+  padding: 14px;
+  border: 0;
+  background: #803a3a;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.form-envio button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.error {
+  color: #9b2525;
+}
+
+.nota {
+  margin: 0;
+  color: #5f5652;
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .checkout-layout {
+    grid-template-columns: 1fr;
+  }
+  .item-carrito {
+    grid-template-columns: 70px 1fr 78px;
+    gap: 10px;
+  }
+  .item-carrito img {
+    width: 70px;
+    height: 90px;
+  }
+  .quitar {
+    grid-column: 2 / 4;
+    justify-self: start;
+  }
+}

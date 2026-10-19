@@ -224,3 +224,137 @@
   font-style: italic;
   padding: 10px 0;
 }
+
+.form-producto {
+  width: 100%;
+  max-width: 650px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #eae6e1;
+  border-radius: 6px;
+}
+
+.form-producto h3 {
+  margin-top: 0;
+  color: #803a3a;
+}
+
+.form-producto .form-group {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+
+.form-producto input,
+.form-producto select,
+.form-producto textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fafafa;
+  font: inherit;
+}
+
+.form-producto textarea {
+  resize: vertical;
+}
+
+.form-producto small {
+  color: #655d59;
+}
+
+.imagenes-nuevo-producto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.imagen-nueva {
+  position: relative;
+  width: 86px;
+  height: 110px;
+}
+
+.imagen-nueva img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+
+.imagen-nueva button {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  border: 0;
+  padding: 4px 6px;
+  background: #803a3a;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-guardar {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 3px;
+  background: #803a3a;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-guardar:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.opciones-talle {
+  padding: 12px;
+  border: 1px solid #ddd3cc;
+  border-radius: 4px;
+}
+
+.opciones-talle legend {
+  padding: 0 5px;
+  font-weight: 600;
+}
+
+.fila-talle {
+  display: grid;
+  grid-template-columns: 1fr minmax(130px, .6fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  border-bottom: 1px solid #eee8e3;
+}
+
+.fila-talle > label:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fila-talle input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.fila-talle .stock-talle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.fila-talle .stock-talle input {
+  max-width: 90px;
+  margin: 0;
+}
+
+.opciones-talle small {
+  display: block;
+  margin-top: 10px;
+}

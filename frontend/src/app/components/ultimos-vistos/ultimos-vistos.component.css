@@ -1,0 +1,133 @@
+.ultimos-vistos {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 2px 8px rgb(0 0 0 / 14%));
+}
+
+.pestana-vistos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 28px;
+  height: 166px;
+  padding: 8px 4px;
+  border: 1px solid #e8e2dd;
+  border-right: 0;
+  border-radius: 6px 0 0 6px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  transition: color .2s ease, background-color .2s ease;
+}
+
+.pestana-vistos:hover {
+  color: #803a3a;
+  background: #fbf8f6;
+}
+
+.pestana-vistos > span:last-child {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.chevron {
+  font-size: 21px;
+  line-height: 1;
+}
+
+.panel-vistos {
+  order: 1;
+  width: 96px;
+  max-height: min(72vh, 390px);
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid #e8e2dd;
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+  background: #fff;
+  animation: panel-vistos-entra .24s ease-out both;
+}
+
+.producto-visto {
+  display: block;
+  padding: 2px 3px;
+  color: #292525;
+  text-decoration: none;
+  animation: producto-visto-entra .3s ease-out both;
+  animation-delay: calc(var(--orden, 0) * 45ms);
+  transition: background-color .18s ease;
+}
+
+.producto-visto:hover {
+  background: #fbf8f6;
+}
+
+.producto-visto img {
+  display: block;
+  width: 100%;
+  height: 104px;
+  border-radius: 3px;
+  object-fit: cover;
+  background: #f4f1ee;
+}
+
+@media (max-width: 520px) {
+  .ultimos-vistos {
+    top: auto;
+    bottom: 18%;
+    transform: none;
+  }
+
+  .pestana-vistos {
+    width: 26px;
+    height: 148px;
+  }
+
+  .panel-vistos {
+    width: 82px;
+    padding: 4px;
+  }
+
+  .producto-visto img {
+    height: 88px;
+  }
+}
+
+@keyframes panel-vistos-entra {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes producto-visto-entra {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-vistos,
+  .producto-visto {
+    animation: none;
+  }
+}

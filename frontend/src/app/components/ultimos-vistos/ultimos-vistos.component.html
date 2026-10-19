@@ -1,0 +1,16 @@
+<aside class="ultimos-vistos" *ngIf="visible" [class.abierto]="abierto">
+  <button type="button" class="pestana-vistos" (click)="abierto = !abierto"
+    [attr.aria-expanded]="abierto" aria-controls="panel-ultimos-vistos">
+    <span class="chevron" aria-hidden="true">{{ abierto ? '›' : '‹' }}</span>
+    <span>ÚLTIMOS VISTOS</span>
+  </button>
+
+  <section class="panel-vistos" id="panel-ultimos-vistos" *ngIf="abierto">
+    <a class="producto-visto" *ngFor="let producto of vistos.productos(); let i = index; trackBy: trackByProducto"
+      [routerLink]="ruta(producto)" (click)="abierto = false"
+      [style.--orden]="i" [attr.aria-label]="'Volver a ver ' + producto.nombre">
+      <img [src]="imagen(producto)" [alt]="producto.nombre" loading="eager" decoding="async"
+        (error)="imagenFallida($event, producto)">
+    </a>
+  </section>
+</aside>

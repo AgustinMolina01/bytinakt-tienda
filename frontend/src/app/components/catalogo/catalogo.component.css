@@ -1,70 +1,7 @@
-/* ==========================================
-   RESET Y ESTILOS GENERALES
-   ========================================== */
 * {
   box-sizing: border-box !important;
 }
 
-/* ==========================================
-   HEADER PRINCIPAL DE LA TIENDA
-   ========================================== */
-.header-tienda {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  padding: 18px 30px !important;
-  background-color: #803A3A !important;
-  color: #FFFFFF !important;
-  border-bottom: 1px solid #6A2E2E !important;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 100 !important;
-  width: 100% !important;
-}
-
-.btn-menu-toggle {
-  background: none !important;
-  border: none !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  letter-spacing: 1px !important;
-  color: #FFFFFF !important;
-}
-
-.logo-tienda {
-  margin: 0 !important;
-  font-size: 22px !important;
-  font-weight: 800 !important;
-  letter-spacing: 3px !important;
-}
-
-.link-logo {
-  text-decoration: none !important;
-  color: #FFFFFF !important;
-}
-
-.link-logo:hover {
-  opacity: 0.85 !important;
-}
-
-.acciones-header .link-auth {
-  text-decoration: none !important;
-  color: #FFFFFF !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  transition: opacity 0.2s !important;
-}
-
-.acciones-header .link-auth:hover {
-  opacity: 0.8 !important;
-}
-
-/* ==========================================
-   LAYOUT PRINCIPAL Y CONTENEDOR ANCHO
-   ========================================== */
 .tienda-layout {
   display: flex !important;
   position: relative !important;
@@ -77,10 +14,10 @@
 /* Sidebar lateral flotante */
 .sidebar-lateral {
   position: fixed !important;
-  top: 65px !important;
+  top: 68px !important;
   left: -300px !important;
   width: 280px !important;
-  height: calc(100vh - 65px) !important;
+  height: calc(100vh - 68px) !important;
   background-color: #FFFFFF !important;
   border-right: 1px solid #EAEAEA !important;
   transition: left 0.3s ease-in-out !important;
@@ -259,9 +196,6 @@
   transform: scale(1.2) !important;
 }
 
-/* ==========================================
-   GRILLA DE PRODUCTOS AMPLIADA (CORREGIDA)
-   ========================================== */
 .catalogo-container {
   width: 100% !important;
 }
@@ -275,35 +209,88 @@
   text-transform: uppercase !important;
 }
 
+.aviso-vista-demo,
+.aviso-error-catalogo {
+  width: fit-content;
+  max-width: 100%;
+  margin: -12px 0 22px;
+  padding: 9px 12px;
+  border-left: 2px solid #9a7664;
+  background: #f7f3ef;
+  color: #64554d;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.aviso-error-catalogo {
+  border-left-color: #9b3838;
+  background: #fff5f3;
+  color: #852d2d;
+}
+
 .grid-productos {
   display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important; /* 4 columnas grandes estilo Portsaid */
-  gap: 24px !important;
-  width: 100% !important;       /* Corregido: Ocupa el 100% real sin desbordar */
-  max-width: 100% !important;   /* Corregido: Sin restricciones de 100px */
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 28px !important;
+  width: 100% !important;
+  max-width: 100% !important;
   padding-bottom: 60px !important;
 }
 
 @media (max-width: 1100px) {
-  .grid-productos { grid-template-columns: repeat(3, 1fr) !important; }
+  .grid-productos { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
 }
 
 @media (max-width: 750px) {
-  .grid-productos { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-productos { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 20px !important; }
 }
 
 .tarjeta-producto {
   display: flex !important;
   flex-direction: column !important;
+  min-width: 0 !important;
+  padding: 0 8px 14px !important;
   background-color: transparent !important;
   border: none !important;
   cursor: pointer !important;
 }
 
-/* Foto Vertical Ampliada y Estilizada */
+.producto-enlace {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.nombre-enlace {
+  min-width: 0;
+}
+
+.ver-producto {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 2px 0 10px !important;
+  color: #803A3A !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.7px !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+}
+
+.etiqueta-prenda-demo {
+  align-self: flex-start;
+  margin-top: 8px;
+  color: #8a7163;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
 .imagen-contenedor {
   position: relative !important;
-  width: 125% !important;
+  width: 100% !important;
+  min-width: 0 !important;
   aspect-ratio: 9 / 16 !important;
   background-color: #F5F5F5 !important;
   overflow: hidden !important;
@@ -433,7 +420,6 @@
   width: 20px !important;
   height: 20px !important;
 }
-
 /* Redes Sociales ( INSTAGRAM y FACEBOOK ) */
 
 .redes-footer {
@@ -459,54 +445,4 @@
 .redes-footer svg {
   width: 20px !important;
   height: 20px !important;
-}
-
-
-/* lupa */
-
-.acciones-header {
-  display: flex !important;
-  align-items: center !important;
-  gap: 20px !important;
-}
-
-.buscador-contenedor {
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  width: 160px !important;
-  transition: width 0.3s ease !important;
-}
-
-.buscador-contenedor:focus-within {
-  width: 220px !important; /* Se agranda sutilmente cuando hacés clic para escribir */
-}
-
-.input-buscador {
-  width: 100% !important;
-  padding: 6px 30px 6px 12px !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  border-radius: 20px !important;
-  color: #FFFFFF !important;
-  font-size: 12px !important;
-  letter-spacing: 0.5px !important;
-  outline: none !important;
-}
-
-.input-buscador::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.boton-lupa {
-  position: absolute !important;
-  right: 10px !important;
-  background: none !important;
-  border: none !important;
-  color: #FFFFFF !important;
-  cursor: pointer !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
 }

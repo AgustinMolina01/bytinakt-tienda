@@ -1,113 +1,90 @@
-<div class="auth-contenedor">
-  <div class="auth-header">
-    <a routerLink="/" class="btn-volver">← Volver al catálogo</a>
-    <h1 class="logo-tienda">BYTINAKT</h1>
-  </div>
+<main class="auth-contenedor">
+  <a routerLink="/" class="btn-volver">
+    <span aria-hidden="true">←</span>
+    Volver a la tienda
+  </a>
 
-  <div class="auth-card">
-    <h2>{{ isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h2>
-    <p class="auth-subtitulo">
-      {{ isRegisterMode ? 'Ingresá tus datos personales para registrarte' : 'Ingresá a tu cuenta para continuar' }}
-    </p>
+  <div class="auth-shell">
+    <section class="auth-card">
+      <div class="auth-card-heading">
+        <span class="auth-kicker">{{ isRegisterMode ? 'SUMATE A BYTINAKT' : 'TU ESPACIO PERSONAL' }}</span>
+        <h2>{{ isRegisterMode ? 'Creá tu cuenta' : 'BYTINAKT' }}</h2>
+        <p class="auth-subtitulo">
+          {{ isRegisterMode ? 'Completá tus datos para empezar.' : 'Ingresá a tu cuenta y seguí donde lo dejaste.' }}
+        </p>
+      </div>
 
-    <!-- Cartel de Error -->
-    <div class="alerta alerta-error" *ngIf="mensajeError">
-      {{ mensajeError }}
-    </div>
+      <div class="alerta alerta-error" *ngIf="mensajeError" role="alert">
+        {{ mensajeError }}
+      </div>
 
-    <!-- Cartel de Éxito -->
-    <div class="alerta alerta-exito" *ngIf="mensajeExito">
-      {{ mensajeExito }}
-    </div>
+      <div class="alerta alerta-exito" *ngIf="mensajeExito" role="status">
+        {{ mensajeExito }}
+      </div>
 
-    <form (ngSubmit)="onSubmit()">
-      
-      <!-- CAMPOS EXCLUSIVOS DE REGISTRO -->
-      <ng-container *ngIf="isRegisterMode">
-        <div class="campo-grupo">
-          <label>Nombre</label>
-          <input 
-            type="text" 
-            [(ngModel)]="nombre" 
-            name="nombre" 
-            placeholder="Ej: Juan" 
-            required>
+      <form (ngSubmit)="onSubmit()">
+        <div class="auth-datos-personales" *ngIf="isRegisterMode">
+          <div class="campo-grupo">
+            <label for="nombre">Nombre</label>
+            <input id="nombre" type="text" [(ngModel)]="nombre" name="nombre"
+              placeholder="Tu nombre" autocomplete="given-name" required>
+          </div>
+
+          <div class="campo-grupo">
+            <label for="apellido">Apellido</label>
+            <input id="apellido" type="text" [(ngModel)]="apellido" name="apellido"
+              placeholder="Tu apellido" autocomplete="family-name" required>
+          </div>
+
+          <div class="campo-grupo campo-genero">
+            <label for="genero">Género</label>
+            <select id="genero" [(ngModel)]="genero" name="genero" required>
+              <option value="" disabled>Seleccionar género</option>
+              <option value="Femenino">Femenino</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Otro">Otro / Prefiero no decir</option>
+            </select>
+          </div>
         </div>
 
         <div class="campo-grupo">
-          <label>Apellido</label>
-          <input 
-            type="text" 
-            [(ngModel)]="apellido" 
-            name="apellido" 
-            placeholder="Ej: Pérez" 
-            required>
+          <label for="email">Correo electrónico</label>
+          <input id="email" type="email" [(ngModel)]="email" name="email"
+            placeholder="correo@ejemplo.com" autocomplete="email" required>
         </div>
 
         <div class="campo-grupo">
-          <label>Género</label>
-          <select [(ngModel)]="genero" name="genero" class="select-categoria" required>
-            <option value="" disabled selected>Seleccionar género</option>
-            <option value="Femenino">Femenino</option>
-            <option value="Masculino">Masculino</option>
-            <option value="Otro">Otro / Prefiero no decir</option>
-          </select>
+          <label for="password">Contraseña</label>
+          <input id="password" [type]="mostrarPassword ? 'text' : 'password'"
+            [(ngModel)]="password" name="password" placeholder="Ingresá tu contraseña"
+            [attr.autocomplete]="isRegisterMode ? 'new-password' : 'current-password'" required>
         </div>
-      </ng-container>
 
-      <!-- CORREO ELECTRÓNICO -->
-      <div class="campo-grupo">
-        <label>Correo Electrónico</label>
-        <input 
-          type="email" 
-          [(ngModel)]="email" 
-          name="email" 
-          placeholder="correo@ejemplo.com" 
-          required>
-      </div>
+        <div class="campo-grupo" *ngIf="isRegisterMode">
+          <label for="confirmPassword">Confirmar contraseña</label>
+          <input id="confirmPassword" [type]="mostrarPassword ? 'text' : 'password'"
+            [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Repetí tu contraseña"
+            autocomplete="new-password" required>
+        </div>
 
-      <!-- CONTRASEÑA -->
-      <div class="campo-grupo">
-        <label>Contraseña</label>
-        <input 
-          [type]="mostrarPassword ? 'text' : 'password'" 
-          [(ngModel)]="password" 
-          name="password" 
-          placeholder="********" 
-          required>
-      </div>
-
-      <!-- CONFIRMAR CONTRASEÑA (Solo en modo registro) -->
-      <div class="campo-grupo" *ngIf="isRegisterMode">
-        <label>Confirmar contraseña</label>
-        <input 
-          [type]="mostrarPassword ? 'text' : 'password'" 
-          [(ngModel)]="confirmPassword" 
-          name="confirmPassword" 
-          placeholder="********" 
-          required>
-      </div>
-
-      <!-- BOTÓN MOSTRAR CONTRASEÑA -->
-      <div class="checkbox-grupo" *ngIf="isRegisterMode || !isRegisterMode">
         <label class="label-checkbox">
           <input type="checkbox" [(ngModel)]="mostrarPassword" name="mostrarPassword">
           <span>Mostrar contraseña</span>
         </label>
-      </div>
 
-      <button type="submit" class="btn-submit">
-        {{ isRegisterMode ? 'CREAR UNA CUENTA' : 'INGRESAR' }}
-      </button>
-    </form>
-
-    <div class="auth-footer">
-      <p>
-        {{ isRegisterMode ? '¿Ya tenés una cuenta?' : '¿No tenés cuenta?' }}
-        <button type="button" class="btn-link" (click)="toggleMode()">
-          {{ isRegisterMode ? 'Iniciá sesión aquí' : 'Registrate aquí' }}
+        <button type="submit" class="btn-submit" [disabled]="cargando">
+          {{ cargando ? 'CONECTANDO...' : isRegisterMode ? 'CREAR MI CUENTA' : 'INGRESAR A MI CUENTA' }}
+          <span aria-hidden="true">→</span>
         </button>
-      </p>
-    </div>
+      </form>
+
+      <div class="auth-footer">
+        <span>{{ isRegisterMode ? '¿Ya tenés una cuenta?' : '¿Es tu primera vez por acá?' }}</span>
+        <button type="button" class="btn-link" (click)="toggleMode()">
+          {{ isRegisterMode ? 'Iniciá sesión' : 'Crear una cuenta' }}
+        </button>
+      </div>
+      <p class="auth-privacidad">Tus datos están protegidos y solo se usan para tu cuenta.</p>
+    </section>
   </div>
-</div>
+</main>

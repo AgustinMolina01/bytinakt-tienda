@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1067">
+  <defs>
+    <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#eee4df"/><stop offset="1" stop-color="#d6c4bc"/></linearGradient>
+    <linearGradient id="cloth" x2="1" y2="1"><stop stop-color="#dfc9c4"/><stop offset="1" stop-color="#b78f89"/></linearGradient>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h600v1067H0z"/><circle cx="300" cy="400" r="220" fill="#f7f0ec" opacity=".55"/>
+  <path d="M70 944h460" stroke="#b6a39c" stroke-width="2"/><ellipse cx="300" cy="902" rx="130" ry="18" fill="#796660" opacity=".15"/>
+  <path d="M300 219c-10 18-23 26-41 34l-65 28-82 70 58 73 79-58 10 352h82l10-352 79 58 58-73-82-70-65-28c-18-8-31-16-41-34z" fill="url(#cloth)" stroke="#99716b" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M259 248q10 62 41 62t41-62M300 311v364M220 356l26 34m134-34-26 34" fill="none" stroke="#f1e2dc" stroke-width="5"/>
+  <path d="M270 679q30 18 60 0" fill="none" stroke="#99716b" stroke-width="4"/>
+  <text x="300" y="1008" text-anchor="middle" fill="#806862" font-family="Georgia,serif" font-size="20" letter-spacing="5">BYTINAKT · NUBE</text>
+</svg>

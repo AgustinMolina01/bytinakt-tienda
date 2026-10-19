@@ -1,0 +1,25 @@
+.resultado-pago {
+  max-width: 680px;
+  min-height: 60vh;
+  margin: 0 auto;
+  padding: 90px 24px;
+  text-align: center;
+}
+
+.resultado-pago h1 {
+  color: #803a3a;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.resultado-pago p {
+  margin: 22px 0;
+  line-height: 1.7;
+}
+
+.resultado-pago a {
+  display: inline-block;
+  padding: 12px 20px;
+  background: #803a3a;
+  color: white;
+  text-decoration: none;
+}

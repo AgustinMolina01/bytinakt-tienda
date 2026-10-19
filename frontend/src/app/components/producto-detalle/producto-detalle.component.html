@@ -1,0 +1,76 @@
+<main class="detalle-pagina">
+  <a routerLink="/" class="volver">← Volver al catálogo</a>
+
+  <p *ngIf="cargando" class="estado">Cargando producto...</p>
+  <p *ngIf="error && !producto" class="estado error" role="alert">{{ error }}</p>
+  <p *ngIf="esProductoDemo" class="aviso-demo-detalle">
+    Vista previa: esta prenda es ilustrativa. Podés probar talles y colores, pero no está disponible para compra real.
+  </p>
+
+  <section class="detalle-producto" *ngIf="producto as prenda">
+    <div class="galeria">
+      <img class="imagen-principal" [src]="imagenes()[imagenSeleccionada]" [alt]="prenda.nombre">
+      <div class="miniaturas" *ngIf="imagenes().length > 1">
+        <button type="button" *ngFor="let imagen of imagenes(); let i = index"
+          [class.activa]="imagenSeleccionada === i" (click)="seleccionarImagen(i)"
+          [attr.aria-label]="'Ver imagen ' + (i + 1)">
+          <img [src]="imagen" [alt]="prenda.nombre + ', imagen ' + (i + 1)">
+        </button>
+      </div>
+    </div>
+
+    <div class="informacion-producto">
+      <p class="categoria">{{ prenda.categoria }}</p>
+      <h1>{{ prenda.nombre }}</h1>
+      <p class="precio">${{ prenda.precio | number:'1.0-0' }}</p>
+      <p class="cuotas">3 cuotas de ${{ (prenda.precio / 3) | number:'1.0-0' }}</p>
+      <section class="selector-opcion" *ngIf="tallesDisponibles().length">
+        <div class="etiqueta-opcion">
+          <strong>Talle</strong>
+          <span *ngIf="talleSeleccionado">Seleccionado: {{ talleSeleccionado }}</span>
+        </div>
+        <div class="opciones">
+          <button type="button" *ngFor="let talle of tallesDisponibles()"
+            [class.seleccionada]="talleSeleccionado === talle"
+            [class.agotada]="stockDelTalle(talle) === 0"
+            [disabled]="stockDelTalle(talle) === 0"
+            (click)="talleSeleccionado = talle"
+            [attr.aria-pressed]="talleSeleccionado === talle">
+            {{ talle }}
+          </button>
+        </div>
+        <p class="stock" *ngIf="cantidadDisponible() !== null">
+          {{ cantidadDisponible() ? 'Disponibles: ' + cantidadDisponible() : 'Sin stock para este talle' }}
+        </p>
+      </section>
+      <section class="selector-opcion" *ngIf="prenda.colores?.length">
+        <div class="etiqueta-opcion">
+          <strong>Color</strong>
+          <span *ngIf="colorSeleccionado">Seleccionado: {{ colorSeleccionado }}</span>
+        </div>
+        <div class="opciones colores">
+          <button type="button" *ngFor="let color of prenda.colores"
+            [class.seleccionada]="colorSeleccionado === color"
+            (click)="colorSeleccionado = color"
+            [attr.aria-pressed]="colorSeleccionado === color">
+            {{ color }}
+          </button>
+        </div>
+      </section>
+      <details class="guia-talles" *ngIf="tallesDisponibles().length">
+        <summary>Guía de talles</summary>
+        <p *ngIf="prenda.guiaTalles; else guiaGeneral">{{ prenda.guiaTalles }}</p>
+        <ng-template #guiaGeneral>
+          <p>Las medidas pueden variar según el modelo. Para elegir, compará con una prenda similar que te quede cómoda. Si necesitás medidas exactas, consultá al local antes de comprar.</p>
+        </ng-template>
+      </details>
+      <p class="descripcion" *ngIf="prenda.descripcion; else sinDescripcion">{{ prenda.descripcion }}</p>
+      <ng-template #sinDescripcion><p class="descripcion">Consultanos si necesitás más información sobre esta prenda.</p></ng-template>
+      <p *ngIf="mensaje" class="mensaje-exito" role="status">{{ mensaje }}</p>
+      <p *ngIf="error && producto" class="error" role="alert">{{ error }}</p>
+      <button *ngIf="!esProductoDemo" type="button" class="agregar-carrito" (click)="agregarAlCarrito()">AGREGAR AL CARRITO</button>
+      <p *ngIf="esProductoDemo" class="nota-demo">Las opciones son solo para mostrar cómo se vería la ficha del producto.</p>
+      <a routerLink="/carrito" class="ir-carrito">Ir al carrito</a>
+    </div>
+  </section>
+</main>

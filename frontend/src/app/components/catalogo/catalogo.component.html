@@ -1,12 +1,24 @@
 <!-- HEADER PRINCIPAL DE LA TIENDA -->
 <header class="header-tienda">
-  <button class="btn-menu-toggle" (click)="toggleMenu()">
-    <span>☰ {{ menuAbierto ? 'CERRAR' : 'MENÚ' }}</span>
-  </button>
-  
+  <div class="identidad-tienda">
+    <button class="btn-menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="menuAbierto"
+      [attr.aria-label]="menuAbierto ? 'Cerrar navegación' : 'Abrir navegación'">
+      <span aria-hidden="true">☰</span>
+    </button>
+  </div>
+
   <h1 class="logo-tienda">
-    <a routerLink="/" class="link-logo" (click)="filtrarCategoria('TODAS')">BYTINAKT.</a>
+    <a routerLink="/" class="link-logo" (click)="filtrarCategoria('TODAS')">BYTINAKT<span>.</span></a>
   </h1>
+
+  <nav class="nav-categorias" aria-label="Categorías de la tienda">
+    <button type="button" [class.activo]="categoriaSeleccionada === 'TODAS'"
+      (click)="filtrarCategoria('TODAS')">Ver todo</button>
+    <button type="button" *ngFor="let cat of categoriasDisponibles"
+      [class.activo]="categoriaSeleccionada === cat" (click)="filtrarCategoria(cat)">
+      {{ cat }}
+    </button>
+  </nav>
 
   <div class="acciones-header">
     <!-- BUSCADOR CON LUPA -->
@@ -26,7 +38,31 @@
       </button>
     </div>
 
-    <a routerLink="/auth" class="link-auth">INICIAR SESIÓN</a>
+    <a *ngIf="!estaAutenticado()" routerLink="/auth" class="link-auth" aria-label="Iniciar sesión">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M5 21v-2a7 7 0 0 1 14 0v2"></path>
+      </svg>
+      <span>INICIAR SESIÓN</span>
+    </a>
+    <a *ngIf="estaAutenticado() && !auth.administrador" routerLink="/perfil" class="icono-header" aria-label="Mi perfil" title="Mi perfil">
+      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M5 21v-2a7 7 0 0 1 14 0v2"></path>
+      </svg>
+      <span>PERFIL</span>
+    </a>
+    <a routerLink="/carrito" class="icono-header icono-carrito" [attr.aria-label]="'Carrito, ' + carrito.cantidadTotal + ' productos'" title="Carrito">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"></path>
+        <circle cx="10" cy="21" r="1"></circle>
+        <circle cx="19" cy="21" r="1"></circle>
+      </svg>
+      <span>CARRITO</span>
+      <span class="contador-carrito">{{ carrito.cantidadTotal }}</span>
+    </a>
   </div>
 </header>
 
@@ -62,8 +98,7 @@
 
       <div class="contenido-banner">
         <span class="subtitulo-coleccion">COLECCIÓN ELEGANCIA REFINADA</span>
-        <h2>Bienvenido a BYTINAKT</h2>
-        <button class="btn-hero" (click)="filtrarCategoria('TODAS')">COMPRAR AHORA</button>
+        <h2>Bienvenida a BYTINAKT</h2>
       </div>
 
       <!-- Botón flecha derecha -->
@@ -80,29 +115,52 @@
 
     <div class="catalogo-container">
       <h3 class="titulo-seccion">ROPA MUJER: CAMPERAS, SATREROS Y MÁS</h3>
+      <p class="aviso-vista-demo" *ngIf="vistaDemo">
+        Vista previa: estas prendas son ilustrativas, no son productos reales y no se guardan en la tienda.
+      </p>
+      <p class="aviso-error-catalogo" *ngIf="errorCatalogo" role="alert">{{ errorCatalogo }}</p>
 
       <!-- CARRUSEL DE PRODUCTOS -->
       <div class="grid-productos">
-        <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()" (click)="comprarProducto(producto)">
+        <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
           
           <!-- Foto Gigante Vertical -->
           <div class="imagen-contenedor">
-            <img [src]="producto.imagenUrl || 'https://via.placeholder.com/600x900?text=Sin+Imagen'" [alt]="producto.nombre" />
+            <a class="producto-enlace" [routerLink]="['/producto', producto._id || producto.id]" [attr.aria-label]="'Ver ' + producto.nombre">
+              <img [src]="imagenesDe(producto)[indiceImagen(producto)]" [alt]="producto.nombre" />
+            </a>
+            <button *ngIf="imagenesDe(producto).length > 1" type="button" class="flecha-imagen anterior"
+              (click)="cambiarImagen(producto, -1, $event)" [attr.aria-label]="'Foto anterior de ' + producto.nombre">
+              &#10094;
+            </button>
+            <button *ngIf="imagenesDe(producto).length > 1" type="button" class="flecha-imagen siguiente"
+              (click)="cambiarImagen(producto, 1, $event)" [attr.aria-label]="'Foto siguiente de ' + producto.nombre">
+              &#10095;
+            </button>
+            <div class="puntos-imagen" *ngIf="imagenesDe(producto).length > 1" aria-hidden="true">
+              <span *ngFor="let imagen of imagenesDe(producto); let i = index"
+                [class.activo]="i === indiceImagen(producto)"></span>
+            </div>
           </div>
 
           <!-- Nombre + Círculos de color -->
           <div class="info-encabezado">
-            <h4 class="nombre-producto">{{ producto.nombre }}</h4>
+            <a class="producto-enlace nombre-enlace" [routerLink]="['/producto', producto._id || producto.id]">
+              <h4 class="nombre-producto">{{ producto.nombre }}</h4>
+            </a>
             <div class="variantes-color">
-              <span class="circulo-color" style="background-color: #111111;"></span>
-              <span class="circulo-color" style="background-color: #556B2F;"></span>
-              <span class="circulo-color" style="background-color: #800020;"></span>
+              <span class="circulo-color" *ngFor="let color of producto.colores"
+                [style.background-color]="estiloColor(color)" [title]="color"></span>
             </div>
           </div>
 
           <!-- Precio y Cuotas -->
           <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
           <p class="cuotas-producto">3 cuotas de ${{ (producto.precio / 3) | number:'1.0-0' }}</p>
+          <a class="ver-producto" [routerLink]="['/producto', producto._id || producto.id]">
+            {{ vistaDemo ? 'VER PRENDA Y ELEGIR OPCIONES' : 'VER PRODUCTO' }}
+          </a>
+          <span *ngIf="vistaDemo" class="etiqueta-prenda-demo">Prenda de muestra</span>
 
         </div>
       </div>
@@ -162,13 +220,11 @@
     </button>
   </div>
 
-  <!-- Si no inició sesión -->
-  <a *ngIf="!estaAutenticado()" routerLink="/auth" class="link-auth">INICIAR SESIÓN</a>
-
-  <!-- Si ya inició sesión o se registró -->
-  <a *ngIf="estaAutenticado()" routerLink="/mi-cuenta" class="link-auth">
-    {{ obtenerNombreUsuario() | uppercase }}
+  <a *ngIf="estaAutenticado() && !auth.administrador" routerLink="/perfil" class="link-auth">
+    MI PERFIL
   </a>
+  <a *ngIf="auth.administrador" routerLink="/admin" class="link-auth">ADMINISTRACIÓN</a>
+  <button *ngIf="estaAutenticado()" type="button" class="link-auth boton-sesion" (click)="cerrarSesion()">CERRAR SESIÓN</button>
 </div>
 
 

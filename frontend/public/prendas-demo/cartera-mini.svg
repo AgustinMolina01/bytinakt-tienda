@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1067">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#eee4dc"/><stop offset="1" stop-color="#d8c5b8"/></linearGradient>
+    <linearGradient id="bag" x2="1" y2="1"><stop stop-color="#a96d60"/><stop offset="1" stop-color="#70443e"/></linearGradient>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h600v1067H0z"/><circle cx="300" cy="430" r="220" fill="#f7f1eb" opacity=".57"/>
+  <path d="M70 944h460" stroke="#b5a297" stroke-width="2"/><ellipse cx="300" cy="803" rx="150" ry="23" fill="#684d45" opacity=".16"/>
+  <path d="M178 430h244l39 340H139z" fill="url(#bag)" stroke="#593a35" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M218 435v-92c0-114 164-114 164 0v92" fill="none" stroke="#70443e" stroke-width="18"/>
+  <path d="M218 435v-92c0-114 164-114 164 0v92" fill="none" stroke="#d0a18c" stroke-width="4"/>
+  <path d="M170 502h260m-219 0v237m178-237v237" fill="none" stroke="#d2a58e" stroke-width="4" opacity=".9"/>
+  <circle cx="300" cy="475" r="12" fill="#e0bd99"/><path d="M294 475h12" stroke="#765146" stroke-width="3"/>
+  <text x="300" y="1008" text-anchor="middle" fill="#79564d" font-family="Georgia,serif" font-size="20" letter-spacing="5">BYTINAKT · MINI</text>
+</svg>

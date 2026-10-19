@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { API_URL } from '../../services/api';
+import { AuthService, Sesion } from '../../services/auth.service';
 
 @Component({
   selector: 'app-auth',
@@ -11,104 +14,93 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './auth.component.css'
 })
 export class AuthComponent {
-  isRegisterMode: boolean = false;
+  isRegisterMode = false;
+  nombre = '';
+  apellido = '';
+  genero = '';
+  email = '';
+  password = '';
+  confirmPassword = '';
+  mostrarPassword = false;
+  cargando = false;
+  mensajeError = '';
+  mensajeExito = '';
 
-  // Campos del formulario
-  nombre: string = '';
-  apellido: string = '';
-  genero: string = '';
-  email: string = '';
-  password: string = '';
-  confirmPassword: string = '';
-  mostrarPassword: boolean = false;
-
-  // Mensajes de error y éxito
-  mensajeError: string = '';
-  mensajeExito: string = '';
-
-  // Credenciales exclusivas del Admin
-  private readonly ADMIN_EMAIL = 'agustin@admin.com';
-  private readonly ADMIN_PASS = 'admin123';
-
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private http: HttpClient,
+    private auth: AuthService
+  ) {}
 
   onSubmit(): void {
     this.limpiarMensajes();
-
-    const emailLimpio = this.email.trim().toLowerCase();
-    const passLimpia = this.password.trim();
+    if (this.cargando) {
+      return;
+    }
+    const email = this.email.trim().toLowerCase();
+    const password = this.password;
 
     if (this.isRegisterMode) {
-      if (passLimpia !== this.confirmPassword.trim()) {
+      if (!this.nombre.trim() || !this.apellido.trim() || !this.genero) {
+        this.mensajeError = 'Completá todos los datos personales.';
+        return;
+      }
+      if (password.length < 10) {
+        this.mensajeError = 'La contraseña debe tener al menos 10 caracteres.';
+        return;
+      }
+      if (password !== this.confirmPassword) {
         this.mensajeError = 'Las contraseñas no coinciden.';
         return;
       }
-      this.registrarUsuario(emailLimpio, passLimpia);
-    } else {
-      this.iniciarSesion(emailLimpio, passLimpia);
+      this.registrarUsuario(email, password);
+      return;
     }
+    this.iniciarSesion(email, password);
   }
 
-  iniciarSesion(email: string, pass: string): void {
-    if (email === this.ADMIN_EMAIL) {
-      if (pass === this.ADMIN_PASS) {
-        this.router.navigate(['/admin']);
-      } else {
-        this.mensajeError = 'Contraseña incorrecta para el usuario administrador.';
+  iniciarSesion(email: string, password: string): void {
+    this.cargando = true;
+    this.http.post<Sesion>(`${API_URL}/auth/login`, { email, password }).subscribe({
+      next: (session) => {
+        this.auth.guardarSesion(session);
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        const destination = returnUrl?.startsWith('/') && !returnUrl.startsWith('//')
+          ? returnUrl
+          : session.usuario.rol === 'admin' ? '/admin' : '/';
+        this.router.navigateByUrl(destination);
+      },
+      error: (error) => {
+        this.mensajeError = error.error?.error || 'No se pudo iniciar sesión.';
+        this.cargando = false;
       }
-      return;
-    }
-
-    const usuarios = JSON.parse(localStorage.getItem('usuarios_bytinakt') || '[]');
-    const usuarioEncontrado = usuarios.find((u: any) => u.email === email);
-
-    if (!usuarioEncontrado) {
-      this.mensajeError = 'El correo electrónico no se encuentra registrado.';
-      return;
-    }
-
-    if (usuarioEncontrado.password !== pass) {
-      this.mensajeError = 'Contraseña incorrecta. Por favor volvé a intentarlo.';
-      return;
-    }
-
-    localStorage.setItem('usuario_actual', JSON.stringify(usuarioEncontrado));
-    this.router.navigate(['/']);
+    });
   }
 
-  registrarUsuario(email: string, pass: string): void {
-    if (!this.nombre.trim() || !this.apellido.trim() || !this.genero) {
-      this.mensajeError = 'Por favor completá todos los campos personales.';
-      return;
-    }
-
-    if (email === this.ADMIN_EMAIL) {
-      this.mensajeError = 'Este correo está reservado para el administrador.';
-      return;
-    }
-
-    const usuarios = JSON.parse(localStorage.getItem('usuarios_bytinakt') || '[]');
-    const yaExiste = usuarios.some((u: any) => u.email === email);
-
-    if (yaExiste) {
-      this.mensajeError = 'Este correo electrónico ya está registrado. Probá iniciando sesión.';
-      return;
-    }
-
-    const nuevoUsuario = {
-      nombre: `${this.nombre.trim()} ${this.apellido.trim()}`,
-      genero: this.genero,
-      email: email,
-      password: pass
+  registrarUsuario(email: string, password: string): void {
+    const usuario = {
+      nombre: `${this.nombre.trim()} ${this.apellido.trim()} (${this.genero})`,
+      email,
+      password
     };
-
-    usuarios.push(nuevoUsuario);
-    localStorage.setItem('usuarios_bytinakt', JSON.stringify(usuarios));
-
-    this.mensajeExito = '¡Cuenta creada con éxito! Ahora podés iniciar sesión.';
-    this.isRegisterMode = false;
-    this.password = '';
-    this.confirmPassword = '';
+    this.cargando = true;
+    this.http.post<{ message: string }>(`${API_URL}/auth/registro`, usuario).subscribe({
+      next: () => {
+        this.mensajeExito = 'Cuenta creada. Ya podés iniciar sesión.';
+        this.isRegisterMode = false;
+        this.password = '';
+        this.confirmPassword = '';
+        this.nombre = '';
+        this.apellido = '';
+        this.genero = '';
+        this.cargando = false;
+      },
+      error: (error) => {
+        this.mensajeError = error.error?.error || 'No se pudo crear la cuenta.';
+        this.cargando = false;
+      }
+    });
   }
 
   toggleMode(): void {

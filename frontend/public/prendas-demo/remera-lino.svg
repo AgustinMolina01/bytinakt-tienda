@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1067">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#eee9e1"/><stop offset="1" stop-color="#d7cbbd"/></linearGradient>
+    <linearGradient id="cloth" x2="1" y2="1"><stop stop-color="#d2c5b1"/><stop offset="1" stop-color="#aa9b85"/></linearGradient>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h600v1067H0z"/><circle cx="300" cy="390" r="220" fill="#f5f1eb" opacity=".5"/>
+  <path d="M70 944h460" stroke="#b3a99c" stroke-width="2"/><ellipse cx="300" cy="907" rx="142" ry="20" fill="#8d8175" opacity=".16"/>
+  <path d="M300 210c-13 20-31 25-48 31l-116 39-62 155 99 39 35-82v388h184V392l35 82 99-39-62-155-116-39c-17-6-35-11-48-31z" fill="url(#cloth)" stroke="#887a68" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M253 242c12 37 30 52 47 52s35-15 47-52M300 294v485M242 342l-25 52m141-52 25 52" fill="none" stroke="#eee6da" stroke-width="5" opacity=".8"/>
+  <path d="M276 243q24 28 48 0" fill="none" stroke="#887a68" stroke-width="4"/>
+  <text x="300" y="1008" text-anchor="middle" fill="#786e63" font-family="Georgia,serif" font-size="20" letter-spacing="5">BYTINAKT · LINO</text>
+</svg>

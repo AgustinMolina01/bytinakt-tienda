@@ -23,17 +23,57 @@
       </select>
     </div>
 
+    <fieldset class="form-group opciones-talle">
+      <legend>Talles y stock disponible:</legend>
+      <div class="fila-talle" *ngFor="let talle of tallesDisponibles">
+        <label>
+          <input type="checkbox" [ngModel]="tieneTalle(talle)" [ngModelOptions]="{standalone: true}"
+            (ngModelChange)="cambiarTalle(talle, $event)">
+          {{ talle }}
+        </label>
+        <label *ngIf="tieneTalle(talle)" class="stock-talle">
+          Unidades
+          <input type="number" min="0" max="10000" [ngModel]="stockDelTalle(talle)"
+            [ngModelOptions]="{standalone: true}" (ngModelChange)="actualizarStock(talle, $event)">
+        </label>
+      </div>
+      <small>El stock se reserva durante 30 minutos cuando el cliente inicia el pago.</small>
+    </fieldset>
+
     <div class="form-group">
-      <label>Talle:</label>
-      <input type="text" [(ngModel)]="nuevoProducto.talle" name="talle" placeholder="Ej: S, M, L, XL">
+      <label>Colores disponibles:</label>
+      <input type="text" [(ngModel)]="nuevoProducto.coloresTexto" name="colores"
+        placeholder="Ej: Negro, Blanco, Beige">
+      <small>Separá los colores con comas.</small>
     </div>
 
     <div class="form-group">
-      <label>Imagen de la prenda:</label>
-      <input type="file" (change)="onFileSelected($event)" accept="image/*">
+      <label>Guía de talles para esta prenda (opcional):</label>
+      <textarea [(ngModel)]="nuevoProducto.guiaTalles" name="guiaTalles" maxlength="2000"
+        rows="3" placeholder="Agregá las medidas reales o cómo tomar las medidas para esta prenda."></textarea>
     </div>
 
-    <button type="submit" class="btn-guardar">Guardar Producto</button>
+    <div class="form-group">
+      <label>Descripción:</label>
+      <textarea [(ngModel)]="nuevoProducto.descripcion" name="descripcion" maxlength="2000"
+        rows="4" placeholder="Contá los detalles, el material y el calce de la prenda."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Imágenes de la prenda (hasta 3):</label>
+      <input type="file" (change)="onFilesSelected($event)" accept="image/*" multiple [disabled]="procesandoImagenes || nuevoProducto.imagenes.length >= 3">
+      <small>{{ nuevoProducto.imagenes.length }} de 3 imágenes seleccionadas</small>
+      <div class="imagenes-nuevo-producto" *ngIf="nuevoProducto.imagenes.length">
+        <div class="imagen-nueva" *ngFor="let imagen of nuevoProducto.imagenes; let i = index">
+          <img [src]="imagen" [alt]="'Vista previa de imagen ' + (i + 1)">
+          <button type="button" (click)="quitarImagen(i)" [attr.aria-label]="'Quitar imagen ' + (i + 1)">Quitar</button>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-guardar" [disabled]="procesandoImagenes">
+      {{ procesandoImagenes ? 'PROCESANDO IMÁGENES...' : 'Guardar Producto' }}
+    </button>
   </form>
 
   <hr class="divider">
@@ -65,18 +105,41 @@
     <!-- Grilla de productos filtrados -->
     <div class="productos-grid">
       <div *ngFor="let producto of productosFiltrados()" class="producto-card">
-        <img [src]="producto.imagenUrl || 'https://via.placeholder.com/300'" [alt]="producto.nombre">
+        <img [src]="producto.imagenUrl || producto.imagenes?.[0] || 'https://via.placeholder.com/300'" [alt]="producto.nombre">
         <div class="producto-info">
           <h4>{{ producto.nombre }}</h4>
           <p class="precio">${{ producto.precio }}</p>
           <p class="detalle">
             {{ producto.categoria }} 
-            <span *ngIf="producto.talle">• Talle {{ producto.talle }}</span>
+            <span *ngIf="producto.variantes?.length">• {{ producto.variantes?.length }} talle(s)</span>
           </p>
+          <p *ngIf="producto.descripcion">{{ producto.descripcion }}</p>
+          <p *ngIf="producto.colores?.length">Colores: {{ producto.colores?.join(', ') }}</p>
+          <p *ngIf="producto.variantes?.length">Stock: {{ resumenStock(producto) }}</p>
+          <p *ngIf="producto.imagenes?.length">{{ producto.imagenes?.length }} imagen(es)</p>
           <button type="button" class="btn-eliminar" (click)="eliminarProducto(producto)">Eliminar</button>
         </div>
       </div>
     </div>
+
+    <section class="pedidos-admin">
+      <h3>Pedidos recientes</h3>
+      <p *ngIf="pedidos.length === 0">Todavía no hay pedidos.</p>
+      <article class="pedido-admin" *ngFor="let pedido of pedidos">
+        <div>
+          <strong>{{ pedido.clienteNombre }}</strong> · {{ pedido.email }}
+          <p>{{ pedido.items.length }} producto(s) · {{ pedido.createdAt | date:'short' }}</p>
+          <small *ngFor="let item of pedido.items">
+            {{ item.nombre }}<span *ngIf="item.talle"> · Talle {{ item.talle }}</span>
+            <span *ngIf="item.color"> · {{ item.color }}</span> × {{ item.cantidad }}<br>
+          </small>
+        </div>
+        <div>
+          <strong>${{ pedido.total | number:'1.0-0' }}</strong>
+          <span class="estado-pedido">{{ pedido.estado }}</span>
+        </div>
+      </article>
+    </section>
 
 <!-- SECCIÓN DE GESTIÓN DE BANNERS -->
 <div class="seccion-admin-banner" style="margin-top: 40px; background: #ebe4db; padding: 25px; border-radius: 8px; border: 1px solid #d5cec5;">

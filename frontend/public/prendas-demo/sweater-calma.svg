@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1067">
+  <defs>
+    <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#e9e4d9"/><stop offset="1" stop-color="#cbc2b1"/></linearGradient>
+    <linearGradient id="cloth" x2="1" y2="1"><stop stop-color="#c5b39c"/><stop offset="1" stop-color="#94816c"/></linearGradient>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h600v1067H0z"/><circle cx="300" cy="400" r="220" fill="#f5f1e8" opacity=".56"/>
+  <path d="M70 944h460" stroke="#aaa08f" stroke-width="2"/><ellipse cx="300" cy="908" rx="142" ry="19" fill="#716658" opacity=".16"/>
+  <path d="M300 211c-15 22-31 31-53 40l-92 35-74 168 95 44 46-91v383h156V407l46 91 95-44-74-168-92-35c-22-9-38-18-53-40z" fill="url(#cloth)" stroke="#88755e" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M247 251q17 61 53 69 36-8 53-69M300 320v431m-29-350 14 22-14 22 14 22-14 22 14 22m44-110-14 22 14 22-14 22 14 22-14 22" fill="none" stroke="#e1d2bc" stroke-width="5" opacity=".78"/>
+  <path d="M223 752h154" stroke="#e1d2bc" stroke-width="10"/>
+  <text x="300" y="1008" text-anchor="middle" fill="#746957" font-family="Georgia,serif" font-size="20" letter-spacing="5">BYTINAKT · CALMA</text>
+</svg>

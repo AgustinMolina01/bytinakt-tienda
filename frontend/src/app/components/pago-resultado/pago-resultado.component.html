@@ -1,0 +1,12 @@
+<main class="resultado-pago">
+  <h1 *ngIf="estado === 'verificando'">Verificando el pago...</h1>
+  <h1 *ngIf="estado === 'pagado'">¡Gracias por tu compra!</h1>
+  <h1 *ngIf="estado === 'cancelado' || estado === 'error_pago'">El pago no se completó</h1>
+  <h1 *ngIf="estado === 'pendiente'">Tu pedido está pendiente</h1>
+
+  <p *ngIf="estado === 'verificando'">Estamos confirmando el estado de tu pedido.</p>
+  <p *ngIf="estado === 'pagado'">El pago fue aprobado y el pedido quedó registrado.</p>
+  <p *ngIf="estado === 'cancelado' || estado === 'error_pago'">Podés volver al carrito y probar nuevamente.</p>
+  <p *ngIf="estado === 'pendiente'">Todavía no pudimos confirmar el pago. Revisá el estado más tarde antes de volver a pagar.</p>
+  <a routerLink="/">Volver a la tienda</a>
+</main>

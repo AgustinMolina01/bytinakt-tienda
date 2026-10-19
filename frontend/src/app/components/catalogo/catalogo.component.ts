@@ -1,10 +1,14 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Producto } from '../../models/producto.model';
-import { ProductoService } from '../../services/producto.service';
 import { BannerService } from '../../services/banner.service';
+import { API_URL } from '../../services/api';
+import { AuthService } from '../../services/auth.service';
+import { CarritoService } from '../../services/carrito.service';
+import { PRODUCTOS_DEMO } from '../../services/productos-demo';
 
 @Component({
   selector: 'app-catalogo',
@@ -15,6 +19,9 @@ import { BannerService } from '../../services/banner.service';
 })
 export class CatalogoComponent implements OnInit, OnDestroy {
   productos: Producto[] = [];
+  vistaDemo = false;
+  errorCatalogo = '';
+  private readonly imagenesProducto: Record<string, number> = {};
   categoriaSeleccionada: string = 'TODAS';
   menuAbierto: boolean = false;
   
@@ -33,8 +40,10 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   intervaloBanner: any;
 
   constructor(
-    private productoService: ProductoService,
-    private bannerService: BannerService
+    private http: HttpClient,
+    private bannerService: BannerService,
+    readonly auth: AuthService,
+    readonly carrito: CarritoService
   ) {}
 
   ngOnInit(): void {
@@ -53,8 +62,25 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Cargar productos directamente desde MongoDB a través del Backend
   cargarProductos(): void {
-    this.productos = this.productoService.obtenerProductos();
+    this.http.get<Producto[]>(`${API_URL}/productos`)
+      .subscribe({
+        next: (data) => {
+          this.productos = data;
+          this.vistaDemo = false;
+          this.errorCatalogo = '';
+        },
+        error: (err) => {
+          console.error('Error al cargar productos de la base de datos:', err);
+          if (isDevMode()) {
+            this.productos = PRODUCTOS_DEMO;
+            this.vistaDemo = true;
+            return;
+          }
+          this.errorCatalogo = 'No se pudo cargar el catálogo. Intentá nuevamente más tarde.';
+        }
+      });
   }
 
   cargarBanners(): void {
@@ -110,26 +136,62 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     });
   }
 
-  comprarProducto(producto: Producto): void {
-    alert(`¡Gracias por tu interés! Seleccionaste: ${producto.nombre} (Talle: ${producto.talle || 'Único'}) a $${producto.precio}`);
+  imagenesDe(producto: Producto): string[] {
+    const images = producto.imagenes?.filter(Boolean) || [];
+    return images.length ? images : [producto.imagenUrl || 'https://via.placeholder.com/600x900?text=Sin+Imagen'];
   }
 
-// Devuelve true si hay una sesión activa en el navegador
-  estaAutenticado(): boolean {
-    return localStorage.getItem('usuario_actual') !== null;
+  estiloColor(color: string): string {
+    const colores: Record<string, string> = {
+      Natural: '#c6b9a6',
+      Negro: '#282725',
+      Blanco: '#e8e4dc',
+      Marrón: '#795548',
+      Beige: '#b9a58e',
+      Gris: '#888783',
+      Arena: '#c1b6a8',
+      Azul: '#71849a',
+      Suela: '#8b544b',
+      Camel: '#b88d74',
+      Crudo: '#d2c6b6'
+    };
+    return colores[color] || color;
   }
 
-  // Obtiene el nombre del usuario logueado para mostrarlo en el header
-  obtenerNombreUsuario(): string {
-    const user = localStorage.getItem('usuario_actual');
-    if (user) {
-      const data = JSON.parse(user);
-      return data.nombre ? data.nombre.split(' ')[0] : 'MI CUENTA';
+  indiceImagen(producto: Producto): number {
+    const id = producto._id || producto.id || '';
+    const images = this.imagenesDe(producto);
+    return images.length ? (this.imagenesProducto[id] || 0) % images.length : 0;
+  }
+
+  cambiarImagen(producto: Producto, direccion: number, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const id = producto._id || producto.id;
+    if (!id) {
+      return;
     }
-    return 'MI CUENTA';
+    const count = this.imagenesDe(producto).length;
+    this.imagenesProducto[id] = (this.indiceImagen(producto) + direccion + count) % count;
   }
 
+  agregarAlCarrito(producto: Producto): void {
+    try {
+      this.carrito.agregar(producto);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo agregar el producto al carrito.');
+    }
+  }
 
+  estaAutenticado(): boolean {
+    return this.auth.autenticado;
+  }
 
+  obtenerNombreUsuario(): string {
+    return this.auth.usuario?.nombre.split(' ')[0] || 'MI CUENTA';
+  }
 
+  cerrarSesion(): void {
+    this.auth.cerrarSesion();
+  }
 }

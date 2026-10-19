@@ -1,0 +1,56 @@
+<main class="checkout">
+  <a routerLink="/" class="volver">← Seguir mirando</a>
+  <h1>Tu carrito</h1>
+
+  <p class="vacio" *ngIf="carrito.items().length === 0">
+    Todavía no agregaste productos al carrito.
+    <a routerLink="/">Volver al catálogo</a>
+  </p>
+
+  <div class="checkout-layout" *ngIf="carrito.items().length > 0">
+    <section class="items-carrito">
+      <article class="item-carrito" *ngFor="let item of carrito.items()">
+        <img [src]="item.producto.imagenUrl || item.producto.imagenes?.[0] || 'https://via.placeholder.com/120'" [alt]="item.producto.nombre">
+        <div class="datos-item">
+          <h2>{{ item.producto.nombre }}</h2>
+          <p>{{ item.producto.categoria }}</p>
+          <p *ngIf="item.talle">Talle: {{ item.talle }}</p>
+          <p *ngIf="item.color">Color: {{ item.color }}</p>
+          <strong>${{ item.producto.precio | number:'1.0-0' }}</strong>
+        </div>
+        <label class="cantidad">
+          Cantidad
+          <input type="number" min="1" max="20" [ngModel]="item.cantidad"
+            (ngModelChange)="carrito.cambiarCantidad(carrito.claveItem(item), $event)">
+        </label>
+        <button type="button" class="quitar" (click)="carrito.quitar(carrito.claveItem(item))">Quitar</button>
+      </article>
+      <div class="total-carrito">
+        <span>Total de productos</span>
+        <strong>${{ carrito.total | number:'1.0-0' }}</strong>
+      </div>
+    </section>
+
+    <form class="form-envio" #formEnvio="ngForm" (ngSubmit)="continuarAlPago()">
+      <h2>Datos para el envío</h2>
+      <p *ngIf="avisoPerfil" class="nota">{{ avisoPerfil }} <a routerLink="/perfil">Abrir mi perfil</a></p>
+      <label>Dirección
+        <input name="direccion" [(ngModel)]="envio.direccion" required maxlength="160" autocomplete="street-address">
+      </label>
+      <label>Ciudad
+        <input name="ciudad" [(ngModel)]="envio.ciudad" required maxlength="100" autocomplete="address-level2">
+      </label>
+      <label>Código postal
+        <input name="codigoPostal" [(ngModel)]="envio.codigoPostal" required maxlength="20" autocomplete="postal-code">
+      </label>
+      <label>Teléfono
+        <input name="telefono" [(ngModel)]="envio.telefono" required maxlength="30" autocomplete="tel">
+      </label>
+      <p *ngIf="!auth.autenticado" class="nota">Vas a iniciar sesión antes de confirmar el pedido.</p>
+      <p *ngIf="error" class="error">{{ error }}</p>
+      <button type="submit" [disabled]="!formEnvio.valid || procesando">
+        {{ procesando ? 'CONECTANDO CON MERCADO PAGO...' : 'CONTINUAR AL PAGO' }}
+      </button>
+    </form>
+  </div>
+</main>

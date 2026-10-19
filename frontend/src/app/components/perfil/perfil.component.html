@@ -1,0 +1,47 @@
+<main class="perfil-pagina">
+  <a routerLink="/" class="volver">← Volver a la tienda</a>
+  <section class="perfil-tarjeta">
+    <div class="perfil-titulo">
+      <span class="perfil-icono" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"></circle>
+          <path d="M5 21v-2a7 7 0 0 1 14 0v2"></path>
+        </svg>
+      </span>
+      <div>
+        <h1>Mi perfil</h1>
+        <p>Completá tus datos para tenerlos listos al hacer un pedido.</p>
+      </div>
+    </div>
+
+    <p *ngIf="cargando" class="mensaje">Cargando tus datos...</p>
+    <form *ngIf="!cargando" #formPerfil="ngForm" (ngSubmit)="guardar()">
+      <label>Nombre y apellido
+        <input name="nombre" [(ngModel)]="perfil.nombre" required maxlength="120" autocomplete="name">
+      </label>
+      <label>Correo electrónico
+        <input name="email" [ngModel]="perfil.email" type="email" readonly autocomplete="email">
+      </label>
+      <label>Teléfono
+        <input name="telefono" [(ngModel)]="perfil.telefono" maxlength="30" autocomplete="tel">
+      </label>
+      <label>Dirección
+        <input name="direccion" [(ngModel)]="perfil.direccion" maxlength="160" autocomplete="street-address">
+      </label>
+      <div class="campos-en-linea">
+        <label>Ciudad
+          <input name="ciudad" [(ngModel)]="perfil.ciudad" maxlength="100" autocomplete="address-level2">
+        </label>
+        <label>Código postal
+          <input name="codigoPostal" [(ngModel)]="perfil.codigoPostal" maxlength="20" autocomplete="postal-code">
+        </label>
+      </div>
+      <p *ngIf="error" class="error" role="alert">{{ error }}</p>
+      <p *ngIf="exito" class="exito" role="status">{{ exito }}</p>
+      <button type="submit" [disabled]="!formPerfil.valid || guardando">
+        {{ guardando ? 'GUARDANDO...' : 'GUARDAR MIS DATOS' }}
+      </button>
+    </form>
+    <a routerLink="/carrito" class="link-carrito">Ir al carrito</a>
+  </section>
+</main>

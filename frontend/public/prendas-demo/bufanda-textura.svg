@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1067">
+  <defs>
+    <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#e9e5df"/><stop offset="1" stop-color="#cec7bd"/></linearGradient>
+    <linearGradient id="cloth" x2="1" y2="1"><stop stop-color="#c8a78f"/><stop offset="1" stop-color="#a47e68"/></linearGradient>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h600v1067H0z"/><circle cx="300" cy="420" r="220" fill="#f6f2ed" opacity=".56"/>
+  <path d="M70 944h460" stroke="#aaa195" stroke-width="2"/><ellipse cx="300" cy="840" rx="145" ry="22" fill="#6d5e52" opacity=".16"/>
+  <path d="M201 250c34-21 164-21 198 0l-15 112c-4 31-7 63-2 98l23 292c3 38-35 68-72 56l-24-8-9-311-12 331-38 9c-39 9-71-22-64-61l48-306c6-38 0-71-9-105z" fill="url(#cloth)" stroke="#8f6d5b" stroke-width="5"/>
+  <path d="M207 277q93 45 186 0M196 340q104 51 208 0m-225 64q106 48 225 0m-211 67q108 46 218 0m-207 68q102 39 202 0" fill="none" stroke="#e4d1c0" stroke-width="6" opacity=".75"/>
+  <path d="M282 746l-9 74m54-67 6 78m-91-15-6 37m153-31 7 33" stroke="#8f6d5b" stroke-width="4"/>
+  <text x="300" y="1008" text-anchor="middle" fill="#776557" font-family="Georgia,serif" font-size="20" letter-spacing="5">BYTINAKT · TEXTURA</text>
+</svg>
