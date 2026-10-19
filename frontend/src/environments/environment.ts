@@ -1,3 +1,3 @@
 export const environment = {
-  apiUrl: ''
+  apiUrl: 'https://bytinakt-tienda.onrender.com'
 };
