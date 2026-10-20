@@ -11,6 +11,70 @@
   max-width: 100% !important;
 }
 
+.barra-promociones {
+  position: relative;
+  display: flex;
+  height: 36px;
+  align-items: center;
+  overflow: hidden;
+  background: #f5f0e8;
+  color: #442b29;
+  border-bottom: 1px solid #e8dfd5;
+}
+
+.texto-accesible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.cinta-promociones {
+  display: flex;
+  width: max-content;
+  min-width: max-content;
+  animation: desplazar-promociones 28s linear infinite;
+}
+
+.grupo-promociones {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+  padding-right: clamp(28px, 5vw, 72px);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .45px;
+  text-transform: uppercase;
+}
+
+.separador-promociones {
+  color: #a77953;
+  font-size: 11px;
+}
+
+.barra-promociones:hover .cinta-promociones,
+.barra-promociones:focus-within .cinta-promociones {
+  animation-play-state: paused;
+}
+
+@keyframes desplazar-promociones {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinta-promociones {
+    animation: none;
+  }
+}
+
 /* Sidebar lateral flotante */
 .sidebar-lateral {
   position: fixed !important;
