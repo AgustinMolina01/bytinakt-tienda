@@ -245,6 +245,30 @@ body {
   flex: 0 0 auto;
 }
 
+.boton-cerrar-sesion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f8f3ed;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .7px;
+  white-space: nowrap;
+}
+
+.boton-cerrar-sesion:hover {
+  color: #e3c1a2;
+}
+
+.boton-cerrar-sesion svg {
+  flex: 0 0 auto;
+}
+
 .contador-carrito {
   display: inline-flex;
   min-width: 18px;
@@ -377,6 +401,16 @@ body {
   }
 
   .acciones-header .icono-header:not(.icono-carrito) span {
+    display: none;
+  }
+
+  .boton-cerrar-sesion {
+    width: 36px;
+    height: 36px;
+    justify-content: center;
+  }
+
+  .boton-cerrar-sesion span {
     display: none;
   }
 

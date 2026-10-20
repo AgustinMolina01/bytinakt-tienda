@@ -54,6 +54,17 @@
       </svg>
       <span>PERFIL</span>
     </a>
+    <button *ngIf="estaAutenticado()" type="button" class="boton-cerrar-sesion"
+      aria-label="Cerrar sesión" title="Cerrar sesión" (click)="cerrarSesion()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true">
+        <path d="M10 17l5-5-5-5"></path>
+        <path d="M15 12H3"></path>
+        <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"></path>
+      </svg>
+      <span>CERRAR SESIÓN</span>
+    </button>
     <a routerLink="/carrito" class="icono-header icono-carrito" [attr.aria-label]="'Carrito, ' + carrito.cantidadTotal + ' productos'" title="Carrito">
       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"></path>

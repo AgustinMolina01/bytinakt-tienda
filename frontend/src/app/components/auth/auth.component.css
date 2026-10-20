@@ -133,9 +133,9 @@
 }
 
 .google-icon {
-  color: #4285f4;
-  font-size: 17px;
-  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
 }
 
 .auth-separador {
