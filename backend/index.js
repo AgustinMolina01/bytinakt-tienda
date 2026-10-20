@@ -2,9 +2,19 @@ const crypto = require('node:crypto');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
+const admin = require('firebase-admin');
+const { getAuth: getFirebaseAdminAuth } = require('firebase-admin/auth');
 require('dotenv').config();
 
 const { hashPassword, verifyPassword, createToken, verifyToken } = require('./auth');
+const {
+  createVerificationCode,
+  hashVerificationCode,
+  verificationCodeMatches,
+  createResendCodeState
+} = require('./email-verification');
+const EmailVerification = require('./models/EmailVerification');
 
 const app = express();
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:4200')
@@ -84,6 +94,9 @@ const Usuario = mongoose.models.Usuario || mongoose.model('Usuario', usuarioSche
 const Producto = mongoose.models.Producto || mongoose.model('Producto', productoSchema);
 const Pedido = mongoose.models.Pedido || mongoose.model('Pedido', pedidoSchema);
 
+const emailVerificationSecret = process.env.AUTH_TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
+let firebaseAuth;
+
 app.get('/', (req, res) => res.json({ message: 'API de Bytinakt funcionando.' }));
 
 function timingSafeTextEqual(value, expected) {
@@ -132,6 +145,46 @@ function issueSession(res, user) {
   return res.json({ token: createToken(safeUser), usuario: safeUser });
 }
 
+function validEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getEmailTransporter() {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPassword = process.env.EMAIL_APP_PASSWORD;
+  if (!emailUser || !emailPassword) {
+    return null;
+  }
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: emailUser, pass: emailPassword.replace(/\s/g, '') }
+  });
+}
+
+function getFirebaseAuth() {
+  if (firebaseAuth) {
+    return firebaseAuth;
+  }
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) {
+    return null;
+  }
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (error) {
+    console.error('FIREBASE_SERVICE_ACCOUNT_JSON no contiene JSON válido.');
+    throw new Error('Firebase Admin no está configurado correctamente.');
+  }
+  const app = admin.apps.length
+    ? admin.app()
+    : admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  firebaseAuth = getFirebaseAdminAuth(app);
+  return firebaseAuth;
+}
+
 async function devolverStock(items) {
   for (const item of items) {
     if (!item.talle) {
@@ -167,25 +220,156 @@ async function liberarReservasVencidas() {
   }
 }
 
-app.post('/api/auth/registro', async (req, res) => {
+app.post('/api/auth/registro/codigo', async (req, res) => {
   try {
     const nombre = typeof req.body.nombre === 'string' ? req.body.nombre.trim() : '';
     const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
     const password = typeof req.body.password === 'string' ? req.body.password : '';
 
-    if (!nombre || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 10) {
-      return sendError(res, 400, 'Ingresá un nombre, un correo válido y una contraseña de al menos 10 caracteres.');
+    if (!nombre || nombre.length > 120 || !validEmail(email) || password.length < 10) {
+      return sendError(res, 400, 'Ingresá tus datos y una contraseña de al menos 10 caracteres.');
+    }
+    const transporter = getEmailTransporter();
+    if (!transporter) {
+      return sendError(res, 503, 'El envío de códigos por correo todavía no está configurado.');
+    }
+    if (await Usuario.exists({ email })) {
+      return sendError(res, 409, 'Ese correo ya está registrado.');
     }
 
+    const existingVerification = await EmailVerification.findOne({ email });
+    const resendState = createResendCodeState(
+      existingVerification?.lastSentAt?.getTime()
+    );
+    if (!resendState.allowed) {
+      return sendError(res, 429, 'Esperá un minuto antes de pedir otro código.');
+    }
+
+    const code = createVerificationCode();
     const passwordHash = await hashPassword(password);
-    const user = await Usuario.create({ nombre, email, password: passwordHash, rol: 'cliente' });
-    return res.status(201).json({ message: 'Cuenta creada.', usuario: publicUser(user) });
+    const now = new Date();
+    const codeHash = hashVerificationCode(email, code, emailVerificationSecret).toString('hex');
+    await EmailVerification.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          nombre,
+          password: passwordHash,
+          codeHash,
+          attempts: 0,
+          expiresAt: new Date(now.getTime() + 10 * 60_000),
+          lastSentAt: now
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    await transporter.sendMail({
+      from: `Bytinakt <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Tu código para crear una cuenta en Bytinakt',
+      text: `Tu código de verificación es ${code}. Vence en 10 minutos.`,
+      html: `<p>Tu código de verificación para crear una cuenta en Bytinakt es:</p><p style="font-size:24px;font-weight:bold;letter-spacing:5px">${code}</p><p>Vence en 10 minutos. Si no solicitaste este código, podés ignorar este correo.</p>`
+    });
+
+    return res.json({ message: 'Te enviamos un código de verificación por correo.' });
   } catch (error) {
     if (error.code === 11000) {
       return sendError(res, 409, 'Ese correo ya está registrado.');
     }
-    console.error('Error al registrar usuario:', error.message);
-    return sendError(res, 500, 'No se pudo crear la cuenta.');
+    if (req.body?.email) {
+      await EmailVerification.deleteOne({
+        email: String(req.body.email).trim().toLowerCase()
+      }).catch((cleanupError) => {
+        console.error('No se pudo limpiar la verificación sin enviar:', cleanupError.message);
+      });
+    }
+    console.error('Error al enviar código de registro:', error.message);
+    return sendError(res, 500, 'No se pudo enviar el código. Revisá el correo e intentá de nuevo.');
+  }
+});
+
+app.post('/api/auth/registro/verificar', async (req, res) => {
+  const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  try {
+    const code = typeof req.body.code === 'string' ? req.body.code.trim() : '';
+    if (!validEmail(email) || !/^\d{6}$/.test(code)) {
+      return sendError(res, 400, 'Ingresá el correo y el código de 6 dígitos.');
+    }
+    const verification = await EmailVerification.findOne({ email });
+    if (!verification || verification.expiresAt <= new Date()) {
+      return sendError(res, 400, 'El código venció o no existe. Pedí uno nuevo.');
+    }
+    if (!verificationCodeMatches(email, code, verification.codeHash, emailVerificationSecret)) {
+      verification.attempts += 1;
+      if (verification.attempts >= 5) {
+        await verification.deleteOne();
+        return sendError(res, 429, 'Se agotaron los intentos. Pedí un código nuevo.');
+      }
+      await verification.save();
+      return sendError(res, 400, 'El código no es correcto.');
+    }
+
+    const user = await Usuario.create({
+      nombre: verification.nombre,
+      email,
+      password: verification.password,
+      rol: 'cliente'
+    });
+    await verification.deleteOne();
+    return issueSession(res, user);
+  } catch (error) {
+    if (error.code === 11000) {
+      await EmailVerification.deleteOne({ email });
+      return sendError(res, 409, 'Ese correo ya está registrado.');
+    }
+    console.error('Error al verificar código de registro:', error.message);
+    return sendError(res, 500, 'No se pudo verificar el código.');
+  }
+});
+
+app.post('/api/auth/registro', (req, res) => {
+  return sendError(res, 400, 'Verificá tu correo con el código antes de crear la cuenta.');
+});
+
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const idToken = typeof req.body.idToken === 'string' ? req.body.idToken : '';
+    if (!idToken) {
+      return sendError(res, 400, 'Iniciá sesión con Google para continuar.');
+    }
+    const firebase = getFirebaseAuth();
+    if (!firebase) {
+      return sendError(res, 503, 'El acceso con Google todavía no está configurado.');
+    }
+    let decodedToken;
+    try {
+      decodedToken = await firebase.verifyIdToken(idToken);
+    } catch (error) {
+      return sendError(res, 401, 'No se pudo verificar la cuenta de Google. Intentá de nuevo.');
+    }
+    const email = typeof decodedToken.email === 'string' ? decodedToken.email.trim().toLowerCase() : '';
+    const nombre = typeof decodedToken.name === 'string' ? decodedToken.name.trim() : '';
+    if (!decodedToken.email_verified || !validEmail(email)) {
+      return sendError(res, 401, 'Usá una cuenta de Google con correo verificado.');
+    }
+
+    let user = await Usuario.findOne({ email });
+    if (!user) {
+      user = await Usuario.create({
+        nombre: nombre || email.split('@')[0],
+        email,
+        password: await hashPassword(crypto.randomBytes(32).toString('hex')),
+        rol: 'cliente'
+      });
+    }
+    return issueSession(res, user);
+  } catch (error) {
+    if (error.code === 11000) {
+      return sendError(res, 409, 'No se pudo crear la cuenta. Volvé a intentarlo.');
+    }
+    console.error('Error al iniciar sesión con Google:', error.message);
+    return sendError(res, 500, 'No se pudo iniciar sesión con Google.');
   }
 });
 

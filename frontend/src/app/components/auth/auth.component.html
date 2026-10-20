@@ -22,64 +22,85 @@
         {{ mensajeExito }}
       </div>
 
+      <button type="button" class="btn-google" (click)="iniciarConGoogle()" [disabled]="cargando">
+        <span class="google-icon" aria-hidden="true">G</span>
+        Continuar con Google
+      </button>
+
+      <div class="auth-separador" aria-hidden="true"><span>o con tu correo</span></div>
+
       <form (ngSubmit)="onSubmit()">
-        <div class="auth-datos-personales" *ngIf="isRegisterMode">
-          <div class="campo-grupo">
-            <label for="nombre">Nombre</label>
-            <input id="nombre" type="text" [(ngModel)]="nombre" name="nombre"
-              placeholder="Tu nombre" autocomplete="given-name" required>
-          </div>
+        <div *ngIf="isRegisterMode && !codigoEnviado">
+          <div class="auth-datos-personales">
+            <div class="campo-grupo">
+              <label for="nombre">Nombre</label>
+              <input id="nombre" type="text" [(ngModel)]="nombre" name="nombre"
+                placeholder="Tu nombre" autocomplete="given-name" required>
+            </div>
 
-          <div class="campo-grupo">
-            <label for="apellido">Apellido</label>
-            <input id="apellido" type="text" [(ngModel)]="apellido" name="apellido"
-              placeholder="Tu apellido" autocomplete="family-name" required>
-          </div>
+            <div class="campo-grupo">
+              <label for="apellido">Apellido</label>
+              <input id="apellido" type="text" [(ngModel)]="apellido" name="apellido"
+                placeholder="Tu apellido" autocomplete="family-name" required>
+            </div>
 
-          <div class="campo-grupo campo-genero">
-            <label for="genero">Género</label>
-            <select id="genero" [(ngModel)]="genero" name="genero" required>
-              <option value="" disabled>Seleccionar género</option>
-              <option value="Femenino">Femenino</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Otro">Otro / Prefiero no decir</option>
-            </select>
+            <div class="campo-grupo campo-genero">
+              <label for="genero">Género</label>
+              <select id="genero" [(ngModel)]="genero" name="genero" required>
+                <option value="" disabled>Seleccionar género</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Otro">Otro / Prefiero no decir</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <div class="campo-grupo">
           <label for="email">Correo electrónico</label>
           <input id="email" type="email" [(ngModel)]="email" name="email"
-            placeholder="correo@ejemplo.com" autocomplete="email" required>
+            placeholder="correo@ejemplo.com" autocomplete="email" required [readonly]="codigoEnviado">
         </div>
 
-        <div class="campo-grupo">
+        <div class="campo-grupo" *ngIf="!codigoEnviado">
           <label for="password">Contraseña</label>
           <input id="password" [type]="mostrarPassword ? 'text' : 'password'"
             [(ngModel)]="password" name="password" placeholder="Ingresá tu contraseña"
             [attr.autocomplete]="isRegisterMode ? 'new-password' : 'current-password'" required>
         </div>
 
-        <div class="campo-grupo" *ngIf="isRegisterMode">
+        <div class="campo-grupo" *ngIf="isRegisterMode && !codigoEnviado">
           <label for="confirmPassword">Confirmar contraseña</label>
           <input id="confirmPassword" [type]="mostrarPassword ? 'text' : 'password'"
             [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Repetí tu contraseña"
             autocomplete="new-password" required>
         </div>
 
-        <label class="label-checkbox">
+        <div class="campo-grupo" *ngIf="codigoEnviado">
+          <label for="codigo">Código enviado a tu correo</label>
+          <input id="codigo" type="text" [(ngModel)]="codigo" name="codigo"
+            placeholder="Ingresá los 6 dígitos" inputmode="numeric" autocomplete="one-time-code"
+            maxlength="6" pattern="[0-9]{6}" required>
+        </div>
+
+        <label class="label-checkbox" *ngIf="!codigoEnviado">
           <input type="checkbox" [(ngModel)]="mostrarPassword" name="mostrarPassword">
           <span>Mostrar contraseña</span>
         </label>
 
         <button type="submit" class="btn-submit" [disabled]="cargando">
-          {{ cargando ? 'CONECTANDO...' : isRegisterMode ? 'CREAR MI CUENTA' : 'INGRESAR A MI CUENTA' }}
+          {{ cargando ? 'CONECTANDO...' : codigoEnviado ? 'VERIFICAR CÓDIGO' : isRegisterMode ? 'ENVIAR CÓDIGO' : 'INGRESAR A MI CUENTA' }}
           <span aria-hidden="true">→</span>
         </button>
       </form>
 
+      <button type="button" class="btn-reenviar" *ngIf="codigoEnviado"
+        (click)="reenviarCodigo()" [disabled]="cargando">
+        Volver a enviar código
+      </button>
+
       <div class="auth-footer">
-        <span>{{ isRegisterMode ? '¿Ya tenés una cuenta?' : '¿Es tu primera vez por acá?' }}</span>
+        <span>{{ isRegisterMode ? (codigoEnviado ? '¿Querés usar otra cuenta?' : '¿Ya tenés una cuenta?') : '¿Es tu primera vez por acá?' }}</span>
         <button type="button" class="btn-link" (click)="toggleMode()">
           {{ isRegisterMode ? 'Iniciá sesión' : 'Crear una cuenta' }}
         </button>
