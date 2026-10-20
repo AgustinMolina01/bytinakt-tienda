@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { API_URL } from '../../services/api';
 import { AuthService, UsuarioActual } from '../../services/auth.service';
+import { GoogleAuthService } from '../../services/google-auth.service';
 
 @Component({
   selector: 'app-perfil',
@@ -32,7 +33,8 @@ export class PerfilComponent implements OnInit {
   constructor(
     readonly auth: AuthService,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private googleAuth: GoogleAuthService
   ) {}
 
   ngOnInit(): void {
@@ -86,5 +88,17 @@ export class PerfilComponent implements OnInit {
         this.guardando = false;
       }
     });
+  }
+
+  async cerrarSesion(): Promise<void> {
+    try {
+      await this.googleAuth.cerrarSesion();
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión de Google:', error);
+      alert('Se cerró la sesión de la tienda, pero no se pudo cerrar la sesión de Google.');
+    } finally {
+      this.auth.cerrarSesion();
+      await this.router.navigateByUrl('/');
+    }
   }
 }

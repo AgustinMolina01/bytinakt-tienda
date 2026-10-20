@@ -8,7 +8,6 @@ import { BannerService } from '../../services/banner.service';
 import { API_URL } from '../../services/api';
 import { AuthService } from '../../services/auth.service';
 import { CarritoService } from '../../services/carrito.service';
-import { GoogleAuthService } from '../../services/google-auth.service';
 import { PRODUCTOS_DEMO } from '../../services/productos-demo';
 
 @Component({
@@ -44,8 +43,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private bannerService: BannerService,
     readonly auth: AuthService,
-    readonly carrito: CarritoService,
-    private googleAuth: GoogleAuthService
+    readonly carrito: CarritoService
   ) {}
 
   ngOnInit(): void {
@@ -193,14 +191,4 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     return this.auth.usuario?.nombre.split(' ')[0] || 'MI CUENTA';
   }
 
-  async cerrarSesion(): Promise<void> {
-    try {
-      await this.googleAuth.cerrarSesion();
-    } catch (error) {
-      console.error('No se pudo cerrar la sesión de Google:', error);
-      alert('Se cerró la sesión de la tienda, pero no se pudo cerrar la sesión de Google.');
-    } finally {
-      this.auth.cerrarSesion();
-    }
-  }
 }

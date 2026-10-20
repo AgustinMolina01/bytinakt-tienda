@@ -98,6 +98,18 @@
   opacity: .6;
 }
 
+.perfil-tarjeta .boton-cerrar-sesion {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid #803a3a;
+  background: #fff;
+  color: #803a3a;
+}
+
+.perfil-tarjeta .boton-cerrar-sesion:hover {
+  background: #fbf4f2;
+}
+
 .error {
   margin: 0;
   color: #9b2525;

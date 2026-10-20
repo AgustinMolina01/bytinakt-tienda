@@ -54,17 +54,6 @@
       </svg>
       <span>PERFIL</span>
     </a>
-    <button *ngIf="estaAutenticado()" type="button" class="boton-cerrar-sesion"
-      aria-label="Cerrar sesión" title="Cerrar sesión" (click)="cerrarSesion()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-        stroke-linejoin="round" aria-hidden="true">
-        <path d="M10 17l5-5-5-5"></path>
-        <path d="M15 12H3"></path>
-        <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"></path>
-      </svg>
-      <span>CERRAR SESIÓN</span>
-    </button>
     <a routerLink="/carrito" class="icono-header icono-carrito" [attr.aria-label]="'Carrito, ' + carrito.cantidadTotal + ' productos'" title="Carrito">
       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"></path>
@@ -203,6 +192,37 @@
   </main>
 
 </div>
+
+<section class="ubicacion-tienda" aria-labelledby="titulo-ubicacion">
+  <div class="encabezado-ubicacion">
+    <span class="icono-ubicacion" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+        <circle cx="12" cy="10" r="2.5"></circle>
+      </svg>
+    </span>
+    <div>
+      <h2 id="titulo-ubicacion">Ubicación</h2>
+      <p>San Martín 4175, Mar del Plata, Buenos Aires, Argentina</p>
+    </div>
+  </div>
+  <div class="mapa-ubicacion">
+    <iframe
+      title="Mapa de Bytinakt en San Martín 4175, Mar del Plata"
+      src="https://maps.google.com/maps?q=San%20Mart%C3%ADn%204175%2C%20Mar%20del%20Plata%2C%20Buenos%20Aires%2C%20Argentina&amp;output=embed"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      allowfullscreen>
+    </iframe>
+  </div>
+  <a class="como-llegar" href="https://www.google.com/maps/search/?api=1&amp;query=San%20Mart%C3%ADn%204175%2C%20Mar%20del%20Plata%2C%20Buenos%20Aires%2C%20Argentina"
+    target="_blank" rel="noopener noreferrer">
+    <span aria-hidden="true">➤</span>
+    Cómo llegar
+  </a>
+</section>
 
 <!-- PIE DE PÁGINA -->
 <footer class="footer-tienda">
