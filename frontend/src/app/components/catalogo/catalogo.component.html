@@ -1,3 +1,15 @@
+<!-- ===== CONTENIDO HTML DE LA PRESENTACION DE CARGA ===== -->
+<section *ngIf="presentacionVisible" class="presentacion-tienda" [class.saliendo]="presentacionSaliendo"
+  role="dialog" aria-modal="true"
+  aria-labelledby="titulo-presentacion">
+  <div class="presentacion-contenido">
+    <p class="presentacion-etiqueta">MODA · ESTILO · ACTITUD</p>
+    <p class="presentacion-logo">BYTINAKT<span>.</span></p>
+    <h2 id="titulo-presentacion">Bienvenida a tu próximo estilo</h2>
+    <p class="presentacion-descripcion">Prendas para expresarte y sentirte vos, todos los días.</p>
+  </div>
+</section>
+
 <!-- HEADER PRINCIPAL DE LA TIENDA -->
 <header class="header-tienda">
   <div class="identidad-tienda">

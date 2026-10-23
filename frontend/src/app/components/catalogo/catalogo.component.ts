@@ -21,7 +21,12 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   productos: Producto[] = [];
   vistaDemo = false;
   errorCatalogo = '';
+  // ===== LOGICA Y TIEMPOS DE LA PRESENTACION DE CARGA =====
+  presentacionVisible = false;
+  presentacionSaliendo = false;
   private readonly imagenesProducto: Record<string, number> = {};
+  private temporizadorPresentacion?: ReturnType<typeof setTimeout>;
+  private temporizadorSalidaPresentacion?: ReturnType<typeof setTimeout>;
   categoriaSeleccionada: string = 'TODAS';
   menuAbierto: boolean = false;
   
@@ -47,6 +52,9 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.presentacionVisible = true;
+    this.temporizadorPresentacion = setTimeout(() => this.cerrarPresentacion(), 2200);
+
     this.cargarProductos();
     this.cargarBanners();
     
@@ -60,6 +68,20 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     if (this.intervaloBanner) {
       clearInterval(this.intervaloBanner);
     }
+    if (this.temporizadorPresentacion) {
+      clearTimeout(this.temporizadorPresentacion);
+    }
+    if (this.temporizadorSalidaPresentacion) {
+      clearTimeout(this.temporizadorSalidaPresentacion);
+    }
+  }
+
+  cerrarPresentacion(): void {
+    this.presentacionSaliendo = true;
+    this.temporizadorSalidaPresentacion = setTimeout(() => {
+      this.presentacionVisible = false;
+      this.presentacionSaliendo = false;
+    }, 550);
   }
 
   // Cargar productos directamente desde MongoDB a través del Backend
