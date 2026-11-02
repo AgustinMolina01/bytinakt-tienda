@@ -1,11 +1,11 @@
 import { Component, OnDestroy, OnInit, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { Producto } from '../../models/producto.model';
-import { BannerService } from '../../services/banner.service';
+import { BannerPortada, BannerService } from '../../services/banner.service';
 import { API_URL } from '../../services/api';
 import { PRODUCTOS_DEMO } from '../../services/productos-demo';
 import { CarritoService } from '../../services/carrito.service';
@@ -37,7 +37,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   presentacionVisible = false;
   presentacionSaliendo = false;
 
-  imagenesBanner: string[] = [];
+  banners: BannerPortada[] = [];
   indiceBannerActual = 0;
   bannerPausado = false;
 
@@ -53,20 +53,24 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private bannerService: BannerService,
     private route: ActivatedRoute,
+    private router: Router,
     private carrito: CarritoService
   ) {}
 
   ngOnInit(): void {
     this.mostrarPresentacion();
     this.cargarProductos();
-    this.imagenesBanner = this.bannerService.imagenesPorDefecto;
+    this.banners = this.bannerService.portadaPorDefecto;
     this.iniciarBanner();
-    this.bannerService.obtenerBanners().subscribe((imagenes) => {
-      if (imagenes.length > 0 && imagenes.join() !== this.imagenesBanner.join()) {
-        this.imagenesBanner = imagenes;
-        this.indiceBannerActual = 0;
-        this.iniciarBanner();
-      }
+    this.bannerService.listar().subscribe({
+      next: (banners) => {
+        if (banners.length > 0) {
+          this.banners = banners;
+          this.indiceBannerActual = 0;
+          this.iniciarBanner();
+        }
+      },
+      error: () => undefined
     });
 
     this.suscripcionRuta = this.route.queryParamMap.subscribe((params) => {
@@ -204,7 +208,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   }
 
   moverBanner(delta: number): void {
-    const total = this.imagenesBanner.length;
+    const total = this.banners.length;
     if (total > 0) {
       this.indiceBannerActual = (this.indiceBannerActual + delta + total) % total;
       this.iniciarBanner();
@@ -213,7 +217,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
 
   private iniciarBanner(): void {
     clearInterval(this.intervaloBanner);
-    if (this.imagenesBanner.length > 1) {
+    if (this.banners.length > 1) {
       this.intervaloBanner = setInterval(() => {
         if (!this.bannerPausado) {
           this.siguienteBanner();
@@ -232,14 +236,14 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   }
 
   siguienteBanner(): void {
-    if (this.imagenesBanner.length > 0) {
-      this.indiceBannerActual = (this.indiceBannerActual + 1) % this.imagenesBanner.length;
+    if (this.banners.length > 0) {
+      this.indiceBannerActual = (this.indiceBannerActual + 1) % this.banners.length;
     }
   }
 
   anteriorBanner(): void {
-    if (this.imagenesBanner.length > 0) {
-      this.indiceBannerActual = (this.indiceBannerActual - 1 + this.imagenesBanner.length) % this.imagenesBanner.length;
+    if (this.banners.length > 0) {
+      this.indiceBannerActual = (this.indiceBannerActual - 1 + this.banners.length) % this.banners.length;
     }
   }
 
@@ -392,6 +396,23 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     const img = event.target as HTMLImageElement;
     if (img.src !== SIN_IMAGEN) {
       img.src = SIN_IMAGEN;
+    }
+  }
+
+  trackBanner = (_: number, banner: BannerPortada): string => banner.id;
+
+  esExterno(enlace?: string): boolean {
+    return !!enlace && /^https?:\/\//i.test(enlace);
+  }
+
+  // El enlace de una imagen o botón de la portada puede ser una sección de la tienda, la colección o una página externa.
+  abrirEnlace(evento: Event, enlace?: string): void {
+    if (!enlace || enlace === '#coleccion') {
+      evento.preventDefault();
+      this.irAColeccion();
+    } else if (enlace.startsWith('/')) {
+      evento.preventDefault();
+      this.router.navigateByUrl(enlace);
     }
   }
 

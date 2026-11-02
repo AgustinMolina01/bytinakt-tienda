@@ -14,31 +14,71 @@
 /* ---------- Portada ---------- */
 .portada {
   position: relative;
-  display: flex;
-  height: clamp(460px, 74vh, 700px);
-  align-items: center;
   overflow: hidden;
   background: var(--color-profundo);
   color: #fff;
 }
 
-.portada-imagenes,
-.portada-imagen,
-.portada-velo {
+/* Todas las imágenes comparten el mismo lugar; la activa se ve y las demás quedan ocultas */
+.portada-slides {
+  display: grid;
+}
+
+.portada-slide {
+  position: relative;
+  display: flex;
+  grid-area: 1 / 1;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1.2s ease, visibility 1.2s;
+}
+
+.portada-slide.activa {
+  z-index: 1;
+  opacity: 1;
+  visibility: visible;
+}
+
+.portada-slide.con-texto {
+  min-height: clamp(460px, 70vh, 680px);
+}
+
+.portada-enlace {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.portada-slide picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 720px;
+}
+
+.portada-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Con texto encima, la imagen es el fondo de toda la portada */
+.portada-slide.con-texto picture {
   position: absolute;
   inset: 0;
+  max-height: none;
 }
 
-.portada-imagen {
-  background-position: center 28%;
-  background-size: cover;
-  opacity: 0;
+.portada-slide.con-texto img {
+  object-position: center 28%;
   transform: scale(1.08);
-  transition: opacity 1.2s ease;
 }
 
-.portada-imagen.activa {
-  opacity: 1;
+.portada-slide.con-texto.activa img {
   animation: portada-zoom 9s ease-out both;
 }
 
@@ -47,7 +87,14 @@
   to { transform: scale(1); }
 }
 
+@keyframes portada-aparecer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .portada-velo {
+  position: absolute;
+  inset: 0;
   background:
     linear-gradient(90deg, rgb(24 14 12 / 82%) 0%, rgb(24 14 12 / 52%) 42%, rgb(24 14 12 / 8%) 78%),
     linear-gradient(0deg, rgb(24 14 12 / 55%) 0%, transparent 38%);
@@ -56,7 +103,7 @@
 .portada-contenido {
   position: relative;
   z-index: 2;
-  padding-block: 56px 96px;
+  padding-block: 56px;
 }
 
 .portada-etiqueta {
@@ -69,7 +116,6 @@
   font-weight: 600;
   letter-spacing: 3.6px;
   text-transform: uppercase;
-  animation: portada-entrar .9s .15s cubic-bezier(.2, .7, .2, 1) both;
 }
 
 .portada-etiqueta span {
@@ -78,17 +124,16 @@
   background: var(--color-acento);
 }
 
-.portada h1 {
+.portada-titulo {
   max-width: 640px;
   color: #fff;
   font-size: clamp(42px, 7vw, 86px);
   font-weight: 400;
   letter-spacing: -.5px;
   line-height: 1.02;
-  animation: portada-entrar 1s .3s cubic-bezier(.2, .7, .2, 1) both;
 }
 
-.portada h1 em {
+.portada-titulo em {
   color: #f1d7c4;
   font-weight: 500;
 }
@@ -99,15 +144,23 @@
   color: rgb(255 255 255 / 86%);
   font-size: clamp(14.5px, 1.5vw, 17px);
   line-height: 1.75;
-  animation: portada-entrar 1s .5s cubic-bezier(.2, .7, .2, 1) both;
 }
 
 .portada-botones {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  animation: portada-entrar 1s .7s cubic-bezier(.2, .7, .2, 1) both;
+  margin-top: 32px;
 }
+
+.portada-texto + .portada-botones {
+  margin-top: 0;
+}
+
+.portada-slide.activa .portada-etiqueta { animation: portada-entrar .9s .15s cubic-bezier(.2, .7, .2, 1) both; }
+.portada-slide.activa .portada-titulo { animation: portada-entrar 1s .3s cubic-bezier(.2, .7, .2, 1) both; }
+.portada-slide.activa .portada-texto { animation: portada-entrar 1s .5s cubic-bezier(.2, .7, .2, 1) both; }
+.portada-slide.activa .portada-botones { animation: portada-entrar 1s .7s cubic-bezier(.2, .7, .2, 1) both; }
 
 .btn-contorno {
   border-color: rgb(255 255 255 / 70%);
@@ -127,12 +180,11 @@
 }
 
 /* Controles inferiores: progreso, contador y flechas */
+/* Los controles van en una franja propia debajo de la imagen, para no tapar nada de la promo */
 .portada-control {
-  position: absolute;
-  right: 0;
-  bottom: 28px;
-  left: 0;
+  position: relative;
   z-index: 3;
+  padding-block: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -325,20 +377,39 @@
 }
 
 @media (max-width: 639px) {
-  /* En celular la foto va arriba, entera, y el texto debajo sobre fondo oscuro */
-  .portada {
-    display: block;
-    height: auto;
+  /* En celular el texto va debajo de la foto, sobre fondo oscuro; las promos sin texto se ven completas */
+  .portada-slide {
+    display: none;
+    opacity: 1;
+    visibility: visible;
   }
 
-  .portada-imagenes {
+  .portada-slide.activa {
+    display: block;
+    animation: portada-aparecer .5s ease both;
+  }
+
+  .portada-slide.con-texto {
+    min-height: 0;
+  }
+
+  .portada-slide.con-texto picture {
     position: relative;
     inset: auto;
     height: clamp(280px, 88vw, 440px);
   }
 
-  .portada-imagen {
-    background-position: 70% 25%;
+  .portada-slide.con-texto img {
+    object-position: 70% 25%;
+    transform: none;
+    animation: none;
+  }
+
+  .portada-slide:not(.con-texto) picture,
+  .portada-slide:not(.con-texto) img,
+  .portada-enlace {
+    height: auto;
+    max-height: none;
   }
 
   .portada-velo {
@@ -348,7 +419,7 @@
   }
 
   .portada-contenido {
-    padding-block: 4px 88px;
+    padding-block: 4px 36px;
   }
 
   .portada-etiqueta {
@@ -357,7 +428,7 @@
     letter-spacing: 2.8px;
   }
 
-  .portada h1 {
+  .portada-titulo {
     font-size: clamp(38px, 11.5vw, 52px);
   }
 

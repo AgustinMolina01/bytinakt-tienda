@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { BannerService, ImagenPortada } from '../../services/banner.service';
+import { BannerPortada, BannerService } from '../../services/banner.service';
 import { Producto } from '../../models/producto.model';
 import { API_URL } from '../../services/api';
 import { AuthService } from '../../services/auth.service';
@@ -132,6 +132,19 @@ const ACCIONES: Record<'envio' | 'retiro', Partial<Record<EstadoPedido, AccionPe
   }
 };
 
+const BANNER_VACIO = () => ({
+  imagen: '',
+  imagenMovil: '',
+  mostrarTexto: false,
+  etiqueta: '',
+  titulo: '',
+  tituloDestacado: '',
+  texto: '',
+  botonTexto: '',
+  enlaceOpcion: '',
+  enlaceOtro: ''
+});
+
 const FORMULARIO_VACIO = () => ({
   nombre: '',
   precio: 0,
@@ -209,8 +222,20 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
   ];
 
   // Portada
-  banners: ImagenPortada[] = [];
+  banners: BannerPortada[] = [];
   subiendoBanner = false;
+  procesandoImagenBanner = false;
+  nuevoBanner = BANNER_VACIO();
+  readonly opcionesEnlace = [
+    { valor: '', texto: 'Sin enlace' },
+    { valor: '#coleccion', texto: 'Toda la colección' },
+    { valor: '/?categoria=REMERAS', texto: 'Categoría: Remeras' },
+    { valor: '/?categoria=BUZOS%20Y%20CAMPERAS', texto: 'Categoría: Buzos y camperas' },
+    { valor: '/?categoria=PANTALONES', texto: 'Categoría: Pantalones' },
+    { valor: '/?categoria=ACCESORIOS', texto: 'Categoría: Accesorios' },
+    { valor: '/envios-y-pagos', texto: 'Cómo comprar (envíos y pagos)' },
+    { valor: '__otro', texto: 'Otra dirección…' }
+  ];
 
   constructor(
     private http: HttpClient,
@@ -252,6 +277,7 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
   }
 
   trackPedido = (_: number, pedido: PedidoAdmin): string => pedido._id;
+  trackBanner = (_: number, banner: BannerPortada): string => banner.id;
   trackProducto = (_: number, producto: Producto): string => this.idDe(producto);
 
   irA(pestana: Pestana, filtroPedido?: string): void {
@@ -808,34 +834,79 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
     });
   }
 
-  async onBannerSelected(event: Event): Promise<void> {
+  get enlaceBanner(): string {
+    return this.nuevoBanner.enlaceOpcion === '__otro' ? this.nuevoBanner.enlaceOtro.trim() : this.nuevoBanner.enlaceOpcion;
+  }
+
+  async elegirImagenBanner(event: Event, campo: 'imagen' | 'imagenMovil'): Promise<void> {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
     input.value = '';
     if (!archivo) {
       return;
     }
-    this.subiendoBanner = true;
+    this.procesandoImagenBanner = true;
     try {
-      const imagen = await this.convertirImagen(archivo);
-      this.http.post(`${API_URL}/admin/banners`, { imagen }, { headers: this.encabezados }).subscribe({
-        next: () => {
-          this.subiendoBanner = false;
-          this.cargarBanners();
-          this.mostrarAviso('Imagen agregada a la portada.');
-        },
-        error: (error) => {
-          this.subiendoBanner = false;
-          this.mostrarAviso(this.mensajeError(error, 'No se pudo guardar la imagen.'), 'error');
-        }
-      });
+      this.nuevoBanner[campo] = await this.convertirImagen(archivo);
     } catch (error) {
-      this.subiendoBanner = false;
       this.mostrarAviso(error instanceof Error ? error.message : 'No se pudo procesar la imagen.', 'error');
+    } finally {
+      this.procesandoImagenBanner = false;
     }
   }
 
-  eliminarBanner(banner: ImagenPortada): void {
+  quitarImagenBanner(campo: 'imagen' | 'imagenMovil'): void {
+    this.nuevoBanner[campo] = '';
+  }
+
+  guardarBanner(): void {
+    const datos = this.nuevoBanner;
+    if (!datos.imagen) {
+      this.mostrarAviso('Elegí la imagen de la portada.', 'error');
+      return;
+    }
+    if (datos.mostrarTexto && !datos.titulo.trim()) {
+      this.mostrarAviso('Para escribir un texto sobre la imagen, completá el título.', 'error');
+      return;
+    }
+    if (datos.enlaceOpcion === '__otro' && !/^(\/(?!\/)\S*|https?:\/\/\S+)$/i.test(datos.enlaceOtro.trim())) {
+      this.mostrarAviso('La dirección tiene que empezar con https:// (una página externa) o con / (una sección de la tienda).', 'error');
+      return;
+    }
+    const cuerpo = {
+      imagen: datos.imagen,
+      imagenMovil: datos.imagenMovil,
+      mostrarTexto: datos.mostrarTexto,
+      etiqueta: datos.etiqueta,
+      titulo: datos.titulo,
+      tituloDestacado: datos.tituloDestacado,
+      texto: datos.texto,
+      botonTexto: datos.mostrarTexto ? datos.botonTexto : '',
+      enlace: this.enlaceBanner
+    };
+    this.subiendoBanner = true;
+    this.http.post(`${API_URL}/admin/banners`, cuerpo, { headers: this.encabezados }).subscribe({
+      next: () => {
+        this.subiendoBanner = false;
+        this.nuevoBanner = BANNER_VACIO();
+        this.cargarBanners();
+        this.mostrarAviso('Imagen agregada a la portada.');
+      },
+      error: (error) => {
+        this.subiendoBanner = false;
+        this.mostrarAviso(this.mensajeError(error, 'No se pudo guardar la imagen.'), 'error');
+      }
+    });
+  }
+
+  moverBanner(banner: BannerPortada, direccion: -1 | 1): void {
+    this.http.patch(`${API_URL}/admin/banners/${banner.id}/mover`, { direccion }, { headers: this.encabezados }).subscribe({
+      next: () => this.cargarBanners(),
+      error: (error) => this.mostrarAviso(this.mensajeError(error, 'No se pudo cambiar el orden.'), 'error')
+    });
+  }
+
+  eliminarBanner(banner: BannerPortada): void {
     if (!confirm('¿Sacar esta imagen de la portada?')) {
       return;
     }

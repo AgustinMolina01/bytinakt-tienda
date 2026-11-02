@@ -406,21 +406,102 @@
 
   <!-- ================= PORTADA ================= -->
   <section *ngIf="pestana === 'portada'" class="seccion">
-    <section class="panel">
-      <h2>Imágenes de la portada</h2>
-      <p class="ayuda">Se muestran en el carrusel de la página principal, para todos los clientes. Usá fotos horizontales (por ejemplo 1600×900) y hasta 8 imágenes. Si no cargás ninguna, se usa la imagen por defecto.</p>
-      <label class="subir">
-        <input type="file" accept="image/*" (change)="onBannerSelected($event)" [disabled]="subiendoBanner" aria-label="Agregar imagen a la portada">
-        <span class="btn">{{ subiendoBanner ? 'Subiendo…' : '+ Agregar imagen' }}</span>
+    <form class="panel formulario-portada" (ngSubmit)="guardarBanner()">
+      <h2>Agregar imagen a la portada</h2>
+      <p class="ayuda">
+        Subí una promo, una nueva colección o lo que quieras mostrar. Si la imagen ya trae su propio texto,
+        dejá la opción de texto apagada: se ve limpia, sin carteles encima.
+      </p>
+
+      <div class="subidas">
+        <div class="subida">
+          <span class="subida-titulo">Imagen principal</span>
+          <small>Para computadora. Mejor horizontal, de 1920×800 px.</small>
+          <label class="subir">
+            <input type="file" accept="image/*" (change)="elegirImagenBanner($event, 'imagen')" [disabled]="procesandoImagenBanner" aria-label="Elegir imagen principal">
+            <span class="btn btn-borde">{{ nuevoBanner.imagen ? 'Cambiar imagen' : 'Elegir imagen' }}</span>
+          </label>
+          <figure class="vista-previa vista-ancha" *ngIf="nuevoBanner.imagen">
+            <img [src]="nuevoBanner.imagen" alt="Vista previa de la imagen principal">
+            <button type="button" class="enlace" (click)="quitarImagenBanner('imagen')">Quitar</button>
+          </figure>
+        </div>
+
+        <div class="subida">
+          <span class="subida-titulo">Imagen para celular <em>(opcional)</em></span>
+          <small>Mejor vertical, de 1080×1350 px. Si no la subís, en el celular se usa la principal.</small>
+          <label class="subir">
+            <input type="file" accept="image/*" (change)="elegirImagenBanner($event, 'imagenMovil')" [disabled]="procesandoImagenBanner" aria-label="Elegir imagen para celular">
+            <span class="btn btn-borde">{{ nuevoBanner.imagenMovil ? 'Cambiar imagen' : 'Elegir imagen' }}</span>
+          </label>
+          <figure class="vista-previa vista-alta" *ngIf="nuevoBanner.imagenMovil">
+            <img [src]="nuevoBanner.imagenMovil" alt="Vista previa de la imagen para celular">
+            <button type="button" class="enlace" (click)="quitarImagenBanner('imagenMovil')">Quitar</button>
+          </figure>
+        </div>
+      </div>
+
+      <label class="check check-publicado">
+        <input type="checkbox" [(ngModel)]="nuevoBanner.mostrarTexto" name="mostrarTexto">
+        Escribir un texto y un botón sobre la imagen
       </label>
 
+      <div class="campos" *ngIf="nuevoBanner.mostrarTexto">
+        <label class="campo">Frase corta de arriba (opcional)
+          <input type="text" [(ngModel)]="nuevoBanner.etiqueta" name="etiqueta" maxlength="60" placeholder="Ej: Nueva colección">
+        </label>
+        <label class="campo">Título
+          <input type="text" [(ngModel)]="nuevoBanner.titulo" name="titulo" maxlength="80" placeholder="Ej: Otoño invierno">
+        </label>
+        <label class="campo">Segunda línea del título, en cursiva (opcional)
+          <input type="text" [(ngModel)]="nuevoBanner.tituloDestacado" name="tituloDestacado" maxlength="80" placeholder="Ej: ya está acá">
+        </label>
+        <label class="campo">Texto del botón (opcional)
+          <input type="text" [(ngModel)]="nuevoBanner.botonTexto" name="botonTexto" maxlength="40" placeholder="Ej: Ver novedades">
+        </label>
+        <label class="campo campo-ancho">Texto de apoyo (opcional)
+          <textarea [(ngModel)]="nuevoBanner.texto" name="texto" maxlength="220" rows="2" placeholder="Ej: 20% OFF pagando con transferencia."></textarea>
+        </label>
+      </div>
+
+      <div class="campos">
+        <label class="campo">Al tocar {{ nuevoBanner.mostrarTexto ? 'el botón' : 'la imagen' }}, lleva a
+          <select [(ngModel)]="nuevoBanner.enlaceOpcion" name="enlaceOpcion">
+            <option *ngFor="let opcion of opcionesEnlace" [value]="opcion.valor">{{ opcion.texto }}</option>
+          </select>
+        </label>
+        <label class="campo" *ngIf="nuevoBanner.enlaceOpcion === '__otro'">Dirección
+          <input type="text" [(ngModel)]="nuevoBanner.enlaceOtro" name="enlaceOtro" maxlength="300" placeholder="https://… o /ayuda">
+        </label>
+      </div>
+
+      <div class="formulario-acciones">
+        <button type="submit" class="btn" [disabled]="subiendoBanner || procesandoImagenBanner || !nuevoBanner.imagen">
+          {{ procesandoImagenBanner ? 'Procesando imagen…' : subiendoBanner ? 'Guardando…' : 'Agregar a la portada' }}
+        </button>
+      </div>
+    </form>
+
+    <section class="panel">
+      <h2>Imágenes de la portada</h2>
+      <p class="ayuda">Se muestran en este orden, una tras otra, en la página principal. Podés tener hasta 8. Si no hay ninguna, se usa la portada por defecto de la tienda.</p>
       <p class="vacio" *ngIf="banners.length === 0">No hay imágenes cargadas: se muestra la portada por defecto.</p>
       <div class="lista-banners">
-        <figure class="banner" *ngFor="let banner of banners; let i = index">
+        <figure class="banner" *ngFor="let banner of banners; let i = index; trackBy: trackBanner">
           <img [src]="banner.url" [alt]="'Imagen de portada ' + (i + 1)" loading="lazy">
           <figcaption>
-            <span>Imagen {{ i + 1 }}</span>
-            <button type="button" class="btn btn-peligro" (click)="eliminarBanner(banner)">Eliminar</button>
+            <div class="banner-datos">
+              <strong>{{ i + 1 }}. {{ banner.mostrarTexto ? (banner.titulo || 'Con texto') : 'Solo imagen' }}</strong>
+              <small>
+                {{ banner.urlMovil ? 'Con imagen para celular' : 'Misma imagen en celular' }}
+                <ng-container *ngIf="banner.enlace"> · Enlace: {{ banner.enlace }}</ng-container>
+              </small>
+            </div>
+            <div class="banner-acciones">
+              <button type="button" class="btn btn-borde" [disabled]="i === 0" (click)="moverBanner(banner, -1)" aria-label="Subir una posición">↑</button>
+              <button type="button" class="btn btn-borde" [disabled]="i === banners.length - 1" (click)="moverBanner(banner, 1)" aria-label="Bajar una posición">↓</button>
+              <button type="button" class="btn btn-peligro" (click)="eliminarBanner(banner)">Eliminar</button>
+            </div>
           </figcaption>
         </figure>
       </div>

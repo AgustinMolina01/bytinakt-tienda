@@ -114,8 +114,18 @@ const productoSchema = new mongoose.Schema({
   publicado: { type: Boolean, default: true }
 }, { timestamps: true });
 
+// Cada imagen de la portada es independiente: puede ser solo la imagen (por ejemplo una promo
+// que ya trae su texto) o llevar un texto y un botón de la tienda encima.
 const bannerSchema = new mongoose.Schema({
   imagen: { type: String, required: true },
+  imagenMovil: { type: String, default: '' },
+  mostrarTexto: { type: Boolean, default: false },
+  etiqueta: { type: String, trim: true, maxlength: 60, default: '' },
+  titulo: { type: String, trim: true, maxlength: 80, default: '' },
+  tituloDestacado: { type: String, trim: true, maxlength: 80, default: '' },
+  texto: { type: String, trim: true, maxlength: 220, default: '' },
+  botonTexto: { type: String, trim: true, maxlength: 40, default: '' },
+  enlace: { type: String, trim: true, maxlength: 300, default: '' },
   orden: { type: Number, default: 0 }
 }, { timestamps: true });
 
@@ -946,25 +956,52 @@ app.post('/api/admin/productos/:id/duplicar', requireAuth, requireAdmin, async (
 // ---------- Portada (carrusel) ----------
 app.get('/api/banners', async (req, res) => {
   try {
-    const banners = await Banner.find().select('_id updatedAt').sort({ orden: 1, createdAt: 1 }).lean();
+    const banners = await Banner.aggregate([
+      { $sort: { orden: 1, createdAt: 1 } },
+      {
+        $project: {
+          updatedAt: 1,
+          mostrarTexto: 1,
+          etiqueta: 1,
+          titulo: 1,
+          tituloDestacado: 1,
+          texto: 1,
+          botonTexto: 1,
+          enlace: 1,
+          tieneMovil: { $gt: [{ $strLenBytes: { $ifNull: ['$imagenMovil', ''] } }, 0] }
+        }
+      }
+    ]);
     res.set('Cache-Control', 'public, max-age=30');
-    return res.json(banners.map((banner) => ({
-      id: banner._id,
-      url: `${publicBaseUrl(req)}/api/banners/${banner._id}/imagen?v=${new Date(banner.updatedAt || 0).getTime()}`
-    })));
+    return res.json(banners.map((banner) => {
+      const version = new Date(banner.updatedAt || 0).getTime();
+      const base = `${publicBaseUrl(req)}/api/banners/${banner._id}`;
+      return {
+        id: banner._id,
+        url: `${base}/imagen?v=${version}`,
+        urlMovil: banner.tieneMovil ? `${base}/imagen-movil?v=${version}` : '',
+        mostrarTexto: !!banner.mostrarTexto,
+        etiqueta: banner.etiqueta || '',
+        titulo: banner.titulo || '',
+        tituloDestacado: banner.tituloDestacado || '',
+        texto: banner.texto || '',
+        botonTexto: banner.botonTexto || '',
+        enlace: banner.enlace || ''
+      };
+    }));
   } catch (error) {
     console.error('Error al consultar la portada:', error.message);
     return sendError(res, 500, 'No se pudo consultar la portada.');
   }
 });
 
-app.get('/api/banners/:id/imagen', async (req, res) => {
+async function enviarImagenDePortada(req, res, campo) {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.sendStatus(404);
     }
-    const banner = await Banner.findById(req.params.id).select('imagen').lean();
-    const match = /^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,(.+)$/s.exec(banner?.imagen || '');
+    const banner = await Banner.findById(req.params.id).select(campo).lean();
+    const match = /^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,(.+)$/s.exec(banner?.[campo] || '');
     if (!match) {
       return res.sendStatus(404);
     }
@@ -978,24 +1015,83 @@ app.get('/api/banners/:id/imagen', async (req, res) => {
     console.error('Error al servir la imagen de portada:', error.message);
     return res.sendStatus(500);
   }
-});
+}
+
+app.get('/api/banners/:id/imagen', (req, res) => enviarImagenDePortada(req, res, 'imagen'));
+app.get('/api/banners/:id/imagen-movil', (req, res) => enviarImagenDePortada(req, res, 'imagenMovil'));
+
+const IMAGEN_DATA_URI = /^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/;
+// El enlace puede ser una sección de la tienda ("/..."), el ancla de la colección o una página externa.
+const ENLACE_PORTADA = /^(?:\/(?!\/)[^\s]*|#coleccion|https?:\/\/[^\s]+)$/i;
 
 app.post('/api/admin/banners', requireAuth, requireAdmin, async (req, res) => {
-  const imagen = req.body?.imagen;
-  if (typeof imagen !== 'string' || imagen.length > 6 * 1024 * 1024 ||
-      !/^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/.test(imagen)) {
+  const body = req.body || {};
+  const textos = {};
+  for (const [campo, maximo] of [['etiqueta', 60], ['titulo', 80], ['tituloDestacado', 80], ['texto', 220], ['botonTexto', 40], ['enlace', 300]]) {
+    const valor = body[campo] === undefined || body[campo] === null ? '' : body[campo];
+    if (typeof valor !== 'string' || valor.trim().length > maximo) {
+      return sendError(res, 400, `Revisá el campo "${campo}": admite hasta ${maximo} caracteres.`);
+    }
+    textos[campo] = valor.trim();
+  }
+  const imagenMovil = typeof body.imagenMovil === 'string' ? body.imagenMovil : '';
+  if (typeof body.imagen !== 'string' || body.imagen.length > 6 * 1024 * 1024 || !IMAGEN_DATA_URI.test(body.imagen)) {
     return sendError(res, 400, 'Subí una imagen válida de hasta 6 MB.');
+  }
+  if (imagenMovil && (imagenMovil.length > 6 * 1024 * 1024 || !IMAGEN_DATA_URI.test(imagenMovil))) {
+    return sendError(res, 400, 'La imagen para celular no es válida o pesa más de 6 MB.');
+  }
+  if (textos.enlace && !ENLACE_PORTADA.test(textos.enlace)) {
+    return sendError(res, 400, 'El enlace tiene que empezar con "/" (una sección de la tienda) o con "https://".');
+  }
+  const mostrarTexto = body.mostrarTexto === true;
+  if (mostrarTexto && !textos.titulo) {
+    return sendError(res, 400, 'Para mostrar un texto sobre la imagen, escribí al menos el título.');
+  }
+  if (textos.botonTexto && !mostrarTexto) {
+    return sendError(res, 400, 'El botón solo se muestra junto con el texto sobre la imagen.');
   }
   try {
     const cantidad = await Banner.countDocuments();
     if (cantidad >= 8) {
       return sendError(res, 409, 'La portada admite hasta 8 imágenes. Eliminá alguna para agregar otra.');
     }
-    const banner = await Banner.create({ imagen, orden: cantidad });
+    const banner = await Banner.create({
+      imagen: body.imagen,
+      imagenMovil,
+      mostrarTexto,
+      ...(mostrarTexto ? textos : { enlace: textos.enlace }),
+      orden: cantidad
+    });
     return res.status(201).json({ id: banner._id });
   } catch (error) {
     console.error('Error al guardar la imagen de portada:', error.message);
     return sendError(res, 500, 'No se pudo guardar la imagen de portada.');
+  }
+});
+
+app.patch('/api/admin/banners/:id/mover', requireAuth, requireAdmin, async (req, res) => {
+  const direccion = Number(req.body?.direccion);
+  if (!mongoose.isValidObjectId(req.params.id) || ![-1, 1].includes(direccion)) {
+    return sendError(res, 400, 'Indicá qué imagen mover y hacia dónde.');
+  }
+  try {
+    const banners = await Banner.find().select('_id').sort({ orden: 1, createdAt: 1 }).lean();
+    const indice = banners.findIndex((banner) => String(banner._id) === req.params.id);
+    const destino = indice + direccion;
+    if (indice < 0) {
+      return sendError(res, 404, 'No se encontró la imagen.');
+    }
+    if (destino >= 0 && destino < banners.length) {
+      [banners[indice], banners[destino]] = [banners[destino], banners[indice]];
+    }
+    await Banner.bulkWrite(banners.map((banner, orden) => ({
+      updateOne: { filter: { _id: banner._id }, update: { $set: { orden } } }
+    })), { timestamps: false });
+    return res.json({ message: 'Orden actualizado.' });
+  } catch (error) {
+    console.error('Error al reordenar la portada:', error.message);
+    return sendError(res, 500, 'No se pudo cambiar el orden.');
   }
 });
 

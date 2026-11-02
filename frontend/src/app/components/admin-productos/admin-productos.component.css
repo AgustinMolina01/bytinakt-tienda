@@ -1190,3 +1190,111 @@
   }
 
 }
+
+/* ---------- Portada: formulario ---------- */
+.formulario-portada {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.formulario-portada h2 {
+  margin-bottom: 0;
+}
+
+.formulario-portada .ayuda {
+  margin: -8px 0 0;
+}
+
+.subidas {
+  display: grid;
+  gap: 16px;
+}
+
+.subida {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 14px;
+  border: 1px dashed var(--color-linea);
+  border-radius: var(--radio);
+  background: var(--color-crema);
+}
+
+.subida-titulo {
+  color: var(--color-tinta);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.subida-titulo em {
+  color: var(--color-suave);
+  font-weight: 400;
+}
+
+.subida small {
+  color: var(--color-suave);
+  font-size: 12.5px;
+}
+
+.subida .subir {
+  margin-bottom: 0;
+}
+
+.vista-previa {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  margin: 4px 0 0;
+}
+
+.vista-previa img {
+  width: 100%;
+  border-radius: var(--radio);
+  background: #fff;
+  object-fit: cover;
+}
+
+.vista-ancha img {
+  aspect-ratio: 12 / 5;
+}
+
+.vista-alta img {
+  max-width: 160px;
+  aspect-ratio: 4 / 5;
+}
+
+.banner-datos {
+  display: grid;
+  min-width: 0;
+}
+
+.banner-datos small {
+  color: var(--color-suave);
+  font-size: 12px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.banner-acciones {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.banner-acciones .btn:not(.btn-peligro) {
+  min-width: 42px;
+  padding-inline: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.banner figcaption {
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .subidas {
+    grid-template-columns: 3fr 2fr;
+  }
+}

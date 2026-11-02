@@ -14,34 +14,61 @@
 
 <main>
   <!-- Portada -->
-  <section class="portada" aria-label="Portada" *ngIf="imagenesBanner.length > 0"
+  <section class="portada" aria-label="Portada" *ngIf="banners.length > 0"
     (mouseenter)="bannerPausado = true" (mouseleave)="bannerPausado = false"
     (focusin)="bannerPausado = true" (focusout)="bannerPausado = false">
-    <div class="portada-imagenes" aria-hidden="true">
-      <div class="portada-imagen" *ngFor="let imagen of imagenesBanner; let i = index"
-        [class.activa]="i === indiceBannerActual" [style.background-image]="'url(' + imagen + ')'"></div>
-    </div>
-    <div class="portada-velo"></div>
+    <h1 class="solo-lectores">BYTINAKT, ropa de mujer en Mar del Plata</h1>
 
-    <div class="contenedor portada-contenido">
-      <p class="portada-etiqueta"><span></span>Colección elegancia refinada</p>
-      <h1>Vestite con<br><em>estilo propio</em></h1>
-      <p class="portada-texto">Prendas pensadas para acompañarte todos los días, con envíos a todo el país y 20% OFF pagando por transferencia.</p>
-      <div class="portada-botones">
-        <button type="button" class="btn btn-claro" (click)="irAColeccion()">Ver colección</button>
-        <a class="btn btn-contorno" routerLink="/envios-y-pagos">Cómo comprar</a>
-      </div>
+    <div class="portada-slides">
+      <article class="portada-slide" *ngFor="let banner of banners; let i = index; trackBy: trackBanner"
+        [class.activa]="i === indiceBannerActual" [class.con-texto]="banner.mostrarTexto"
+        [attr.aria-hidden]="i !== indiceBannerActual ? 'true' : null">
+        <a *ngIf="!banner.mostrarTexto && banner.enlace; else imagenSola" class="portada-enlace"
+          [href]="banner.enlace" [attr.target]="esExterno(banner.enlace) ? '_blank' : null"
+          [attr.rel]="esExterno(banner.enlace) ? 'noopener noreferrer' : null"
+          [attr.tabindex]="i === indiceBannerActual ? 0 : -1"
+          [attr.aria-label]="banner.titulo || 'Ver la promoción'" (click)="abrirEnlace($event, banner.enlace)">
+          <ng-container *ngTemplateOutlet="imagenPortada; context: { $implicit: banner }"></ng-container>
+        </a>
+        <ng-template #imagenSola>
+          <ng-container *ngTemplateOutlet="imagenPortada; context: { $implicit: banner }"></ng-container>
+        </ng-template>
+
+        <ng-container *ngIf="banner.mostrarTexto">
+          <div class="portada-velo"></div>
+          <div class="contenedor portada-contenido">
+            <p class="portada-etiqueta" *ngIf="banner.etiqueta"><span></span>{{ banner.etiqueta }}</p>
+            <h2 class="portada-titulo">{{ banner.titulo }}<ng-container *ngIf="banner.tituloDestacado"><br><em>{{ banner.tituloDestacado }}</em></ng-container></h2>
+            <p class="portada-texto" *ngIf="banner.texto">{{ banner.texto }}</p>
+            <div class="portada-botones" *ngIf="banner.botonTexto || banner.botonSecundarioTexto">
+              <a *ngIf="banner.botonTexto" class="btn btn-claro" [href]="banner.enlace || '#coleccion'"
+                [attr.target]="esExterno(banner.enlace) ? '_blank' : null"
+                [attr.rel]="esExterno(banner.enlace) ? 'noopener noreferrer' : null"
+                [attr.tabindex]="i === indiceBannerActual ? 0 : -1" (click)="abrirEnlace($event, banner.enlace)">{{ banner.botonTexto }}</a>
+              <a *ngIf="banner.botonSecundarioTexto" class="btn btn-contorno" [routerLink]="banner.botonSecundarioEnlace"
+                [attr.tabindex]="i === indiceBannerActual ? 0 : -1">{{ banner.botonSecundarioTexto }}</a>
+            </div>
+          </div>
+        </ng-container>
+      </article>
     </div>
 
-    <div class="portada-control contenedor" *ngIf="imagenesBanner.length > 1">
+    <ng-template #imagenPortada let-banner>
+      <picture>
+        <source *ngIf="banner.urlMovil" media="(max-width: 639px)" [srcset]="banner.urlMovil">
+        <img [src]="banner.url" [alt]="banner.mostrarTexto ? '' : (banner.titulo || 'Promoción de la tienda')" decoding="async">
+      </picture>
+    </ng-template>
+
+    <div class="portada-control contenedor" *ngIf="banners.length > 1">
       <div class="portada-progreso" role="tablist" aria-label="Imágenes de portada">
-        <button type="button" role="tab" *ngFor="let imagen of imagenesBanner; let i = index"
+        <button type="button" role="tab" *ngFor="let banner of banners; let i = index"
           [class.activo]="i === indiceBannerActual" [class.pausado]="bannerPausado"
           [attr.aria-selected]="i === indiceBannerActual" [attr.aria-label]="'Ir a la imagen ' + (i + 1)"
           (click)="irABanner(i)"></button>
       </div>
       <div class="portada-flechas">
-        <span class="portada-contador" aria-hidden="true">{{ indiceBannerActual + 1 | number:'2.0-0' }} / {{ imagenesBanner.length | number:'2.0-0' }}</span>
+        <span class="portada-contador" aria-hidden="true">{{ indiceBannerActual + 1 | number:'2.0-0' }} / {{ banners.length | number:'2.0-0' }}</span>
         <button type="button" (click)="moverBanner(-1)" aria-label="Imagen anterior">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
         </button>
