@@ -2,19 +2,18 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { BannerService, ImagenPortada } from '../../services/banner.service';
 import { Producto } from '../../models/producto.model';
 import { API_URL } from '../../services/api';
 import { AuthService } from '../../services/auth.service';
+import { GoogleAuthService } from '../../services/google-auth.service';
 
-type Pestana = 'resumen' | 'pedidos' | 'productos' | 'portada';
+type Pestana = 'resumen' | 'pedidos' | 'ventas' | 'productos' | 'portada';
 type EstadoPedido = 'pendiente' | 'pagado' | 'preparando' | 'enviado' | 'entregado' | 'cancelado' | 'error_pago';
 type FiltroStock = 'todos' | 'publicados' | 'pausados' | 'bajo' | 'agotados';
 
 interface Resumen {
-  ventasMes: number;
-  pedidosMes: number;
   pendientesPago: number;
   porPreparar: number;
   preparando: number;
@@ -22,6 +21,57 @@ interface Resumen {
   productos: { total: number; publicados: number; agotados: number; stockBajo: number };
   alertas: { id: string; nombre: string; stock: number }[];
 }
+
+interface VentaMes {
+  anio: number;
+  mes: number;
+  total: number;
+  pedidos: number;
+}
+
+interface VentaDia {
+  dia: string;
+  total: number;
+  pedidos: number;
+}
+
+interface VentaPedido {
+  _id: string;
+  dia: string;
+  fechaVenta: string;
+  clienteNombre: string;
+  total: number;
+  metodoPago?: string;
+  metodoEntrega?: string;
+  items: number;
+}
+
+interface RespuestaVentas {
+  anio: number;
+  mes: number;
+  meses: VentaMes[];
+  dias: VentaDia[];
+  pedidos: VentaPedido[];
+}
+
+interface BarraDia {
+  dia: string;
+  numero: number;
+  total: number;
+  pedidos: number;
+  altura: number;
+  futuro: boolean;
+}
+
+interface AnioVentas {
+  anio: number;
+  total: number;
+  pedidos: number;
+  meses: VentaMes[];
+}
+
+const NOMBRES_MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
 
 interface PedidoAdmin {
   _id: string;
@@ -44,6 +94,17 @@ interface AccionPedido {
   texto: string;
   peligro?: boolean;
 }
+
+const RESUMEN_VACIO: Resumen = {
+
+
+  pendientesPago: 0,
+  porPreparar: 0,
+  preparando: 0,
+  enCamino: 0,
+  productos: { total: 0, publicados: 0, agotados: 0, stockBajo: 0 },
+  alertas: []
+};
 
 const CANCELAR: AccionPedido = { estado: 'cancelado', texto: 'Cancelar pedido', peligro: true };
 
@@ -112,6 +173,20 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
     { clave: 'cancelado', nombre: 'Cancelados' }
   ];
 
+  // Ventas
+  ventas: RespuestaVentas | null = null;
+  errorVentas = '';
+  cargandoVentas = false;
+  anioVentas = 0;
+  mesVentas = 0;
+  diaSeleccionado: string | null = null;
+  barras: BarraDia[] = [];
+  aniosHistorial: AnioVentas[] = [];
+  // Ventas del mes en curso y de hoy, para la pestaña Resumen
+  ventasMesActual = { total: 0, pedidos: 0, hoy: 0, pedidosHoy: 0 };
+  readonly nombresMes = NOMBRES_MES;
+  readonly zonaHoraria = '-0300';
+
   // Productos
   productos: Producto[] = [];
   cargandoProductos = true;
@@ -140,11 +215,14 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private bannerService: BannerService,
-    private auth: AuthService
+    private auth: AuthService,
+    private googleAuth: GoogleAuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
     this.cargarResumen();
+    this.cargarVentas();
     this.cargarPedidos();
     this.cargarProductos();
     this.cargarBanners();
@@ -152,6 +230,11 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     clearTimeout(this.temporizadorAviso);
+  }
+
+  // Mientras no llega el resumen del servidor se muestran los contadores en cero.
+  get r(): Resumen {
+    return this.resumen ?? RESUMEN_VACIO;
   }
 
   private get encabezados() {
@@ -177,6 +260,160 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
       this.filtroPedido = filtroPedido;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async cerrarSesion(): Promise<void> {
+    // La sesión de la tienda se cierra al instante; la de Google (si existiera) se cierra aparte.
+    this.auth.cerrarSesion();
+    this.googleAuth.cerrarSesion().catch(() => undefined);
+    await this.router.navigateByUrl('/');
+  }
+
+  // ---------- Ventas ----------
+  private hoy(): string {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: ZONA_HORARIA });
+  }
+
+  get esMesActual(): boolean {
+    return this.hoy().slice(0, 7) === `${this.anioVentas}-${String(this.mesVentas).padStart(2, '0')}`;
+  }
+
+  get tituloMes(): string {
+    return `${NOMBRES_MES[this.mesVentas - 1] || ''} ${this.anioVentas}`;
+  }
+
+  cargarVentas(anio?: number, mes?: number): void {
+    if (anio && mes) {
+      this.anioVentas = anio;
+      this.mesVentas = mes;
+    } else if (!this.anioVentas || !this.mesVentas) {
+      const [anioHoy, mesHoy] = this.hoy().split('-').map(Number);
+      this.anioVentas = anioHoy;
+      this.mesVentas = mesHoy;
+    }
+    this.cargandoVentas = true;
+    this.errorVentas = '';
+    this.diaSeleccionado = null;
+    this.http.get<RespuestaVentas>(`${API_URL}/admin/ventas`, {
+      headers: this.encabezados,
+      params: { anio: this.anioVentas, mes: this.mesVentas }
+    }).subscribe({
+      next: (ventas) => {
+        this.ventas = ventas;
+        this.cargandoVentas = false;
+        this.armarBarras(ventas);
+        this.armarHistorial(ventas.meses);
+        if (this.esMesActual) {
+          const hoy = this.hoy();
+          const deHoy = ventas.dias.find((dia) => dia.dia === hoy);
+          this.ventasMesActual = {
+            total: ventas.dias.reduce((suma, dia) => suma + dia.total, 0),
+            pedidos: ventas.dias.reduce((suma, dia) => suma + dia.pedidos, 0),
+            hoy: deHoy?.total || 0,
+            pedidosHoy: deHoy?.pedidos || 0
+          };
+          this.diaSeleccionado = hoy;
+        }
+      },
+      error: (error) => {
+        this.cargandoVentas = false;
+        this.errorVentas = this.mensajeError(error, 'No se pudieron cargar las ventas.');
+      }
+    });
+  }
+
+  private armarBarras(ventas: RespuestaVentas): void {
+    const diasDelMes = new Date(ventas.anio, ventas.mes, 0).getDate();
+    const hoy = this.hoy();
+    const prefijo = `${ventas.anio}-${String(ventas.mes).padStart(2, '0')}-`;
+    const porDia = new Map(ventas.dias.map((dia) => [dia.dia, dia]));
+    const maximo = Math.max(1, ...ventas.dias.map((dia) => dia.total));
+    this.barras = Array.from({ length: diasDelMes }, (_, i) => {
+      const clave = prefijo + String(i + 1).padStart(2, '0');
+      const venta = porDia.get(clave);
+      return {
+        dia: clave,
+        numero: i + 1,
+        total: venta?.total || 0,
+        pedidos: venta?.pedidos || 0,
+        altura: venta ? Math.max(4, Math.round((venta.total / maximo) * 100)) : 0,
+        futuro: clave > hoy
+      };
+    });
+  }
+
+  private armarHistorial(meses: VentaMes[]): void {
+    const porAnio = new Map<number, AnioVentas>();
+    for (const mes of meses) {
+      const anio = porAnio.get(mes.anio) || { anio: mes.anio, total: 0, pedidos: 0, meses: [] };
+      anio.total += mes.total;
+      anio.pedidos += mes.pedidos;
+      anio.meses.push(mes);
+      porAnio.set(mes.anio, anio);
+    }
+    this.aniosHistorial = [...porAnio.values()]
+      .sort((a, b) => b.anio - a.anio)
+      .map((anio) => ({ ...anio, meses: anio.meses.sort((a, b) => b.mes - a.mes) }));
+  }
+
+  // Desde el año de la primera venta (o el actual) hasta el actual, del más nuevo al más viejo.
+  aniosDisponibles(): number[] {
+    const actual = Number(this.hoy().slice(0, 4));
+    const primero = Math.min(actual, this.anioVentas || actual, ...this.aniosHistorial.map((anio) => anio.anio));
+    return Array.from({ length: actual - primero + 1 }, (_, i) => actual - i);
+  }
+
+  verMesActual(): void {
+    const [anio, mes] = this.hoy().split('-').map(Number);
+    this.cargarVentas(anio, mes);
+  }
+
+  moverMes(delta: number): void {
+    const fecha = new Date(this.anioVentas, this.mesVentas - 1 + delta, 1);
+    this.cargarVentas(fecha.getFullYear(), fecha.getMonth() + 1);
+  }
+
+  irAMes(anio: number, mes: number): void {
+    this.cargarVentas(anio, mes);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  get totalMes(): number {
+    return this.barras.reduce((suma, barra) => suma + barra.total, 0);
+  }
+
+  get pedidosMes(): number {
+    return this.barras.reduce((suma, barra) => suma + barra.pedidos, 0);
+  }
+
+  get ticketPromedio(): number {
+    return this.pedidosMes ? Math.round(this.totalMes / this.pedidosMes) : 0;
+  }
+
+  get mejorDia(): BarraDia | null {
+    const mejor = this.barras.reduce<BarraDia | null>((a, b) => (!a || b.total > a.total ? b : a), null);
+    return mejor && mejor.total > 0 ? mejor : null;
+  }
+
+  get diasConVentas(): BarraDia[] {
+    return this.barras.filter((barra) => barra.pedidos > 0).reverse();
+  }
+
+  get barraSeleccionada(): BarraDia | null {
+    return this.barras.find((barra) => barra.dia === this.diaSeleccionado) || null;
+  }
+
+  get pedidosDelDia(): VentaPedido[] {
+    return (this.ventas?.pedidos || []).filter((pedido) => pedido.dia === this.diaSeleccionado);
+  }
+
+  seleccionarDia(dia: string): void {
+    this.diaSeleccionado = this.diaSeleccionado === dia ? null : dia;
+  }
+
+  nombreDia(dia: string): string {
+    const texto = new Date(`${dia}T12:00:00`).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
 
   // ---------- Resumen ----------

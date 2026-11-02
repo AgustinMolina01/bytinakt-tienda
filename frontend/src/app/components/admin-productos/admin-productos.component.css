@@ -933,3 +933,260 @@
     flex: 1 1 100%;
   }
 }
+
+/* ---------- Cerrar sesión ---------- */
+.admin-cabecera-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- Ventas ---------- */
+.navegador-mes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.navegador-mes .btn {
+  min-height: 44px;
+  padding-inline: 16px;
+}
+
+.selector-mes {
+  display: flex;
+  flex: 1 1 220px;
+  gap: 8px;
+}
+
+.selector-mes select {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio);
+  background: #fff;
+  color: var(--color-tinta);
+  font: inherit;
+  font-size: 16px;
+}
+
+.estadisticas-ventas .dato-principal {
+  grid-column: 1 / -1;
+}
+
+.panel + .panel,
+.estadisticas-ventas + .panel {
+  margin-top: 16px;
+}
+
+.grafico {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 200px;
+  margin-top: 6px;
+  padding-top: 8px;
+}
+
+.grafico.cargando {
+  opacity: .5;
+}
+
+.columna {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.barra {
+  display: block;
+  width: 100%;
+  max-width: 22px;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-marca);
+  transition: background-color var(--transicion), opacity var(--transicion);
+}
+
+.columna.vacia .barra {
+  height: 2px;
+  background: var(--color-linea);
+}
+
+.columna:hover .barra {
+  background: var(--color-marca-oscuro);
+}
+
+.columna.seleccionada .barra {
+  background: var(--color-acento);
+  outline: 2px solid var(--color-profundo);
+}
+
+.columna.futuro {
+  opacity: .45;
+}
+
+.numero-dia {
+  height: 22px;
+  margin-top: 4px;
+  color: var(--color-suave);
+  font-size: 10px;
+  line-height: 22px;
+}
+
+@media (max-width: 639px) {
+  .columna:not(:nth-child(5n)):not(:first-child) .numero-dia {
+    visibility: hidden;
+  }
+}
+
+.columna.seleccionada .numero-dia {
+  visibility: visible;
+  color: var(--color-tinta);
+  font-weight: 700;
+}
+
+.detalle-dia-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-bottom: 10px;
+}
+
+.detalle-dia-cabecera strong {
+  color: var(--color-marca);
+  font-family: var(--fuente-titulos);
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.ventas-dia,
+.tabla-dias {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ventas-dia li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--color-linea);
+}
+
+.ventas-dia li:last-child {
+  border-bottom: 0;
+}
+
+.ventas-dia li div {
+  display: grid;
+  min-width: 0;
+}
+
+.ventas-dia small {
+  color: var(--color-suave);
+  font-size: 12.5px;
+}
+
+.ventas-dia li > span {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tabla-dias button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--color-linea);
+  background: transparent;
+  color: var(--color-texto);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tabla-dias button:hover,
+.tabla-dias button.seleccionada {
+  background: var(--color-crema);
+}
+
+.tabla-dias button.seleccionada span:first-child {
+  color: var(--color-marca);
+  font-weight: 700;
+}
+
+.tabla-dias .cantidad {
+  color: var(--color-suave);
+  font-size: 12.5px;
+}
+
+.tabla-dias strong {
+  min-width: 90px;
+  color: var(--color-tinta);
+  text-align: right;
+}
+
+.anio + .anio {
+  margin-top: 20px;
+}
+
+.anio header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-marca);
+}
+
+.anio header h3 {
+  font-size: 22px;
+}
+
+.anio header p {
+  margin: 0;
+  font-size: 14px;
+}
+
+@media (min-width: 640px) {
+  .estadisticas-ventas {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+
+  .estadisticas-ventas .dato-principal {
+    grid-column: auto;
+  }
+
+  .grafico {
+    height: 240px;
+    gap: 4px;
+  }
+
+  .numero-dia {
+    font-size: 11px;
+  }
+
+}

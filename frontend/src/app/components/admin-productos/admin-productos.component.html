@@ -4,7 +4,10 @@
       <p class="sobretitulo">Panel de administración</p>
       <h1>BYTINAKT<span>.</span></h1>
     </div>
-    <a routerLink="/" class="btn btn-borde">Ver la tienda</a>
+    <div class="admin-cabecera-acciones">
+      <a routerLink="/" class="btn btn-borde">Ver la tienda</a>
+      <button type="button" class="btn btn-peligro" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
   </header>
 
   <nav class="pestanas" role="tablist" aria-label="Secciones del panel">
@@ -13,6 +16,7 @@
       Pedidos
       <span class="insignia" *ngIf="contarPedidos('pendiente') + contarPedidos('pagado') > 0">{{ contarPedidos('pendiente') + contarPedidos('pagado') }}</span>
     </button>
+    <button type="button" role="tab" [class.activa]="pestana === 'ventas'" [attr.aria-selected]="pestana === 'ventas'" (click)="irA('ventas')">Ventas</button>
     <button type="button" role="tab" [class.activa]="pestana === 'productos'" [attr.aria-selected]="pestana === 'productos'" (click)="irA('productos')">Productos</button>
     <button type="button" role="tab" [class.activa]="pestana === 'portada'" [attr.aria-selected]="pestana === 'portada'" (click)="irA('portada')">Portada</button>
   </nav>
@@ -25,35 +29,35 @@
   <!-- ================= RESUMEN ================= -->
   <section *ngIf="pestana === 'resumen'" class="seccion">
     <div class="estadisticas">
-      <article class="dato dato-principal">
+      <button type="button" class="dato dato-principal dato-accion" (click)="irA('ventas'); verMesActual()">
         <span>Ventas de este mes</span>
-        <strong>${{ (resumen?.ventasMes || 0) | number:'1.0-0' }}</strong>
-        <small>{{ resumen?.pedidosMes || 0 }} pedido(s) pagos</small>
-      </article>
-      <button type="button" class="dato dato-accion" [class.alerta]="(resumen?.pendientesPago || 0) > 0" (click)="irA('pedidos', 'pendiente')">
+        <strong>${{ ventasMesActual.total | number:'1.0-0' }}</strong>
+        <small>{{ ventasMesActual.pedidos }} pedido(s) pagos · Hoy: ${{ ventasMesActual.hoy | number:'1.0-0' }} ({{ ventasMesActual.pedidosHoy }})</small>
+      </button>
+      <button type="button" class="dato dato-accion" [class.alerta]="(r.pendientesPago || 0) > 0" (click)="irA('pedidos', 'pendiente')">
         <span>Por confirmar</span>
-        <strong>{{ resumen?.pendientesPago || 0 }}</strong>
+        <strong>{{ r.pendientesPago || 0 }}</strong>
         <small>Transferencias o pagos pendientes</small>
       </button>
-      <button type="button" class="dato dato-accion" [class.alerta]="(resumen?.porPreparar || 0) > 0" (click)="irA('pedidos', 'pagado')">
+      <button type="button" class="dato dato-accion" [class.alerta]="(r.porPreparar || 0) > 0" (click)="irA('pedidos', 'pagado')">
         <span>Por preparar</span>
-        <strong>{{ resumen?.porPreparar || 0 }}</strong>
+        <strong>{{ r.porPreparar || 0 }}</strong>
         <small>Pagados, esperando que los armes</small>
       </button>
       <button type="button" class="dato dato-accion" (click)="irA('pedidos', 'preparando')">
         <span>En preparación</span>
-        <strong>{{ resumen?.preparando || 0 }}</strong>
-        <small>{{ resumen?.enCamino || 0 }} en camino o para retirar</small>
+        <strong>{{ r.preparando || 0 }}</strong>
+        <small>{{ r.enCamino || 0 }} en camino o para retirar</small>
       </button>
       <button type="button" class="dato dato-accion" (click)="irA('productos')">
         <span>Productos en la tienda</span>
-        <strong>{{ resumen?.productos?.publicados || 0 }}</strong>
-        <small>{{ resumen?.productos?.total || 0 }} cargados en total</small>
+        <strong>{{ r.productos.publicados || 0 }}</strong>
+        <small>{{ r.productos.total || 0 }} cargados en total</small>
       </button>
-      <button type="button" class="dato dato-accion" [class.alerta]="((resumen?.productos?.agotados || 0) + (resumen?.productos?.stockBajo || 0)) > 0" (click)="stockFiltro = 'bajo'; irA('productos')">
+      <button type="button" class="dato dato-accion" [class.alerta]="((r.productos.agotados || 0) + (r.productos.stockBajo || 0)) > 0" (click)="stockFiltro = 'bajo'; irA('productos')">
         <span>Stock bajo o agotado</span>
-        <strong>{{ (resumen?.productos?.agotados || 0) + (resumen?.productos?.stockBajo || 0) }}</strong>
-        <small>{{ resumen?.productos?.agotados || 0 }} agotado(s)</small>
+        <strong>{{ (r.productos.agotados || 0) + (r.productos.stockBajo || 0) }}</strong>
+        <small>{{ r.productos.agotados || 0 }} agotado(s)</small>
       </button>
     </div>
 
@@ -61,19 +65,19 @@
       <section class="panel">
         <h2>Qué hacer ahora</h2>
         <ul class="tareas">
-          <li *ngIf="(resumen?.pendientesPago || 0) > 0">
-            <span>Hay <strong>{{ resumen?.pendientesPago }}</strong> pedido(s) esperando pago. Confirmá las transferencias que ya llegaron.</span>
+          <li *ngIf="(r.pendientesPago || 0) > 0">
+            <span>Hay <strong>{{ r.pendientesPago }}</strong> pedido(s) esperando pago. Confirmá las transferencias que ya llegaron.</span>
             <button type="button" class="enlace" (click)="irA('pedidos', 'pendiente')">Ver</button>
           </li>
-          <li *ngIf="(resumen?.porPreparar || 0) > 0">
-            <span>Hay <strong>{{ resumen?.porPreparar }}</strong> pedido(s) pagado(s) para preparar.</span>
+          <li *ngIf="(r.porPreparar || 0) > 0">
+            <span>Hay <strong>{{ r.porPreparar }}</strong> pedido(s) pagado(s) para preparar.</span>
             <button type="button" class="enlace" (click)="irA('pedidos', 'pagado')">Ver</button>
           </li>
-          <li *ngIf="(resumen?.productos?.agotados || 0) > 0">
-            <span><strong>{{ resumen?.productos?.agotados }}</strong> producto(s) sin stock. Se siguen viendo en la tienda pero no se pueden comprar.</span>
+          <li *ngIf="(r.productos.agotados || 0) > 0">
+            <span><strong>{{ r.productos.agotados }}</strong> producto(s) sin stock. Se siguen viendo en la tienda pero no se pueden comprar.</span>
             <button type="button" class="enlace" (click)="stockFiltro = 'agotados'; irA('productos')">Ver</button>
           </li>
-          <li *ngIf="(resumen?.productos?.total || 0) === 0">
+          <li *ngIf="(r.productos.total || 0) === 0">
             <span>Todavía no cargaste productos. Empezá con el primero.</span>
             <button type="button" class="enlace" (click)="irA('productos'); abrirFormulario()">Agregar</button>
           </li>
@@ -85,9 +89,9 @@
 
       <section class="panel">
         <h2>Productos con poco stock</h2>
-        <p class="vacio" *ngIf="!resumen?.alertas?.length">Ningún producto está por agotarse.</p>
-        <ul class="alertas" *ngIf="resumen?.alertas?.length">
-          <li *ngFor="let alerta of resumen?.alertas">
+        <p class="vacio" *ngIf="!r.alertas.length">Ningún producto está por agotarse.</p>
+        <ul class="alertas" *ngIf="r.alertas.length">
+          <li *ngFor="let alerta of r.alertas">
             <span>{{ alerta.nombre }}</span>
             <span class="chip" [class.chip-error]="alerta.stock === 0">{{ alerta.stock === 0 ? 'Agotado' : alerta.stock + ' u.' }}</span>
           </li>
@@ -156,6 +160,109 @@
         </footer>
       </article>
     </div>
+  </section>
+
+  <!-- ================= VENTAS ================= -->
+  <section *ngIf="pestana === 'ventas'" class="seccion">
+    <div class="navegador-mes">
+      <button type="button" class="btn btn-borde" (click)="moverMes(-1)" aria-label="Mes anterior">‹</button>
+      <div class="selector-mes">
+        <select [ngModel]="mesVentas" (ngModelChange)="cargarVentas(anioVentas, +$event)" name="mesVentas" aria-label="Mes">
+          <option *ngFor="let nombre of nombresMes; let i = index" [ngValue]="i + 1">{{ nombre }}</option>
+        </select>
+        <select [ngModel]="anioVentas" (ngModelChange)="cargarVentas(+$event, mesVentas)" name="anioVentas" aria-label="Año">
+          <option *ngFor="let anio of aniosDisponibles()" [ngValue]="anio">{{ anio }}</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-borde" (click)="moverMes(1)" aria-label="Mes siguiente">›</button>
+      <button type="button" class="btn btn-borde" *ngIf="!esMesActual" (click)="verMesActual()">Ir al mes actual</button>
+    </div>
+
+    <p class="mensaje-error" *ngIf="errorVentas" role="alert">{{ errorVentas }}</p>
+
+    <div class="estadisticas estadisticas-ventas">
+      <article class="dato dato-principal">
+        <span>Vendido en {{ tituloMes }}</span>
+        <strong>${{ totalMes | number:'1.0-0' }}</strong>
+        <small>{{ pedidosMes }} pedido(s)</small>
+      </article>
+      <article class="dato">
+        <span>Venta promedio</span>
+        <strong>${{ ticketPromedio | number:'1.0-0' }}</strong>
+        <small>por pedido</small>
+      </article>
+      <article class="dato">
+        <span>Mejor día</span>
+        <strong>{{ mejorDia ? mejorDia.numero : '—' }}</strong>
+        <small>{{ mejorDia ? '$' + (mejorDia.total | number:'1.0-0') : 'Sin ventas este mes' }}</small>
+      </article>
+    </div>
+
+    <section class="panel">
+      <h2>Ventas por día</h2>
+      <p class="ayuda">Tocá un día para ver sus pedidos. Se cuenta cada venta el día en que se acreditó el pago.</p>
+      <div class="grafico" role="group" aria-label="Ventas de cada día del mes" [class.cargando]="cargandoVentas">
+        <button type="button" class="columna" *ngFor="let barra of barras"
+          [class.seleccionada]="barra.dia === diaSeleccionado" [class.vacia]="barra.pedidos === 0" [class.futuro]="barra.futuro"
+          (click)="seleccionarDia(barra.dia)"
+          [attr.aria-label]="nombreDia(barra.dia) + ': ' + (barra.total | number:'1.0-0') + ' pesos, ' + barra.pedidos + ' pedidos'"
+          [title]="nombreDia(barra.dia) + ': $' + (barra.total | number:'1.0-0')">
+          <span class="barra" [style.height.%]="barra.altura"></span>
+          <span class="numero-dia">{{ barra.numero }}</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel detalle-dia" *ngIf="barraSeleccionada as dia">
+      <div class="detalle-dia-cabecera">
+        <h2>{{ nombreDia(dia.dia) }}</h2>
+        <strong>${{ dia.total | number:'1.0-0' }}</strong>
+      </div>
+      <p class="vacio" *ngIf="dia.pedidos === 0">{{ dia.futuro ? 'Este día todavía no llegó.' : 'No hubo ventas este día.' }}</p>
+      <ul class="ventas-dia" *ngIf="dia.pedidos > 0">
+        <li *ngFor="let pedido of pedidosDelDia">
+          <div>
+            <strong>{{ pedido.clienteNombre }}</strong>
+            <small>{{ pedido.fechaVenta | date:'HH:mm':zonaHoraria }} · {{ pedido.items }} prenda(s) · {{ pedido.metodoPago === 'transferencia' ? 'Transferencia' : 'Mercado Pago' }}</small>
+          </div>
+          <span>${{ pedido.total | number:'1.0-0' }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="panel" *ngIf="diasConVentas.length">
+      <h2>Días con ventas de {{ tituloMes }}</h2>
+      <ul class="tabla-dias">
+        <li *ngFor="let barra of diasConVentas">
+          <button type="button" [class.seleccionada]="barra.dia === diaSeleccionado" (click)="seleccionarDia(barra.dia)">
+            <span>{{ nombreDia(barra.dia) }}</span>
+            <span class="cantidad">{{ barra.pedidos }} pedido(s)</span>
+            <strong>${{ barra.total | number:'1.0-0' }}</strong>
+          </button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Todos los meses</h2>
+      <p class="ayuda">El historial completo, año por año. Tocá un mes para ver sus días.</p>
+      <p class="vacio" *ngIf="aniosHistorial.length === 0">Todavía no hay ventas registradas.</p>
+      <article class="anio" *ngFor="let anio of aniosHistorial">
+        <header>
+          <h3>{{ anio.anio }}</h3>
+          <p><strong>${{ anio.total | number:'1.0-0' }}</strong> · {{ anio.pedidos }} pedido(s)</p>
+        </header>
+        <ul class="tabla-dias">
+          <li *ngFor="let fila of anio.meses">
+            <button type="button" [class.seleccionada]="fila.anio === anioVentas && fila.mes === mesVentas" (click)="irAMes(fila.anio, fila.mes)">
+              <span>{{ nombresMes[fila.mes - 1] }}</span>
+              <span class="cantidad">{{ fila.pedidos }} pedido(s)</span>
+              <strong>${{ fila.total | number:'1.0-0' }}</strong>
+            </button>
+          </li>
+        </ul>
+      </article>
+    </section>
   </section>
 
   <!-- ================= PRODUCTOS ================= -->

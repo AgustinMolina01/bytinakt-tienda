@@ -5,6 +5,7 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
+import { GoogleAuthService } from '../../services/google-auth.service';
 import { CarritoService } from '../../services/carrito.service';
 import { SITE, enlaceWhatsapp } from '../../config/site.config';
 
@@ -33,7 +34,8 @@ export class SiteHeaderComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     readonly auth: AuthService,
-    readonly carrito: CarritoService
+    readonly carrito: CarritoService,
+    private googleAuth: GoogleAuthService
   ) {}
 
   ngOnInit(): void {
@@ -49,6 +51,14 @@ export class SiteHeaderComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.suscripcion?.unsubscribe();
     clearTimeout(this.temporizadorBusqueda);
+  }
+
+  async cerrarSesion(): Promise<void> {
+    this.menuAbierto = false;
+    // La sesión de la tienda se cierra al instante; la de Google (si existiera) se cierra aparte.
+    this.auth.cerrarSesion();
+    this.googleAuth.cerrarSesion().catch(() => undefined);
+    await this.router.navigateByUrl('/');
   }
 
   @HostListener('document:keydown.escape')

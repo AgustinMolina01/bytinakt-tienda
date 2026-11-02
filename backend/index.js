@@ -1501,16 +1501,101 @@ app.patch('/api/admin/pedidos/:id/estado', requireAuth, requireAdmin, async (req
   }
 });
 
+const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
+
+// Ventas por día y por mes. Una venta cuenta el día en que se acreditó el pago (hora de Argentina);
+// los pedidos cancelados, pendientes o con error de pago no suman.
+// ?anio=2026&mes=11 devuelve el detalle diario y los pedidos de ese mes; `meses` trae todo el historial.
+app.get('/api/admin/ventas', requireAuth, requireAdmin, async (req, res) => {
+  const ahora = new Date().toLocaleString('sv-SE', { timeZone: ZONA_HORARIA }).slice(0, 7);
+  const anio = Number(req.query.anio ?? ahora.slice(0, 4));
+  const mes = Number(req.query.mes ?? ahora.slice(5, 7));
+  if (!Number.isInteger(anio) || anio < 2000 || anio > 2100 || !Number.isInteger(mes) || mes < 1 || mes > 12) {
+    return sendError(res, 400, 'Indicá un año y un mes válidos.');
+  }
+  const prefijoMes = `${anio}-${String(mes).padStart(2, '0')}`;
+  try {
+    const [resultado] = await Pedido.aggregate([
+      { $match: { estado: { $in: ESTADOS_VENTA } } },
+      {
+        $addFields: {
+          fechaVenta: {
+            $ifNull: [
+              {
+                $arrayElemAt: [
+                  {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: { $ifNull: ['$historial', []] },
+                          as: 'paso',
+                          cond: { $eq: ['$$paso.estado', 'pagado'] }
+                        }
+                      },
+                      as: 'paso',
+                      in: '$$paso.fecha'
+                    }
+                  },
+                  0
+                ]
+              },
+              '$createdAt'
+            ]
+          }
+        }
+      },
+      { $addFields: { dia: { $dateToString: { format: '%Y-%m-%d', date: '$fechaVenta', timezone: ZONA_HORARIA } } } },
+      {
+        $facet: {
+          meses: [
+            { $group: { _id: { $substrBytes: ['$dia', 0, 7] }, total: { $sum: '$total' }, pedidos: { $sum: 1 } } },
+            { $sort: { _id: -1 } }
+          ],
+          dias: [
+            { $match: { dia: { $regex: `^${prefijoMes}-` } } },
+            { $group: { _id: '$dia', total: { $sum: '$total' }, pedidos: { $sum: 1 } } },
+            { $sort: { _id: 1 } }
+          ],
+          pedidos: [
+            { $match: { dia: { $regex: `^${prefijoMes}-` } } },
+            { $sort: { fechaVenta: -1 } },
+            {
+              $project: {
+                dia: 1,
+                fechaVenta: 1,
+                clienteNombre: 1,
+                total: 1,
+                metodoPago: 1,
+                metodoEntrega: 1,
+                estado: 1,
+                items: { $sum: '$items.cantidad' }
+              }
+            }
+          ]
+        }
+      }
+    ]);
+    return res.json({
+      anio,
+      mes,
+      meses: resultado.meses.map((fila) => ({
+        anio: Number(fila._id.slice(0, 4)),
+        mes: Number(fila._id.slice(5, 7)),
+        total: fila.total,
+        pedidos: fila.pedidos
+      })),
+      dias: resultado.dias.map((fila) => ({ dia: fila._id, total: fila.total, pedidos: fila.pedidos })),
+      pedidos: resultado.pedidos
+    });
+  } catch (error) {
+    console.error('Error al calcular las ventas:', error.message);
+    return sendError(res, 500, 'No se pudieron calcular las ventas.');
+  }
+});
+
 app.get('/api/admin/resumen', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const inicioMes = new Date();
-    inicioMes.setDate(1);
-    inicioMes.setHours(0, 0, 0, 0);
-    const [ventas, pendientesPago, porPreparar, preparando, enCamino, productos] = await Promise.all([
-      Pedido.aggregate([
-        { $match: { estado: { $in: ESTADOS_VENTA }, createdAt: { $gte: inicioMes } } },
-        { $group: { _id: null, total: { $sum: '$total' }, cantidad: { $sum: 1 } } }
-      ]),
+    const [pendientesPago, porPreparar, preparando, enCamino, productos] = await Promise.all([
       Pedido.countDocuments({ estado: 'pendiente' }),
       Pedido.countDocuments({ estado: 'pagado' }),
       Pedido.countDocuments({ estado: 'preparando' }),
@@ -1528,8 +1613,6 @@ app.get('/api/admin/resumen', requireAuth, requireAdmin, async (req, res) => {
     const agotados = conStock.filter((producto) => producto.stockTotal === 0);
     const stockBajo = conStock.filter((producto) => producto.stockTotal > 0 && producto.stockTotal <= 3);
     return res.json({
-      ventasMes: ventas[0]?.total || 0,
-      pedidosMes: ventas[0]?.cantidad || 0,
       pendientesPago,
       porPreparar,
       preparando,

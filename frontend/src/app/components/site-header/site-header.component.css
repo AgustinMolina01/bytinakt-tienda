@@ -546,6 +546,10 @@
   }
 }
 
+.cajon-cuerpo > button.cajon-salir {
+  color: var(--color-error);
+}
+
 /* Pantallas bajas (celulares chicos o apaisados): el pie del menú se compacta */
 @media (max-height: 720px) {
   .cajon-pie {

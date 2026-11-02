@@ -109,6 +109,7 @@
     <a *ngIf="auth.autenticado && !auth.administrador" routerLink="/pedidos" [attr.tabindex]="menuAbierto ? 0 : -1">Mis pedidos</a>
     <a *ngIf="auth.autenticado && !auth.administrador" routerLink="/perfil" [attr.tabindex]="menuAbierto ? 0 : -1">Mi perfil</a>
     <a *ngIf="auth.administrador" routerLink="/admin" [attr.tabindex]="menuAbierto ? 0 : -1">Panel de administración</a>
+    <button *ngIf="auth.autenticado" type="button" class="cajon-salir" [attr.tabindex]="menuAbierto ? 0 : -1" (click)="cerrarSesion()">Cerrar sesión</button>
 
     <p class="cajon-titulo">Ayuda</p>
     <a routerLink="/ayuda" [attr.tabindex]="menuAbierto ? 0 : -1">Preguntas frecuentes</a>
