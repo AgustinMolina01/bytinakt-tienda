@@ -356,10 +356,10 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
       .map((anio) => ({ ...anio, meses: anio.meses.sort((a, b) => b.mes - a.mes) }));
   }
 
-  // Desde el año de la primera venta (o el actual) hasta el actual, del más nuevo al más viejo.
+  // Los últimos 6 años hasta el actual, del más nuevo al más viejo; si hay ventas más antiguas, también se incluyen.
   aniosDisponibles(): number[] {
     const actual = Number(this.hoy().slice(0, 4));
-    const primero = Math.min(actual, this.anioVentas || actual, ...this.aniosHistorial.map((anio) => anio.anio));
+    const primero = Math.min(actual - 5, this.anioVentas || actual, ...this.aniosHistorial.map((anio) => anio.anio));
     return Array.from({ length: actual - primero + 1 }, (_, i) => actual - i);
   }
 
