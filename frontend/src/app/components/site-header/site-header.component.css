@@ -247,10 +247,8 @@
   left: 0;
   z-index: 210;
   display: flex;
-  width: min(330px, 86vw);
+  width: min(360px, 88vw);
   flex-direction: column;
-  padding: 0 0 24px;
-  overflow-y: auto;
   background: #fff;
   box-shadow: var(--sombra-elevada);
   transform: translateX(-102%);
@@ -265,9 +263,10 @@
 
 .cajon-cabecera {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 14px 24px;
+  padding: 10px 12px 10px 22px;
   border-bottom: 1px solid var(--color-linea);
 }
 
@@ -284,32 +283,146 @@
   color: var(--color-marca);
 }
 
-.cajon > button,
-.cajon > a {
-  padding: 16px 24px;
+.cajon-cuerpo {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.cajon-buscador {
+  position: relative;
+  margin: 16px 20px 6px;
+}
+
+.cajon-buscador input {
+  width: 100%;
+  height: 46px;
+  padding: 0 46px 0 18px;
+  border: 1px solid var(--color-linea);
+  border-radius: 999px;
+  outline: none;
+  background: var(--color-crema);
+  color: var(--color-tinta);
+  font-size: 16px; /* 16px evita el zoom automático en iPhone */
+}
+
+.cajon-buscador input:focus {
+  border-color: var(--color-marca);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(128 58 58 / 12%);
+}
+
+.cajon-buscador button {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-tinta);
+}
+
+.cajon-titulo {
+  margin: 20px 22px 4px;
+  color: var(--color-suave);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.cajon-cuerpo > button,
+.cajon-cuerpo > a {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
   border: 0;
   border-bottom: 1px solid var(--color-linea);
   background: transparent;
   color: var(--color-tinta);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 1.2px;
+  letter-spacing: 1px;
   text-align: left;
   text-decoration: none;
   text-transform: uppercase;
 }
 
-.cajon > button:hover,
-.cajon > a:hover {
+.cajon-cuerpo > button:hover,
+.cajon-cuerpo > a:hover,
+.cajon-cuerpo > button.activo {
   background: var(--color-crema);
   color: var(--color-marca);
 }
 
-.cajon hr {
-  height: 12px;
-  margin: 0;
-  border: 0;
+.cajon-contador {
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-marca);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.cajon-pie {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 12px;
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-linea);
   background: var(--color-crema);
+}
+
+.cajon-whatsapp {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: var(--radio);
+  background: #25d366;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cajon-pie p {
+  margin: 0;
+  color: var(--color-suave);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.cajon-redes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cajon-redes a {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--color-linea);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-tinta);
 }
 
 @keyframes aparecer {
@@ -317,8 +430,58 @@
   to { opacity: 1; }
 }
 
+/* ---------- Buscador desplegable (celular y tableta) ---------- */
+.buscar-movil {
+  display: inline-flex;
+}
+
+.buscador-movil {
+  position: relative;
+  padding-block: 0 12px;
+  animation: aparecer .2s ease-out;
+}
+
+.buscador-movil input {
+  width: 100%;
+  height: 46px;
+  padding: 0 52px 0 18px;
+  border: 1px solid var(--color-linea);
+  border-radius: 999px;
+  outline: none;
+  background: var(--color-crema);
+  color: var(--color-tinta);
+  font-size: 16px;
+}
+
+.buscador-movil input:focus {
+  border-color: var(--color-marca);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(128 58 58 / 12%);
+}
+
+.buscador-movil button {
+  position: absolute;
+  top: 3px;
+  right: calc(var(--margen-lateral) + 3px);
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-tinta);
+}
+
+@media (min-width: 1024px) {
+  .buscar-movil,
+  .buscador-movil {
+    display: none;
+  }
+}
+
 /* ---------- Pantallas anchas ---------- */
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .accion-texto {
     display: inline;
   }
@@ -346,5 +509,64 @@
 
   .header-barra {
     min-height: 76px;
+  }
+}
+
+/* ---------- Celulares ---------- */
+@media (max-width: 479px) {
+  .header-barra {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 60px;
+    gap: 6px;
+  }
+
+  .logo {
+    justify-self: center;
+    font-size: 20px;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+
+  .icono-btn,
+  .accion {
+    min-width: 38px;
+    height: 40px;
+    padding: 0 8px;
+  }
+
+  .lado {
+    gap: 0;
+  }
+}
+
+@media (max-width: 379px) {
+  .accion-cuenta {
+    display: none;
+  }
+
+  .logo {
+    font-size: 18px;
+    letter-spacing: 1.5px;
+  }
+}
+
+/* Pantallas bajas (celulares chicos o apaisados): el pie del menú se compacta */
+@media (max-height: 720px) {
+  .cajon-pie {
+    gap: 8px;
+    padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .cajon-pie p {
+    display: none;
+  }
+
+  .cajon-whatsapp {
+    min-height: 44px;
+  }
+
+  .cajon-redes a {
+    width: 38px;
+    height: 38px;
   }
 }

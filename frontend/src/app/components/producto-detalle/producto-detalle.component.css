@@ -2,7 +2,7 @@
   min-height: 75vh;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 32px 22px 60px;
+  padding: 32px var(--margen-lateral) 60px;
   color: #292525;
 }
 
@@ -228,7 +228,7 @@
 
 @media (max-width: 900px) {
   .detalle-pagina {
-    padding: 26px 20px 48px;
+    padding: 26px var(--margen-lateral) 48px;
   }
 
   .detalle-producto {
@@ -243,7 +243,7 @@
 
 @media (max-width: 680px) {
   .detalle-pagina {
-    padding: 20px 14px 40px;
+    padding: 20px var(--margen-lateral) 40px;
   }
 
   .detalle-producto {

@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
 import { CarritoService } from '../../services/carrito.service';
+import { SITE, enlaceWhatsapp } from '../../config/site.config';
 
 export const CATEGORIAS_TIENDA = ['REMERAS', 'BUZOS Y CAMPERAS', 'PANTALONES', 'ACCESORIOS'];
 
@@ -21,6 +22,9 @@ export class SiteHeaderComponent implements OnInit, OnDestroy {
   categoriaActiva = '';
   busqueda = '';
   menuAbierto = false;
+  buscadorMovil = false;
+  readonly site = SITE;
+  readonly whatsapp = enlaceWhatsapp();
   enInicio = true;
   private rutaAnterior: string | null = null;
   private suscripcion?: Subscription;
@@ -50,6 +54,7 @@ export class SiteHeaderComponent implements OnInit, OnDestroy {
   @HostListener('document:keydown.escape')
   cerrarConEscape(): void {
     this.menuAbierto = false;
+    this.buscadorMovil = false;
   }
 
   get nombreCorto(): string {
@@ -67,6 +72,13 @@ export class SiteHeaderComponent implements OnInit, OnDestroy {
     });
   }
 
+  alternarBuscador(): void {
+    this.buscadorMovil = !this.buscadorMovil;
+    if (this.buscadorMovil) {
+      setTimeout(() => document.getElementById('buscador-movil')?.focus());
+    }
+  }
+
   irAlInicio(): void {
     this.busqueda = '';
     this.menuAbierto = false;
@@ -82,6 +94,8 @@ export class SiteHeaderComponent implements OnInit, OnDestroy {
     event.preventDefault();
     clearTimeout(this.temporizadorBusqueda);
     this.aplicarBusqueda();
+    this.buscadorMovil = false;
+    this.menuAbierto = false;
     document.getElementById('coleccion')?.scrollIntoView({ behavior: 'smooth' });
   }
 
