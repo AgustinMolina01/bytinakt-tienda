@@ -3,268 +3,273 @@
   role="dialog" aria-modal="true"
   aria-labelledby="titulo-presentacion">
   <div class="presentacion-contenido">
-    <h2 id="titulo-presentacion">Bienvenida</h2>
-    <p class="presentacion-logo">BYTINAKT</p>
+    <p class="presentacion-etiqueta" id="titulo-presentacion">Bienvenida a</p>
+    <p class="presentacion-logo" aria-label="BYTINAKT">
+      <span class="letra" *ngFor="let letra of letrasLogo; let i = index" [style.--i]="i" aria-hidden="true">{{ letra }}</span><span class="punto" aria-hidden="true">.</span>
+    </p>
+    <span class="presentacion-linea" aria-hidden="true"></span>
+    <p class="presentacion-lema">Ropa de mujer · Mar del Plata</p>
   </div>
 </section>
 
-<!-- HEADER PRINCIPAL DE LA TIENDA -->
-<header class="header-tienda">
-  <div class="identidad-tienda">
-    <button class="btn-menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="menuAbierto"
-      [attr.aria-label]="menuAbierto ? 'Cerrar navegación' : 'Abrir navegación'">
-      <span aria-hidden="true">☰</span>
-    </button>
-  </div>
-
-  <h1 class="logo-tienda">
-    <a routerLink="/" class="link-logo" (click)="filtrarCategoria('TODAS')">BYTINAKT<span>.</span></a>
-  </h1>
-
-  <nav class="nav-categorias" aria-label="Categorías de la tienda">
-    <button type="button" [class.activo]="categoriaSeleccionada === 'TODAS'"
-      (click)="filtrarCategoria('TODAS')">Ver todo</button>
-    <button type="button" *ngFor="let cat of categoriasDisponibles"
-      [class.activo]="categoriaSeleccionada === cat" (click)="filtrarCategoria(cat)">
-      {{ cat }}
-    </button>
-  </nav>
-
-  <div class="acciones-header">
-    <!-- BUSCADOR CON LUPA -->
-    <div class="buscador-contenedor">
-      <input 
-        type="text" 
-        placeholder="Buscar..." 
-        class="input-buscador" 
-        [(ngModel)]="busqueda" 
-        (input)="filtrarProductos()" 
-      />
-      <button class="boton-lupa" aria-label="Buscar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </button>
+<main>
+  <!-- Portada -->
+  <section class="portada" aria-label="Portada" *ngIf="imagenesBanner.length > 0"
+    (mouseenter)="bannerPausado = true" (mouseleave)="bannerPausado = false"
+    (focusin)="bannerPausado = true" (focusout)="bannerPausado = false">
+    <div class="portada-imagenes" aria-hidden="true">
+      <div class="portada-imagen" *ngFor="let imagen of imagenesBanner; let i = index"
+        [class.activa]="i === indiceBannerActual" [style.background-image]="'url(' + imagen + ')'"></div>
     </div>
+    <div class="portada-velo"></div>
 
-    <a *ngIf="!estaAutenticado()" routerLink="/auth" class="link-auth" aria-label="Iniciar sesión">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-        stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="8" r="4"></circle>
-        <path d="M5 21v-2a7 7 0 0 1 14 0v2"></path>
-      </svg>
-      <span>INICIAR SESIÓN</span>
-    </a>
-    <a *ngIf="estaAutenticado() && !auth.administrador" routerLink="/perfil" class="icono-header" aria-label="Mi perfil" title="Mi perfil">
-      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="8" r="4"></circle>
-        <path d="M5 21v-2a7 7 0 0 1 14 0v2"></path>
-      </svg>
-      <span>PERFIL</span>
-    </a>
-    <a routerLink="/carrito" class="icono-header icono-carrito" [attr.aria-label]="'Carrito, ' + carrito.cantidadTotal + ' productos'" title="Carrito">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"></path>
-        <circle cx="10" cy="21" r="1"></circle>
-        <circle cx="19" cy="21" r="1"></circle>
-      </svg>
-      <span>CARRITO</span>
-      <span class="contador-carrito">{{ carrito.cantidadTotal }}</span>
-    </a>
-  </div>
-</header>
-
-<section class="barra-promociones" aria-label="Información de envíos y promociones">
-  <p class="texto-accesible">
-    Envíos a todo el país. 20% OFF en efectivo o transferencia. 3 cuotas sin interés.
-  </p>
-  <div class="cinta-promociones" aria-hidden="true">
-    <div class="grupo-promociones">
-      <span>Envíos a todo el país</span>
-      <span class="separador-promociones">✦</span>
-      <span>20% OFF efectivo / transferencia</span>
-      <span class="separador-promociones">✦</span>
-      <span>3 cuotas sin interés</span>
-      <span class="separador-promociones">✦</span>
-    </div>
-    <div class="grupo-promociones">
-      <span>Envíos a todo el país</span>
-      <span class="separador-promociones">✦</span>
-      <span>20% OFF efectivo / transferencia</span>
-      <span class="separador-promociones">✦</span>
-      <span>3 cuotas sin interés</span>
-      <span class="separador-promociones">✦</span>
-    </div>
-  </div>
-</section>
-
-<!-- LAYOUT PRINCIPAL -->
-<div class="tienda-layout">
-  
-  <!-- MENÚ LATERAL DESPLEGABLE -->
-  <aside class="sidebar-lateral" [class.abierto]="menuAbierto">
-    <div class="contenido-sidebar">
-      <h3>Navegación</h3>
-      <ul class="lista-categorias">
-        <li [class.activo]="categoriaSeleccionada === 'TODAS'" (click)="filtrarCategoria('TODAS')">TODAS LAS PRENDAS</li>
-        <li *ngFor="let cat of categoriasDisponibles" 
-            [class.activo]="categoriaSeleccionada === cat" 
-            (click)="filtrarCategoria(cat)">
-          {{ cat }}
-        </li>
-      </ul>
-    </div>
-  </aside>
-
-  <!-- CONTENIDO PRINCIPAL -->
-  <main class="catalogo-contenido">
-    
-    <!-- BANNER HERO CARRUSEL SLIDER -->
-    <section class="banner-hero" 
-             *ngIf="imagenesBanner && imagenesBanner.length > 0" 
-             [style.background-image]="'url(' + imagenesBanner[indiceBannerActual] + ')'">
-      <div class="hero-overlay"></div>
-
-      <!-- Botón flecha izquierda -->
-      <button class="btn-slider btn-prev" (click)="anteriorBanner()">&#10094;</button>
-
-      <div class="contenido-banner">
-        <span class="subtitulo-coleccion">COLECCIÓN ELEGANCIA REFINADA</span>
-        <h2>Bienvenida a BYTINAKT</h2>
+    <div class="contenedor portada-contenido">
+      <p class="portada-etiqueta"><span></span>Colección elegancia refinada</p>
+      <h1>Vestite con<br><em>estilo propio</em></h1>
+      <p class="portada-texto">Prendas pensadas para acompañarte todos los días, con envíos a todo el país y 20% OFF pagando por transferencia.</p>
+      <div class="portada-botones">
+        <button type="button" class="btn btn-claro" (click)="irAColeccion()">Ver colección</button>
+        <a class="btn btn-contorno" routerLink="/envios-y-pagos">Cómo comprar</a>
       </div>
+    </div>
 
-      <!-- Botón flecha derecha -->
-      <button class="btn-slider btn-next" (click)="siguienteBanner()">&#10095;</button>
+    <div class="portada-control contenedor" *ngIf="imagenesBanner.length > 1">
+      <div class="portada-progreso" role="tablist" aria-label="Imágenes de portada">
+        <button type="button" role="tab" *ngFor="let imagen of imagenesBanner; let i = index"
+          [class.activo]="i === indiceBannerActual" [class.pausado]="bannerPausado"
+          [attr.aria-selected]="i === indiceBannerActual" [attr.aria-label]="'Ir a la imagen ' + (i + 1)"
+          (click)="irABanner(i)"></button>
+      </div>
+      <div class="portada-flechas">
+        <span class="portada-contador" aria-hidden="true">{{ indiceBannerActual + 1 | number:'2.0-0' }} / {{ imagenesBanner.length | number:'2.0-0' }}</span>
+        <button type="button" (click)="moverBanner(-1)" aria-label="Imagen anterior">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+        </button>
+        <button type="button" (click)="moverBanner(1)" aria-label="Imagen siguiente">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
 
-      <!-- Puntitos indicadores -->
-      <div class="slider-puntos">
-        <span *ngFor="let img of imagenesBanner; let i = index" 
-              [class.activo]="i === indiceBannerActual" 
-              (click)="seleccionarBanner(i)">
+  <!-- Beneficios -->
+  <section class="beneficios contenedor" aria-label="Beneficios de comprar en BYTINAKT">
+    <div>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+      <p><strong>Envíos a todo el país</strong><span>Recibí tu compra donde estés</span></p>
+    </div>
+    <div>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.4"/><circle cx="17" cy="17" r="2.4"/></svg>
+      <p><strong>20% OFF por transferencia</strong><span>Pagando con transferencia bancaria</span></p>
+    </div>
+    <div>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>
+      <p><strong>3 cuotas sin interés</strong><span>Con tarjetas de crédito</span></p>
+    </div>
+    <div>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <p><strong>Retiro en el local</strong><span>San Martín 4175, Mar del Plata</span></p>
+    </div>
+  </section>
+
+  <!-- Comprar por categoría -->
+  <section class="categorias contenedor" aria-labelledby="titulo-categorias" *ngIf="categoriasPortada.length > 0">
+    <header class="categorias-cabecera">
+      <p class="etiqueta">Explorá</p>
+      <h2 id="titulo-categorias">Comprar por categoría</h2>
+    </header>
+    <div class="categorias-grilla">
+      <a class="categoria" *ngFor="let cat of categoriasPortada" routerLink="/" [queryParams]="{ categoria: cat.nombre }">
+        <span class="categoria-imagen" [style.background-image]="cat.imagen ? 'url(' + cat.imagen + ')' : null"></span>
+        <span class="categoria-velo"></span>
+        <span class="categoria-texto">
+          <strong>{{ cat.nombre }}</strong>
+          <small>{{ cat.cantidad }} {{ cat.cantidad === 1 ? 'prenda' : 'prendas' }}</small>
         </span>
+        <span class="categoria-flecha" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Colección -->
+  <section class="coleccion contenedor" id="coleccion" aria-labelledby="titulo-coleccion">
+    <header class="coleccion-cabecera">
+      <div>
+        <p class="etiqueta">Nuestra tienda</p>
+        <h2 id="titulo-coleccion">{{ tituloColeccion }}</h2>
       </div>
-    </section>
-
-    <div class="catalogo-container">
-      <h3 class="titulo-seccion">ROPA MUJER: CAMPERAS, SATREROS Y MÁS</h3>
-      <p class="aviso-vista-demo" *ngIf="vistaDemo">
-        Vista previa: estas prendas son ilustrativas, no son productos reales y no se guardan en la tienda.
+      <p class="conteo" *ngIf="!cargando && !errorCatalogo" aria-live="polite">
+        {{ productosFiltrados().length }} {{ productosFiltrados().length === 1 ? 'prenda' : 'prendas' }}
       </p>
-      <p class="aviso-error-catalogo" *ngIf="errorCatalogo" role="alert">{{ errorCatalogo }}</p>
+    </header>
 
-      <!-- CARRUSEL DE PRODUCTOS -->
-      <div class="grid-productos">
-        <div class="tarjeta-producto" *ngFor="let producto of productosFiltrados()">
-          
-          <!-- Foto Gigante Vertical -->
-          <div class="imagen-contenedor">
-            <a class="producto-enlace" [routerLink]="['/producto', producto._id || producto.id]" [attr.aria-label]="'Ver ' + producto.nombre">
-              <img [src]="imagenesDe(producto)[indiceImagen(producto)]" [alt]="producto.nombre" />
-            </a>
-            <button *ngIf="imagenesDe(producto).length > 1" type="button" class="flecha-imagen anterior"
-              (click)="cambiarImagen(producto, -1, $event)" [attr.aria-label]="'Foto anterior de ' + producto.nombre">
-              &#10094;
-            </button>
-            <button *ngIf="imagenesDe(producto).length > 1" type="button" class="flecha-imagen siguiente"
-              (click)="cambiarImagen(producto, 1, $event)" [attr.aria-label]="'Foto siguiente de ' + producto.nombre">
-              &#10095;
-            </button>
-            <div class="puntos-imagen" *ngIf="imagenesDe(producto).length > 1" aria-hidden="true">
-              <span *ngFor="let imagen of imagenesDe(producto); let i = index"
-                [class.activo]="i === indiceImagen(producto)"></span>
-            </div>
-          </div>
+    <p class="aviso aviso-demo" *ngIf="vistaDemo">
+      Vista previa: estas prendas son ilustrativas, no son productos reales y no se guardan en la tienda.
+    </p>
 
-          <!-- Nombre + Círculos de color -->
-          <div class="info-encabezado">
-            <a class="producto-enlace nombre-enlace" [routerLink]="['/producto', producto._id || producto.id]">
-              <h4 class="nombre-producto">{{ producto.nombre }}</h4>
-            </a>
-            <div class="variantes-color">
-              <span class="circulo-color" *ngFor="let color of producto.colores"
-                [style.background-color]="estiloColor(color)" [title]="color"></span>
-            </div>
-          </div>
+    <div class="aviso aviso-error" *ngIf="errorCatalogo" role="alert">
+      <span>{{ errorCatalogo }}</span>
+      <button type="button" class="btn btn-borde" (click)="cargarProductos()">Reintentar</button>
+    </div>
 
-          <!-- Precio y Cuotas -->
-          <p class="precio-producto">${{ producto.precio | number:'1.0-0' }}</p>
-          <p class="cuotas-producto">3 cuotas de ${{ (producto.precio / 3) | number:'1.0-0' }}</p>
-          <a class="ver-producto" [routerLink]="['/producto', producto._id || producto.id]">
-            {{ vistaDemo ? 'VER PRENDA Y ELEGIR OPCIONES' : 'VER PRODUCTO' }}
-          </a>
-          <span *ngIf="vistaDemo" class="etiqueta-prenda-demo">Prenda de muestra</span>
+    <!-- Filtros y orden -->
+    <div class="barra-filtros" *ngIf="!cargando && !errorCatalogo && productos.length > 0">
+      <button type="button" class="btn-filtros" (click)="filtrosAbiertos = !filtrosAbiertos"
+        [attr.aria-expanded]="filtrosAbiertos" aria-controls="panel-filtros">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filtrar
+        <span class="filtros-cuenta" *ngIf="filtrosActivos">{{ filtrosActivos }}</span>
+      </button>
+      <label class="orden">
+        <span>Ordenar por</span>
+        <select [(ngModel)]="orden" name="orden">
+          <option value="nuevos">Más nuevos</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="nombre">Nombre (A-Z)</option>
+        </select>
+      </label>
+    </div>
 
+    <div class="panel-filtros" id="panel-filtros" *ngIf="filtrosAbiertos && productos.length > 0">
+      <div class="filtro-grupo" *ngIf="tallesCatalogo.length">
+        <h3>Talle</h3>
+        <div class="chips">
+          <button type="button" *ngFor="let talle of tallesCatalogo" [class.elegido]="filtroTalles.includes(talle)"
+            (click)="alternarFiltro(filtroTalles, talle)" [attr.aria-pressed]="filtroTalles.includes(talle)">{{ talle }}</button>
         </div>
       </div>
+      <div class="filtro-grupo" *ngIf="coloresCatalogo.length">
+        <h3>Color</h3>
+        <div class="chips">
+          <button type="button" *ngFor="let color of coloresCatalogo" [class.elegido]="filtroColores.includes(color)"
+            (click)="alternarFiltro(filtroColores, color)" [attr.aria-pressed]="filtroColores.includes(color)">
+            <span class="muestra" [style.background-color]="estiloColor(color)"></span>{{ color }}
+          </button>
+        </div>
+      </div>
+      <div class="filtro-grupo">
+        <h3>Precio</h3>
+        <div class="rango">
+          <input type="number" min="0" inputmode="numeric" placeholder="Mínimo" aria-label="Precio mínimo" [(ngModel)]="precioMin" name="precioMin">
+          <span>a</span>
+          <input type="number" min="0" inputmode="numeric" placeholder="Máximo" aria-label="Precio máximo" [(ngModel)]="precioMax" name="precioMax">
+        </div>
+      </div>
+      <button type="button" class="limpiar" *ngIf="filtrosActivos" (click)="limpiarFiltrosExtra()">Limpiar filtros</button>
     </div>
-  </main>
 
-</div>
-
-<section class="ubicacion-tienda" aria-labelledby="titulo-ubicacion">
-  <div class="encabezado-ubicacion">
-    <span class="icono-ubicacion" aria-hidden="true">
-      <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path>
-        <circle cx="12" cy="10" r="2.5"></circle>
-      </svg>
-    </span>
-    <div>
-      <h2 id="titulo-ubicacion">Ubicación</h2>
-      <p>San Martín 4175, Mar del Plata, Buenos Aires, Argentina</p>
+    <!-- Cargando -->
+    <div class="grilla" *ngIf="cargando" aria-busy="true" aria-label="Cargando productos">
+      <div class="esqueleto" *ngFor="let e of esqueletos">
+        <div class="esqueleto-foto"></div>
+        <div class="esqueleto-linea"></div>
+        <div class="esqueleto-linea corta"></div>
+      </div>
     </div>
-  </div>
-  <div class="mapa-ubicacion">
-    <iframe
-      title="Mapa de Bytinakt en San Martín 4175, Mar del Plata"
-      src="https://maps.google.com/maps?q=San%20Mart%C3%ADn%204175%2C%20Mar%20del%20Plata%2C%20Buenos%20Aires%2C%20Argentina&amp;output=embed"
-      loading="lazy"
-      referrerpolicy="no-referrer-when-downgrade"
-      allowfullscreen>
-    </iframe>
-  </div>
-  <a class="como-llegar" href="https://www.google.com/maps/search/?api=1&amp;query=San%20Mart%C3%ADn%204175%2C%20Mar%20del%20Plata%2C%20Buenos%20Aires%2C%20Argentina"
-    target="_blank" rel="noopener noreferrer">
-    <span aria-hidden="true">➤</span>
-    Cómo llegar
-  </a>
-</section>
 
-<!-- PIE DE PÁGINA -->
-<footer class="footer-tienda">
-  <div class="enlaces-footer">
-    <a routerLink="/ayuda">AYUDA</a>
-    <a routerLink="/nosotros">NOSOTRAS</a>
-    <a routerLink="/contacto">CONTACTO</a>
+    <!-- Sin resultados -->
+    <div class="vacio" *ngIf="!cargando && !errorCatalogo && productosFiltrados().length === 0">
+      <h3>No encontramos prendas</h3>
+      <p>{{ productos.length === 0 ? 'Todavía no hay productos cargados.' : 'Probá con otra búsqueda o mirá toda la colección.' }}</p>
+      <a *ngIf="productos.length > 0" class="btn btn-borde" routerLink="/" (click)="limpiarFiltros()">Ver toda la colección</a>
+    </div>
+
+    <!-- Productos -->
+    <div class="grilla" *ngIf="!cargando">
+      <article class="tarjeta" *ngFor="let producto of productosFiltrados(); trackBy: trackProducto">
+        <div class="foto">
+          <a class="foto-enlace" [routerLink]="['/producto', idDe(producto)]" [attr.aria-label]="'Ver ' + producto.nombre">
+            <img [src]="imagenesDe(producto)[indiceImagen(producto)]" [alt]="producto.nombre"
+              width="600" height="800" loading="lazy" decoding="async" (error)="imagenFallida($event)">
+          </a>
+          <span class="insignia" *ngIf="vistaDemo">Prenda de muestra</span>
+          <ng-container *ngIf="imagenesDe(producto).length > 1">
+            <button type="button" class="flecha anterior" (click)="cambiarImagen(producto, -1, $event)"
+              [attr.aria-label]="'Foto anterior de ' + producto.nombre">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+            </button>
+            <button type="button" class="flecha siguiente" (click)="cambiarImagen(producto, 1, $event)"
+              [attr.aria-label]="'Foto siguiente de ' + producto.nombre">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+            </button>
+            <div class="puntos" aria-hidden="true">
+              <span *ngFor="let imagen of imagenesDe(producto); let i = index" [class.activo]="i === indiceImagen(producto)"></span>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="datos">
+          <div class="datos-fila">
+            <h3><a [routerLink]="['/producto', idDe(producto)]">{{ producto.nombre }}</a></h3>
+            <div class="colores" *ngIf="producto.colores?.length" [attr.aria-label]="'Colores: ' + producto.colores!.join(', ')">
+              <span *ngFor="let color of producto.colores!.slice(0, 4)" [style.background-color]="estiloColor(color)" [title]="color"></span>
+            </div>
+          </div>
+          <p class="precio">${{ producto.precio | number:'1.0-0' }}</p>
+          <p class="cuotas">3 cuotas sin interés de ${{ producto.precio / 3 | number:'1.0-0' }}</p>
+
+          <button type="button" class="btn-agregar" (click)="agregarAlCarrito(producto)"
+            [attr.aria-expanded]="abiertoId === idDe(producto)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+            Agregar al carrito
+          </button>
+
+          <div class="selector" *ngIf="abiertoId === idDe(producto)">
+            <div class="selector-grupo" *ngIf="tallesDe(producto).length">
+              <p>Talle</p>
+              <div class="chips">
+                <button type="button" *ngFor="let talle of tallesDe(producto)"
+                  [class.elegido]="seleccion.talle === talle"
+                  [disabled]="stockDe(producto, talle) === 0"
+                  (click)="seleccion.talle = talle; errorSeleccion = ''"
+                  [attr.aria-pressed]="seleccion.talle === talle">{{ talle }}</button>
+              </div>
+            </div>
+            <div class="selector-grupo" *ngIf="producto.colores?.length">
+              <p>Color</p>
+              <div class="chips">
+                <button type="button" *ngFor="let color of producto.colores"
+                  [class.elegido]="seleccion.color === color"
+                  (click)="seleccion.color = color; errorSeleccion = ''"
+                  [attr.aria-pressed]="seleccion.color === color">{{ color }}</button>
+              </div>
+            </div>
+            <p class="selector-error" *ngIf="errorSeleccion" role="alert">{{ errorSeleccion }}</p>
+            <button type="button" class="btn" (click)="confirmarSeleccion(producto)">Agregar</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Aviso al agregar al carrito -->
+  <div class="aviso-carrito" *ngIf="aviso" [class.con-error]="avisoError" [attr.role]="avisoError ? 'alert' : 'status'">
+    <span>{{ aviso }}</span>
+    <a *ngIf="!avisoError" routerLink="/carrito">Ver carrito</a>
   </div>
 
-  <div class="redes-footer">
-    <!-- Enlace a Instagram con el logo SVG oficial -->
-    <a href="https://www.instagram.com/bytinakt?utm_source=ig_web_button_share_sheet&srtk=ZDNlZDc0MzIxNw==" 
-       target="_blank" 
-       rel="noopener noreferrer" 
-       aria-label="Instagram">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-      </svg>
-    </a>
-      
-    <!-- Enlace a Facebook con el logo SVG oficial -->
-    <a href="https://www.facebook.com/karina.tissone?locale=pt_BR" 
-       target="_blank" 
-       rel="noopener noreferrer" 
-       aria-label="Facebook">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-      </svg>
-    </a>
-      
-  </div>
-
-</footer>
+  <!-- Ubicación -->
+  <section class="ubicacion contenedor" aria-labelledby="titulo-ubicacion">
+    <div class="ubicacion-texto">
+      <p class="etiqueta">Visitanos</p>
+      <h2 id="titulo-ubicacion">Nuestro local</h2>
+      <p class="ubicacion-direccion">{{ site.direccion }}<br>{{ site.ciudad }}, {{ site.provincia }}, Argentina</p>
+      <p class="ubicacion-horario">{{ site.horario }}</p>
+      <p class="ubicacion-nota">Podés elegir retiro en el local al finalizar tu compra.</p>
+      <a class="btn btn-borde" target="_blank" rel="noopener noreferrer"
+        href="https://www.google.com/maps/search/?api=1&amp;query=San%20Mart%C3%ADn%204175%2C%20Mar%20del%20Plata%2C%20Buenos%20Aires%2C%20Argentina">
+        Cómo llegar
+      </a>
+    </div>
+    <div class="mapa">
+      <iframe
+        title="Mapa de Bytinakt en San Martín 4175, Mar del Plata"
+        src="https://maps.google.com/maps?q=San%20Mart%C3%ADn%204175%2C%20Mar%20del%20Plata%2C%20Buenos%20Aires%2C%20Argentina&amp;output=embed"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allowfullscreen>
+      </iframe>
+    </div>
+  </section>
+</main>

@@ -1,0 +1,70 @@
+<main class="pedidos contenedor">
+  <header class="cabecera">
+    <nav class="migas" aria-label="Ruta de navegación">
+      <a routerLink="/">Inicio</a><span aria-hidden="true">›</span><span>Mis pedidos</span>
+    </nav>
+    <h1>Mis pedidos</h1>
+    <p>Acá ves tus compras y cómo va cada una{{ auth.usuario ? ', ' + auth.usuario.nombre.split(' ')[0] : '' }}.</p>
+  </header>
+
+  <div class="lista" *ngIf="cargando" aria-busy="true">
+    <div class="esqueleto" *ngFor="let e of esqueletos"></div>
+  </div>
+
+  <div class="aviso aviso-error" *ngIf="error" role="alert">
+    <span>{{ error }}</span>
+    <button type="button" class="btn btn-borde" (click)="cargar()">Reintentar</button>
+  </div>
+
+  <section class="vacio" *ngIf="!cargando && !error && pedidos.length === 0">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 3h12l2 5v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8l2-5Z"/><path d="M4 8h16M9 12a3 3 0 0 0 6 0"/>
+    </svg>
+    <h2>Todavía no hiciste compras</h2>
+    <p>Cuando compres, tus pedidos aparecen acá con su estado.</p>
+    <a routerLink="/" class="btn">Ver colección</a>
+  </section>
+
+  <div class="lista" *ngIf="!cargando && pedidos.length > 0">
+    <article class="pedido" *ngFor="let pedido of pedidos">
+      <header class="pedido-cabecera">
+        <div>
+          <h2>Pedido {{ numero(pedido) }}</h2>
+          <p>{{ pedido.createdAt | date:'d \'de\' MMMM \'de\' y, HH:mm' }}</p>
+        </div>
+        <span class="estado" [attr.data-estado]="pedido.estado">{{ etiquetaEstado(pedido) }}</span>
+      </header>
+
+      <ul class="items">
+        <li *ngFor="let item of pedido.items">
+          <img [src]="item.imagen" [alt]="item.nombre" width="56" height="70" loading="lazy" (error)="imagenFallida($event)">
+          <div class="item-info">
+            <strong>{{ item.nombre }}</strong>
+            <span *ngIf="item.talle || item.color">
+              <ng-container *ngIf="item.talle">Talle {{ item.talle }}</ng-container><ng-container *ngIf="item.talle && item.color"> · </ng-container><ng-container *ngIf="item.color">{{ item.color }}</ng-container>
+            </span>
+            <span>{{ item.cantidad }} × ${{ item.precio | number:'1.0-0' }}</span>
+          </div>
+          <span class="item-total">${{ item.precio * item.cantidad | number:'1.0-0' }}</span>
+        </li>
+      </ul>
+
+      <footer class="pedido-pie">
+        <dl>
+          <div><dt>Entrega</dt><dd>{{ pedido.metodoEntrega === 'retiro' ? 'Retiro en el local' : 'Envío a domicilio' }}</dd></div>
+          <div><dt>Pago</dt><dd>{{ pedido.metodoPago === 'transferencia' ? 'Transferencia' : 'Mercado Pago' }}</dd></div>
+          <div class="total"><dt>Total</dt><dd>${{ pedido.total | number:'1.0-0' }}</dd></div>
+        </dl>
+        <div class="acciones">
+          <a *ngIf="pedido.estado === 'pendiente' && pedido.metodoPago === 'transferencia'"
+            class="btn" routerLink="/pago/resultado" [queryParams]="{ pedido: pedido._id, metodo: 'transferencia' }">
+            Ver datos de transferencia
+          </a>
+          <a class="btn btn-borde" [href]="consultarPorWhatsapp(pedido)" target="_blank" rel="noopener noreferrer">
+            Consultar por WhatsApp
+          </a>
+        </div>
+      </footer>
+    </article>
+  </div>
+</main>

@@ -1,0 +1,74 @@
+<footer class="footer">
+  <div class="contenedor footer-grilla">
+    <section class="marca">
+      <a routerLink="/" class="logo">{{ site.nombre }}<span>.</span></a>
+      <p>Ropa de mujer pensada para el día a día. Diseños que se sienten bien y se ven mejor.</p>
+      <div class="redes">
+        <a [href]="site.instagram" target="_blank" rel="noopener noreferrer" aria-label="Instagram de BYTINAKT">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.4A4 4 0 1 1 12.6 8 4 4 0 0 1 16 11.4Z"/><path d="M17.5 6.5h.01"/>
+          </svg>
+        </a>
+        <a [href]="site.facebook" target="_blank" rel="noopener noreferrer" aria-label="Facebook de BYTINAKT">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </a>
+        <a [href]="whatsapp" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp de BYTINAKT">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 21l1.65-4.8A8.5 8.5 0 1 1 8 19.4L3 21Z"/><path d="M9 10c.5 2 2.5 4 5 5l1.5-1.5-2-1-1 .5c-.7-.4-1.3-1-1.7-1.7l.5-1-1-2L9 10Z"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <nav aria-label="Tienda">
+      <h2>Tienda</h2>
+      <ul>
+        <li><a routerLink="/">Toda la colección</a></li>
+        <li *ngFor="let cat of categorias">
+          <a [routerLink]="['/']" [queryParams]="{ categoria: cat }">{{ cat }}</a>
+        </li>
+      </ul>
+    </nav>
+
+    <nav aria-label="Ayuda">
+      <h2>Ayuda</h2>
+      <ul>
+        <li><a routerLink="/ayuda">Preguntas frecuentes</a></li>
+        <li><a routerLink="/cambios-y-devoluciones">Cambios y devoluciones</a></li>
+        <li><a routerLink="/envios-y-pagos">Envíos y pagos</a></li>
+        <li><a routerLink="/pedidos">Mis pedidos</a></li>
+        <li><a routerLink="/auth">Mi cuenta</a></li>
+      </ul>
+    </nav>
+
+    <section>
+      <h2>Contacto</h2>
+      <ul class="datos">
+        <li>
+          <a [href]="whatsapp" target="_blank" rel="noopener noreferrer">WhatsApp {{ site.whatsappVisible }}</a>
+        </li>
+        <li>{{ site.horario }}</li>
+      </ul>
+      <p class="direccion">{{ site.direccion }}<br>{{ site.ciudad }}, {{ site.provincia }}</p>
+    </section>
+  </div>
+
+  <div class="legal">
+    <div class="contenedor">
+      <span>© {{ anio }} {{ site.nombre }}. Todos los derechos reservados.</span>
+      <span class="legal-enlaces">
+        <a routerLink="/terminos">Términos y condiciones</a>
+        <a routerLink="/privacidad">Privacidad</a>
+        <a routerLink="/contacto">Contacto</a>
+      </span>
+    </div>
+    <div class="contenedor pagos" aria-label="Medios de pago">
+      <span class="pago">Mercado Pago</span>
+      <span class="pago">Tarjetas de crédito y débito</span>
+      <span class="pago">Transferencia {{ site.descuentoTransferencia }}% OFF</span>
+      <span class="pago">{{ site.cuotasSinInteres }} cuotas sin interés</span>
+    </div>
+  </div>
+</footer>

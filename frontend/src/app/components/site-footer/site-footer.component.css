@@ -1,0 +1,155 @@
+:host {
+  display: block;
+}
+
+.footer {
+  background: var(--color-profundo);
+  color: #d9c9bd;
+}
+
+.footer-grilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 36px 24px;
+  padding-block: clamp(40px, 6vw, 64px);
+}
+
+.marca {
+  grid-column: 1 / -1;
+}
+
+.logo {
+  color: #fff;
+  font-family: var(--fuente-titulos);
+  font-size: 28px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-decoration: none;
+}
+
+.logo span {
+  color: var(--color-acento);
+}
+
+.marca p {
+  max-width: 340px;
+  margin: 14px 0 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+h2 {
+  margin: 0 0 16px;
+  color: #fff;
+  font-family: var(--fuente-texto);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: #d9c9bd;
+  font-size: 13.5px;
+  text-decoration: none;
+  transition: color var(--transicion);
+}
+
+a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.datos li {
+  font-size: 13.5px;
+}
+
+.direccion {
+  margin: 18px 0 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.redes {
+  display: flex;
+  gap: 10px;
+}
+
+.redes a {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 50%;
+  color: #fff;
+  transition: background-color var(--transicion), border-color var(--transicion);
+}
+
+.redes a:hover {
+  border-color: var(--color-acento);
+  background: rgb(255 255 255 / 10%);
+  text-decoration: none;
+}
+
+.legal {
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  font-size: 12px;
+}
+
+.legal .contenedor {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 24px;
+  padding-block: 18px;
+  color: #b9a79a;
+}
+
+.legal-enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+}
+
+.legal-enlaces a {
+  color: #b9a79a;
+  font-size: 12px;
+}
+
+.legal .pagos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 0;
+  padding-bottom: 22px;
+}
+
+.pago {
+  padding: 5px 12px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  color: #d9c9bd;
+  font-size: 11.5px;
+  letter-spacing: .4px;
+}
+
+@media (min-width: 900px) {
+  .footer-grilla {
+    grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+    gap: 48px;
+  }
+
+  .marca {
+    grid-column: auto;
+  }
+}

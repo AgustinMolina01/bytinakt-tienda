@@ -1,0 +1,39 @@
+<main class="info contenedor" *ngIf="pagina as p">
+  <nav class="migas" aria-label="Ruta de navegación">
+    <a routerLink="/">Inicio</a><span aria-hidden="true">›</span><span>{{ p.titulo }}</span>
+  </nav>
+
+  <div class="info-layout">
+    <aside class="info-menu" aria-label="Ayuda">
+      <h2>Ayuda</h2>
+      <a *ngFor="let e of enlaces" [routerLink]="e.ruta" routerLinkActive="activo">{{ e.texto }}</a>
+    </aside>
+
+    <article class="info-contenido">
+      <h1>{{ p.titulo }}</h1>
+      <p class="bajada">{{ p.bajada }}</p>
+      <p class="actualizado" *ngIf="p.actualizado">{{ p.actualizado }}</p>
+
+      <div class="preguntas" *ngIf="p.preguntas">
+        <details *ngFor="let q of p.preguntas">
+          <summary>{{ q.pregunta }}</summary>
+          <p>{{ q.respuesta }}</p>
+        </details>
+      </div>
+
+      <section class="bloque" *ngFor="let b of p.bloques">
+        <h2 *ngIf="b.titulo">{{ b.titulo }}</h2>
+        <p *ngFor="let parrafo of b.parrafos">{{ parrafo }}</p>
+        <ul *ngIf="b.lista"><li *ngFor="let item of b.lista">{{ item }}</li></ul>
+      </section>
+
+      <aside class="ayuda-extra">
+        <div>
+          <h2>¿Necesitás ayuda?</h2>
+          <p>{{ site.horario }}. Te respondemos por WhatsApp.</p>
+        </div>
+        <a class="btn" [href]="whatsapp" target="_blank" rel="noopener noreferrer">Escribinos al {{ site.whatsappVisible }}</a>
+      </aside>
+    </article>
+  </div>
+</main>

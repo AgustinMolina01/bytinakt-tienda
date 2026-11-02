@@ -5,6 +5,8 @@ const cors = require('cors');
 const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 const { getAuth: getFirebaseAdminAuth } = require('firebase-admin/auth');
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
 require('dotenv').config();
 
 const { hashPassword, verifyPassword, createToken, verifyToken } = require('./auth');
@@ -21,19 +23,64 @@ const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:4200')
   .split(',')
   .map((origin) => origin.trim());
 
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: allowedOrigins,
   allowedHeaders: ['Content-Type', 'Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Solo la carga de productos acepta cuerpos grandes (imágenes en base64).
+const smallJson = express.json({ limit: '100kb' });
+const productJson = express.json({ limit: '20mb' });
+const isProductWrite = (req) => req.path.startsWith('/api/productos') && ['POST', 'PUT'].includes(req.method);
+app.use((req, res, next) => (isProductWrite(req) ? productJson : smallJson)(req, res, next));
+
+const rateLimitMessage = { error: 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.' };
+const limiterOptions = { standardHeaders: 'draft-7', legacyHeaders: false, message: rateLimitMessage };
+const authLimiter = rateLimit({ ...limiterOptions, windowMs: 15 * 60_000, limit: 20 });
+const codeLimiter = rateLimit({ ...limiterOptions, windowMs: 60 * 60_000, limit: 10 });
+const checkoutLimiter = rateLimit({ ...limiterOptions, windowMs: 15 * 60_000, limit: 30 });
+const apiLimiter = rateLimit({ ...limiterOptions, windowMs: 60_000, limit: 300 });
+app.use('/api', apiLimiter);
 
 app.get('/api/health', (req, res) => {
   const databaseConnected = mongoose.connection.readyState === 1;
   return res.status(databaseConnected ? 200 : 503).json({
     status: databaseConnected ? 'ok' : 'unavailable',
     database: databaseConnected ? 'connected' : 'disconnected'
+  });
+});
+
+app.get('/api/checkout/config', (req, res) => {
+  const shippingRate = Number(process.env.SHIPPING_FLAT_RATE);
+  const transferDiscountPercent = Number(process.env.TRANSFER_DISCOUNT_PERCENT || 20);
+  const bankAlias = (process.env.BANK_TRANSFER_ALIAS || '').trim();
+  const bankCbu = (process.env.BANK_TRANSFER_CBU || '').trim();
+  const accountHolder = (process.env.BANK_ACCOUNT_HOLDER || '').trim();
+
+  return res.json({
+    pickup: {
+      address: process.env.LOCAL_PICKUP_ADDRESS || 'San Martín 4175, Mar del Plata',
+      postalCode: process.env.LOCAL_PICKUP_POSTAL_CODE || '7600'
+    },
+    homeDelivery: {
+      available: Number.isFinite(shippingRate) && shippingRate > 0,
+      cost: Number.isFinite(shippingRate) && shippingRate > 0 ? shippingRate : null
+    },
+    mercadopago: { available: Boolean(process.env.MP_ACCESS_TOKEN) },
+    bankTransfer: {
+      available: Boolean(accountHolder && (bankAlias || bankCbu)),
+      bank: process.env.BANK_TRANSFER_BANK || 'Banco Provincia',
+      alias: bankAlias,
+      cbu: bankCbu,
+      accountHolder,
+      discountPercent: Number.isFinite(transferDiscountPercent)
+        ? Math.max(0, Math.min(100, transferDiscountPercent))
+        : 20
+    }
   });
 });
 
@@ -73,6 +120,10 @@ const pedidoSchema = new mongoose.Schema({
     codigoPostal: { type: String, required: true },
     telefono: { type: String, required: true }
   },
+  metodoEntrega: { type: String, enum: ['retiro', 'envio'], default: 'envio' },
+  costoEnvio: { type: Number, min: 0, default: 0 },
+  metodoPago: { type: String, enum: ['mercadopago', 'transferencia'], default: 'mercadopago' },
+  descuentoTransferencia: { type: Number, min: 0, default: 0 },
   items: [{
     producto: { type: mongoose.Schema.Types.ObjectId, ref: 'Producto', required: true },
     nombre: { type: String, required: true },
@@ -220,7 +271,7 @@ async function liberarReservasVencidas() {
   }
 }
 
-app.post('/api/auth/registro/codigo', async (req, res) => {
+app.post('/api/auth/registro/codigo', codeLimiter, async (req, res) => {
   try {
     const nombre = typeof req.body.nombre === 'string' ? req.body.nombre.trim() : '';
     const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
@@ -289,7 +340,7 @@ app.post('/api/auth/registro/codigo', async (req, res) => {
   }
 });
 
-app.post('/api/auth/registro/verificar', async (req, res) => {
+app.post('/api/auth/registro/verificar', authLimiter, async (req, res) => {
   const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   try {
     const code = typeof req.body.code === 'string' ? req.body.code.trim() : '';
@@ -328,11 +379,7 @@ app.post('/api/auth/registro/verificar', async (req, res) => {
   }
 });
 
-app.post('/api/auth/registro', (req, res) => {
-  return sendError(res, 400, 'Verificá tu correo con el código antes de crear la cuenta.');
-});
-
-app.post('/api/auth/google', async (req, res) => {
+app.post('/api/auth/google', authLimiter, async (req, res) => {
   try {
     const idToken = typeof req.body.idToken === 'string' ? req.body.idToken : '';
     if (!idToken) {
@@ -373,7 +420,7 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
     const password = typeof req.body.password === 'string' ? req.body.password : '';
@@ -462,14 +509,39 @@ app.put('/api/auth/perfil', requireAuth, async (req, res) => {
   }
 });
 
+// Las imágenes subidas se guardan como data URI; al listar se reemplazan por una URL
+// cacheable para no mandar megas de base64 en cada consulta.
+function publicBaseUrl(req) {
+  return (process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+}
+
+function withImageUrls(req, product) {
+  const imagenes = (product.imagenesRef || []).map((ref, index) =>
+    ref || `${publicBaseUrl(req)}/api/productos/${product._id}/imagen/${index}?v=${new Date(product.updatedAt || 0).getTime()}`
+  );
+  const { imagenesRef, ...rest } = product;
+  return { ...rest, imagenes, imagenUrl: imagenes[0] || '' };
+}
+
+const productImageProjection = {
+  imagenesRef: {
+    $map: {
+      input: { $ifNull: ['$imagenes', []] },
+      as: 'imagen',
+      in: { $cond: [{ $regexMatch: { input: '$$imagen', regex: /^data:/ } }, null, '$$imagen'] }
+    }
+  }
+};
+
 app.get('/api/productos', async (req, res) => {
   try {
-    await liberarReservasVencidas();
-    const productos = await Producto.find().sort({ createdAt: -1 }).lean();
-    return res.json(productos.map((producto) => ({
-      ...producto,
-      imagenUrl: producto.imagenes?.[0] || ''
-    })));
+    const productos = await Producto.aggregate([
+      { $sort: { createdAt: -1 } },
+      { $addFields: productImageProjection },
+      { $project: { imagenes: 0 } }
+    ]);
+    res.set('Cache-Control', 'public, max-age=30');
+    return res.json(productos.map((producto) => withImageUrls(req, producto)));
   } catch (error) {
     console.error('Error al consultar productos:', error.message);
     return sendError(res, 500, 'No se pudieron consultar los productos.');
@@ -478,67 +550,96 @@ app.get('/api/productos', async (req, res) => {
 
 app.get('/api/productos/:id', async (req, res) => {
   try {
-    await liberarReservasVencidas();
     if (!mongoose.isValidObjectId(req.params.id)) {
       return sendError(res, 400, 'El identificador del producto no es válido.');
     }
-    const product = await Producto.findById(req.params.id).lean();
+    const [product] = await Producto.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(req.params.id) } },
+      { $addFields: productImageProjection },
+      { $project: { imagenes: 0 } }
+    ]);
     if (!product) {
       return sendError(res, 404, 'No se encontró el producto.');
     }
-    return res.json({ ...product, imagenUrl: product.imagenes?.[0] || '' });
+    return res.json(withImageUrls(req, product));
   } catch (error) {
     console.error('Error al consultar el producto:', error.message);
     return sendError(res, 500, 'No se pudo consultar el producto.');
   }
 });
 
-app.post('/api/productos', requireAuth, requireAdmin, async (req, res) => {
+app.get('/api/productos/:id/imagen/:index', async (req, res) => {
   try {
-    const {
-      nombre,
-      descripcion = '',
-      precio,
-      categoria,
-      talle = [],
-      variantes = [],
-      colores = [],
-      guiaTalles = '',
-      imagenes = []
-    } = req.body;
-    const numericPrice = Number(precio);
-    const validCategories = ['REMERAS', 'BUZOS Y CAMPERAS', 'PANTALONES', 'ACCESORIOS'];
-    const validVariants = Array.isArray(variantes) && variantes.every((variant) =>
-      variant && typeof variant.talle === 'string' && variant.talle.trim().length > 0 &&
-      variant.talle.trim().length <= 20 && Number.isInteger(variant.stock) &&
-      variant.stock >= 0 && variant.stock <= 10000);
-    const variantSizes = validVariants ? variantes.map((variant) => variant.talle.trim().toUpperCase()) : [];
-    const validColors = Array.isArray(colores) && colores.length <= 20 &&
-      colores.every((color) => typeof color === 'string' && color.trim().length > 0 && color.trim().length <= 40);
-    if (typeof nombre !== 'string' || !nombre.trim() || nombre.trim().length > 120 ||
-        typeof categoria !== 'string' || !validCategories.includes(categoria.trim()) ||
-        !Number.isFinite(numericPrice) || numericPrice <= 0 ||
-        !Array.isArray(talle) || talle.length > 10 ||
-        !talle.every((size) => typeof size === 'string' && size.length <= 20) ||
-        !validVariants || variantSizes.length > 10 || new Set(variantSizes).size !== variantSizes.length ||
-        new Set(talle.map((size) => size.trim().toUpperCase())).size !== talle.length ||
-        !validColors || new Set(colores.map((color) => color.trim().toLowerCase())).size !== colores.length ||
-        typeof guiaTalles !== 'string' || guiaTalles.length > 2000 ||
-        !Array.isArray(imagenes) || imagenes.length > 3 ||
-        !imagenes.every((image) => typeof image === 'string' && image.length <= 5 * 1024 * 1024) ||
-        typeof descripcion !== 'string' || descripcion.length > 2000) {
-      return sendError(res, 400, 'Revisá el nombre, categoría, precio, talles, stock, colores e imágenes.');
+    const index = Number(req.params.index);
+    if (!mongoose.isValidObjectId(req.params.id) || !Number.isInteger(index) || index < 0 || index > 2) {
+      return res.sendStatus(404);
     }
+    const product = await Producto.findById(req.params.id).select('imagenes').lean();
+    const image = product?.imagenes?.[index];
+    if (!image) {
+      return res.sendStatus(404);
+    }
+    const match = /^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,(.+)$/s.exec(image);
+    if (!match) {
+      return /^https?:\/\//.test(image) ? res.redirect(image) : res.sendStatus(404);
+    }
+    res.set({
+      'Content-Type': match[1],
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    return res.send(Buffer.from(match[2], 'base64'));
+  } catch (error) {
+    console.error('Error al servir imagen de producto:', error.message);
+    return res.sendStatus(500);
+  }
+});
 
-    const productSizes = variantSizes.length
-      ? variantSizes
-      : talle.map((size) => size.trim().toUpperCase());
-    const product = await Producto.create({
+const PRODUCT_CATEGORIES = ['REMERAS', 'BUZOS Y CAMPERAS', 'PANTALONES', 'ACCESORIOS'];
+
+// Valida el cuerpo de alta/edición y devuelve los datos limpios o un error.
+function parseProductBody(body) {
+  const {
+    nombre,
+    descripcion = '',
+    precio,
+    categoria,
+    talle = [],
+    variantes = [],
+    colores = [],
+    guiaTalles = '',
+    imagenes = []
+  } = body || {};
+  const numericPrice = Number(precio);
+  const validVariants = Array.isArray(variantes) && variantes.every((variant) =>
+    variant && typeof variant.talle === 'string' && variant.talle.trim().length > 0 &&
+    variant.talle.trim().length <= 20 && Number.isInteger(variant.stock) &&
+    variant.stock >= 0 && variant.stock <= 10000);
+  const variantSizes = validVariants ? variantes.map((variant) => variant.talle.trim().toUpperCase()) : [];
+  const validColors = Array.isArray(colores) && colores.length <= 20 &&
+    colores.every((color) => typeof color === 'string' && color.trim().length > 0 && color.trim().length <= 40);
+  if (typeof nombre !== 'string' || !nombre.trim() || nombre.trim().length > 120 ||
+      typeof categoria !== 'string' || !PRODUCT_CATEGORIES.includes(categoria.trim()) ||
+      !Number.isFinite(numericPrice) || numericPrice <= 0 ||
+      !Array.isArray(talle) || talle.length > 10 ||
+      !talle.every((size) => typeof size === 'string' && size.length <= 20) ||
+      !validVariants || variantSizes.length > 10 || new Set(variantSizes).size !== variantSizes.length ||
+      new Set(talle.map((size) => size.trim().toUpperCase())).size !== talle.length ||
+      !validColors || new Set(colores.map((color) => color.trim().toLowerCase())).size !== colores.length ||
+      typeof guiaTalles !== 'string' || guiaTalles.length > 2000 ||
+      !Array.isArray(imagenes) || imagenes.length > 3 ||
+      !imagenes.every((image) => typeof image === 'string' && image.length <= 5 * 1024 * 1024) ||
+      typeof descripcion !== 'string' || descripcion.length > 2000) {
+    return { error: 'Revisá el nombre, categoría, precio, talles, stock, colores e imágenes.' };
+  }
+
+  return {
+    data: {
       nombre: nombre.trim(),
-      descripcion: typeof descripcion === 'string' ? descripcion.trim() : '',
+      descripcion: descripcion.trim(),
       precio: numericPrice,
       categoria: categoria.trim(),
-      talle: productSizes,
+      talle: variantSizes.length ? variantSizes : talle.map((size) => size.trim().toUpperCase()),
       variantes: variantes.map((variant) => ({
         talle: variant.talle.trim().toUpperCase(),
         stock: variant.stock
@@ -546,11 +647,49 @@ app.post('/api/productos', requireAuth, requireAdmin, async (req, res) => {
       colores: colores.map((color) => color.trim()),
       guiaTalles: guiaTalles.trim(),
       imagenes
-    });
+    }
+  };
+}
+
+app.post('/api/productos', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { data, error } = parseProductBody(req.body);
+    if (error) {
+      return sendError(res, 400, error);
+    }
+    const product = await Producto.create(data);
     return res.status(201).json({ message: 'Producto creado.', producto: product });
   } catch (error) {
     console.error('Error al guardar producto:', error.message);
     return sendError(res, 500, 'No se pudo guardar el producto.');
+  }
+});
+
+// Las imágenes que ya son URL del catálogo (/imagen/N) se conservan sin volver a subirlas.
+app.put('/api/productos/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return sendError(res, 400, 'El identificador del producto no es válido.');
+    }
+    const existing = await Producto.findById(req.params.id).select('imagenes').lean();
+    if (!existing) {
+      return sendError(res, 404, 'No se encontró el producto.');
+    }
+    const keptImages = (Array.isArray(req.body?.imagenes) ? req.body.imagenes : []).map((image) => {
+      const match = typeof image === 'string'
+        ? new RegExp(`/api/productos/${req.params.id}/imagen/(\d)(?:\?|$)`).exec(image)
+        : null;
+      return match ? existing.imagenes?.[Number(match[1])] || '' : image;
+    }).filter(Boolean);
+    const { data, error } = parseProductBody({ ...req.body, imagenes: keptImages });
+    if (error) {
+      return sendError(res, 400, error);
+    }
+    const product = await Producto.findByIdAndUpdate(req.params.id, { $set: data }, { new: true, runValidators: true });
+    return res.json({ message: 'Producto actualizado.', producto: product });
+  } catch (error) {
+    console.error('Error al actualizar producto:', error.message);
+    return sendError(res, 500, 'No se pudo actualizar el producto.');
   }
 });
 
@@ -570,24 +709,62 @@ app.delete('/api/productos/:id', requireAuth, requireAdmin, async (req, res) => 
   }
 });
 
-app.post('/api/pedidos/checkout', requireAuth, async (req, res) => {
+app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res) => {
   if (req.sessionUser.role !== 'cliente') {
     return sendError(res, 403, 'Solo las cuentas de cliente pueden crear pedidos.');
   }
+  if ((req.body.metodoEntrega && !['retiro', 'envio'].includes(req.body.metodoEntrega)) ||
+      (req.body.metodoPago && !['mercadopago', 'transferencia'].includes(req.body.metodoPago))) {
+    return sendError(res, 400, 'La forma de entrega o pago no es válida.');
+  }
+  const metodoEntrega = req.body.metodoEntrega === 'retiro' ? 'retiro' : 'envio';
+  const metodoPago = req.body.metodoPago === 'transferencia' ? 'transferencia' : 'mercadopago';
   const accessToken = process.env.MP_ACCESS_TOKEN;
-  if (!accessToken) {
+  const bankAlias = (process.env.BANK_TRANSFER_ALIAS || '').trim();
+  const bankCbu = (process.env.BANK_TRANSFER_CBU || '').trim();
+  const accountHolder = (process.env.BANK_ACCOUNT_HOLDER || '').trim();
+  const shippingRate = Number(process.env.SHIPPING_FLAT_RATE);
+  if (metodoPago === 'mercadopago' && !accessToken) {
     return sendError(res, 503, 'Falta configurar MP_ACCESS_TOKEN en backend/.env para habilitar pagos con Mercado Pago.');
+  }
+  if (metodoPago === 'transferencia' && !(accountHolder && (bankAlias || bankCbu))) {
+    return sendError(res, 503, 'Faltan configurar los datos de la cuenta bancaria para habilitar transferencias.');
+  }
+  if (metodoEntrega === 'envio' && (!Number.isFinite(shippingRate) || shippingRate <= 0)) {
+    return sendError(res, 503, 'El envío a domicilio todavía no está configurado. Elegí retiro en el local.');
   }
 
   try {
     const { items, envio } = req.body;
     if (!Array.isArray(items) || items.length === 0 || items.length > 50 ||
-        !envio || !['direccion', 'ciudad', 'codigoPostal', 'telefono'].every((field) =>
-          typeof envio[field] === 'string' && envio[field].trim()) ||
-        envio.direccion.trim().length > 160 || envio.ciudad.trim().length > 100 ||
-        envio.codigoPostal.trim().length > 20 || envio.telefono.trim().length > 30) {
+        !envio || typeof envio.telefono !== 'string' || !envio.telefono.trim() ||
+        envio.telefono.trim().length > 30 ||
+        (metodoEntrega === 'envio' &&
+          !['direccion', 'ciudad', 'codigoPostal'].every((field) =>
+            typeof envio[field] === 'string' && envio[field].trim()))) {
       return sendError(res, 400, 'Completá los datos de envío y agregá al menos un producto.');
     }
+    if (metodoEntrega === 'envio' &&
+        (envio.direccion.trim().length > 160 || envio.ciudad.trim().length > 100 ||
+          envio.codigoPostal.trim().length > 20)) {
+      return sendError(res, 400, 'Revisá la dirección, ciudad y código postal del envío.');
+    }
+
+    const pickupAddress = process.env.LOCAL_PICKUP_ADDRESS || 'San Martín 4175, Mar del Plata';
+    const pickupPostalCode = process.env.LOCAL_PICKUP_POSTAL_CODE || '7600';
+    const envioPedido = metodoEntrega === 'retiro'
+      ? {
+          direccion: `Retiro en el local: ${pickupAddress}`,
+          ciudad: 'Mar del Plata',
+          codigoPostal: pickupPostalCode,
+          telefono: envio.telefono.trim()
+        }
+      : {
+          direccion: envio.direccion.trim(),
+          ciudad: envio.ciudad.trim(),
+          codigoPostal: envio.codigoPostal.trim(),
+          telefono: envio.telefono.trim()
+        };
 
     await liberarReservasVencidas();
     const requestedItems = new Map();
@@ -648,7 +825,7 @@ app.post('/api/pedidos/checkout', requireAuth, async (req, res) => {
         color: line.color,
         precio: product.precio,
         cantidad: line.cantidad,
-        imagen: product.imagenes?.[0] || ''
+        imagen: product.imagenes?.[0] && !product.imagenes[0].startsWith('data:') ? product.imagenes[0] : ''
       };
     });
 
@@ -676,23 +853,28 @@ app.post('/api/pedidos/checkout', requireAuth, async (req, res) => {
       reservas.push({ producto: product._id, talle: line.talle, cantidad: line.cantidad });
     }
 
-    const total = orderItems.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
     const buyer = req.sessionUser;
     const reservaStockExpira = reservas.length > 0
-      ? new Date(Date.now() + 30 * 60 * 1000)
+      ? new Date(Date.now() + (metodoPago === 'transferencia' ? 24 * 60 * 60 * 1000 : 30 * 60 * 1000))
       : undefined;
+    const subtotal = orderItems.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+    const costoEnvio = metodoEntrega === 'envio' ? shippingRate : 0;
+    const configuredDiscount = Number(process.env.TRANSFER_DISCOUNT_PERCENT || 20);
+    const discountPercent = metodoPago === 'transferencia'
+      ? (Number.isFinite(configuredDiscount) ? Math.max(0, Math.min(100, configuredDiscount)) : 20)
+      : 0;
+    const descuentoTransferencia = Math.round(subtotal * discountPercent / 100);
     const order = new Pedido({
       cliente: buyer.id,
       clienteNombre: buyer.nombre,
       email: buyer.email,
-      envio: {
-        direccion: envio.direccion.trim(),
-        ciudad: envio.ciudad.trim(),
-        codigoPostal: envio.codigoPostal.trim(),
-        telefono: envio.telefono.trim()
-      },
+      envio: envioPedido,
+      metodoEntrega,
+      costoEnvio,
+      metodoPago,
+      descuentoTransferencia,
       items: orderItems,
-      total,
+      total: subtotal + costoEnvio - descuentoTransferencia,
       reservaStockActiva: reservas.length > 0,
       reservaStockExpira
     });
@@ -703,6 +885,15 @@ app.post('/api/pedidos/checkout', requireAuth, async (req, res) => {
       throw error;
     }
 
+    if (metodoPago === 'transferencia') {
+      return res.status(201).json({
+        pedidoId: order._id,
+        estado: order.estado,
+        metodoPago,
+        total: order.total
+      });
+    }
+
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:4200').split(',')[0].trim();
     const preferenceResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
@@ -711,13 +902,22 @@ app.post('/api/pedidos/checkout', requireAuth, async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        items: orderItems.map((item) => ({
+        items: [
+          ...orderItems.map((item) => ({
           id: String(item.producto),
           title: [item.nombre, item.talle, item.color].filter(Boolean).join(' - '),
           quantity: item.cantidad,
           unit_price: item.precio,
           currency_id: 'ARS'
-        })),
+          })),
+          ...(costoEnvio > 0 ? [{
+            id: 'envio',
+            title: 'Envío a domicilio',
+            quantity: 1,
+            unit_price: costoEnvio,
+            currency_id: 'ARS'
+          }] : [])
+        ],
         payer: { name: buyer.nombre, email: buyer.email },
         external_reference: String(order._id),
         ...(reservaStockExpira ? {
@@ -750,6 +950,40 @@ app.post('/api/pedidos/checkout', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error al crear pedido:', error.message);
     return sendError(res, 500, 'No se pudo crear el pedido.');
+  }
+});
+
+app.get('/api/pedidos/mios', requireAuth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.sessionUser.id)) {
+      return res.json([]);
+    }
+    const orders = await Pedido.find({ cliente: req.sessionUser.id }).sort({ createdAt: -1 }).limit(50).lean();
+    return res.json(orders.map((order) => ({
+      _id: order._id,
+      estado: order.estado,
+      metodoPago: order.metodoPago,
+      metodoEntrega: order.metodoEntrega,
+      costoEnvio: order.costoEnvio,
+      descuentoTransferencia: order.descuentoTransferencia,
+      total: order.total,
+      createdAt: order.createdAt,
+      reservaStockExpira: order.reservaStockExpira,
+      items: order.items.map((item) => ({
+        producto: item.producto,
+        nombre: item.nombre,
+        talle: item.talle,
+        color: item.color,
+        precio: item.precio,
+        cantidad: item.cantidad,
+        imagen: item.imagen && !item.imagen.startsWith('data:')
+          ? item.imagen
+          : `${publicBaseUrl(req)}/api/productos/${item.producto}/imagen/0`
+      }))
+    })));
+  } catch (error) {
+    console.error('Error al consultar los pedidos del cliente:', error.message);
+    return sendError(res, 500, 'No se pudieron consultar tus pedidos.');
   }
 });
 
@@ -796,10 +1030,23 @@ async function updatePaymentStatus(paymentId, expectedOrderId = '') {
   }
 
   if (payment.status === 'approved') {
-    if (!order.reservaStockActiva) {
+    // Se "reclama" el pedido de forma atómica: si el webhook y /pagos/estado llegan a la vez,
+    // solo uno pasa de no-pagado a pagado y descuenta stock una única vez.
+    const previous = await Pedido.findOneAndUpdate(
+      { _id: order._id, estado: { $ne: 'pagado' } },
+      {
+        $set: { estado: 'pagado', pagoId: String(payment.id), reservaStockActiva: false },
+        $unset: { reservaStockExpira: '' }
+      },
+      { new: false }
+    );
+    if (!previous) {
+      return Pedido.findById(order._id);
+    }
+    if (!previous.reservaStockActiva) {
       const reservasTardias = [];
       let stockDisponible = true;
-      for (const item of order.items) {
+      for (const item of previous.items) {
         if (!item.talle) {
           continue;
         }
@@ -822,19 +1069,15 @@ async function updatePaymentStatus(paymentId, expectedOrderId = '') {
       }
       if (!stockDisponible) {
         await devolverStock(reservasTardias);
-        order.estado = 'error_pago';
-        order.pagoId = String(payment.id);
-        await order.save();
         console.error(`Pago ${payment.id} aprobado después de vencer la reserva y no queda stock; requiere revisión manual.`);
-        return order;
+        return Pedido.findByIdAndUpdate(order._id, { $set: { estado: 'error_pago' } }, { new: true });
       }
     }
-    order.estado = 'pagado';
-    order.pagoId = String(payment.id);
-    order.reservaStockActiva = false;
-    order.reservaStockExpira = undefined;
-    await order.save();
+    return Pedido.findById(order._id);
   } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
+    if (order.estado === 'pagado') {
+      return order;
+    }
     if (order.reservaStockActiva) {
       await liberarStockDePedido(order._id);
       order.reservaStockActiva = false;
@@ -881,6 +1124,34 @@ app.get('/api/admin/pedidos', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+app.patch('/api/admin/pedidos/:id/confirmar-transferencia', requireAuth, requireAdmin, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return sendError(res, 400, 'El identificador del pedido no es válido.');
+  }
+  try {
+    await liberarReservasVencidas();
+    const order = await Pedido.findOne({
+      _id: req.params.id,
+      metodoPago: 'transferencia',
+      estado: 'pendiente'
+    });
+    if (!order) {
+      return sendError(res, 409, 'El pedido no está pendiente de confirmación por transferencia.');
+    }
+    if (order.reservaStockExpira && order.reservaStockExpira <= new Date()) {
+      return sendError(res, 409, 'La reserva de stock venció. Revisá la disponibilidad antes de confirmar el pago.');
+    }
+    order.estado = 'pagado';
+    order.reservaStockActiva = false;
+    order.reservaStockExpira = undefined;
+    await order.save();
+    return res.json({ message: 'Transferencia confirmada.', estado: order.estado });
+  } catch (error) {
+    console.error('Error al confirmar transferencia:', error.message);
+    return sendError(res, 500, 'No se pudo confirmar la transferencia.');
+  }
+});
+
 app.post('/api/pagos/webhook', async (req, res) => {
   const paymentId = String(req.query['data.id'] || req.body?.data?.id || req.body?.id || '');
   if (!paymentId || !/^\d+$/.test(paymentId)) {
@@ -916,6 +1187,9 @@ if (!MONGO_URI) {
 if (MONGO_URI && process.exitCode !== 1) {
   mongoose.connect(MONGO_URI)
     .then(() => {
+      setInterval(() => {
+        liberarReservasVencidas().catch((error) => console.error('No se pudieron liberar reservas vencidas:', error.message));
+      }, 60_000).unref();
       app.listen(PORT, () => console.log(`Servidor backend conectado a MongoDB y escuchando en http://localhost:${PORT}`));
       if (!process.env.MP_ACCESS_TOKEN) {
         console.warn('Configura MP_ACCESS_TOKEN en backend/.env para habilitar checkout de Mercado Pago.');

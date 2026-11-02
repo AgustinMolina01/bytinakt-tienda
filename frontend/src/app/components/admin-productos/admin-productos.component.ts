@@ -13,6 +13,10 @@ interface PedidoAdmin {
   email: string;
   total: number;
   estado: string;
+  metodoPago?: string;
+  metodoEntrega?: string;
+  envio?: { direccion: string; ciudad: string; codigoPostal: string; telefono: string };
+  confirmandoTransferencia?: boolean;
   items: { nombre: string; talle?: string; color?: string; cantidad: number }[];
   createdAt: string;
 }
@@ -48,9 +52,11 @@ export class AdminProductosComponent implements OnInit {
     guiaTalles: ''
   };
 
+  editandoId: string | null = null;
   imagenesBanner: string[] = [];
   pedidos: PedidoAdmin[] = [];
   procesandoImagenes = false;
+  errorPedidos = '';
 
   constructor(
     private http: HttpClient,
@@ -81,8 +87,39 @@ export class AdminProductosComponent implements OnInit {
     this.http.get<PedidoAdmin[]>(`${API_URL}/admin/pedidos`, {
       headers: this.auth.encabezadosAutenticados()
     }).subscribe({
-      next: (orders) => this.pedidos = orders,
-      error: (error) => console.error('Error al cargar pedidos:', error)
+      next: (orders) => {
+        this.pedidos = orders;
+        this.errorPedidos = '';
+      },
+      error: (error) => {
+        console.error('Error al cargar pedidos:', error);
+        this.errorPedidos = error.error?.error || 'No se pudieron cargar los pedidos.';
+      }
+    });
+  }
+
+  confirmarTransferencia(pedido: PedidoAdmin): void {
+    if (pedido.estado !== 'pendiente' || pedido.metodoPago !== 'transferencia') {
+      return;
+    }
+    if (!confirm(`¿Confirmaste que recibiste la transferencia del pedido de ${pedido.clienteNombre}?`)) {
+      return;
+    }
+    pedido.confirmandoTransferencia = true;
+    this.http.patch<{ estado: string }>(
+      `${API_URL}/admin/pedidos/${encodeURIComponent(pedido._id)}/confirmar-transferencia`,
+      {},
+      { headers: this.auth.encabezadosAutenticados() }
+    ).subscribe({
+      next: ({ estado }) => {
+        pedido.estado = estado;
+        pedido.confirmandoTransferencia = false;
+        this.errorPedidos = '';
+      },
+      error: (error) => {
+        pedido.confirmandoTransferencia = false;
+        this.errorPedidos = error.error?.error || 'No se pudo confirmar la transferencia.';
+      }
     });
   }
 
@@ -105,14 +142,17 @@ export class AdminProductosComponent implements OnInit {
       imagenes: [...this.nuevoProducto.imagenes]
     };
 
-    this.http.post(`${API_URL}/productos`, productoParaGuardar, {
-      headers: this.auth.encabezadosAutenticados()
-    })
+    const editando = this.editandoId;
+    const headers = this.auth.encabezadosAutenticados();
+    const peticion = editando
+      ? this.http.put(`${API_URL}/productos/${editando}`, productoParaGuardar, { headers })
+      : this.http.post(`${API_URL}/productos`, productoParaGuardar, { headers });
+    peticion
       .subscribe({
         next: () => {
           this.cargarProductos();
           this.limpiarCampos();
-          alert('¡Producto agregado con éxito a MongoDB!');
+          alert(editando ? '¡Producto actualizado con éxito!' : '¡Producto agregado con éxito!');
         },
         error: (err) => {
           console.error('Error al guardar producto:', err);
@@ -144,7 +184,23 @@ export class AdminProductosComponent implements OnInit {
     }
   }
 
+  editarProducto(producto: Producto): void {
+    this.editandoId = producto._id || producto.id || null;
+    this.nuevoProducto = {
+      nombre: producto.nombre,
+      precio: producto.precio,
+      categoria: producto.categoria,
+      descripcion: producto.descripcion || '',
+      imagenes: [...(producto.imagenes || [])],
+      variantes: (producto.variantes || []).map((variant) => ({ ...variant })),
+      coloresTexto: (producto.colores || []).join(', '),
+      guiaTalles: producto.guiaTalles || ''
+    };
+    document.getElementById('form-producto')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
   limpiarCampos(): void {
+    this.editandoId = null;
     this.nuevoProducto = {
       nombre: '',
       precio: 0,

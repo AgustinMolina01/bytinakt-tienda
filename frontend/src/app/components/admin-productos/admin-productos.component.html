@@ -2,8 +2,8 @@
   <h2>Panel de Administración - Bytinakt</h2>
 
   <!-- Formulario para agregar producto -->
-  <form (ngSubmit)="agregarProducto()" class="form-producto">
-    <h3>Agregar Nuevo Producto</h3>
+  <form (ngSubmit)="agregarProducto()" class="form-producto" id="form-producto">
+    <h3>{{ editandoId ? 'Editar producto' : 'Agregar Nuevo Producto' }}</h3>
     
     <div class="form-group">
       <label>Nombre:</label>
@@ -72,8 +72,9 @@
     </div>
 
     <button type="submit" class="btn-guardar" [disabled]="procesandoImagenes">
-      {{ procesandoImagenes ? 'PROCESANDO IMÁGENES...' : 'Guardar Producto' }}
+      {{ procesandoImagenes ? 'PROCESANDO IMÁGENES...' : (editandoId ? 'Guardar cambios' : 'Guardar Producto') }}
     </button>
+    <button type="button" class="btn-eliminar" *ngIf="editandoId" (click)="limpiarCampos()">Cancelar edición</button>
   </form>
 
   <hr class="divider">
@@ -117,6 +118,7 @@
           <p *ngIf="producto.colores?.length">Colores: {{ producto.colores?.join(', ') }}</p>
           <p *ngIf="producto.variantes?.length">Stock: {{ resumenStock(producto) }}</p>
           <p *ngIf="producto.imagenes?.length">{{ producto.imagenes?.length }} imagen(es)</p>
+          <button type="button" class="btn-guardar" (click)="editarProducto(producto)">Editar</button>
           <button type="button" class="btn-eliminar" (click)="eliminarProducto(producto)">Eliminar</button>
         </div>
       </div>
@@ -124,11 +126,15 @@
 
     <section class="pedidos-admin">
       <h3>Pedidos recientes</h3>
+      <p *ngIf="errorPedidos" class="error-pedidos" role="alert">{{ errorPedidos }}</p>
       <p *ngIf="pedidos.length === 0">Todavía no hay pedidos.</p>
       <article class="pedido-admin" *ngFor="let pedido of pedidos">
         <div>
           <strong>{{ pedido.clienteNombre }}</strong> · {{ pedido.email }}
           <p>{{ pedido.items.length }} producto(s) · {{ pedido.createdAt | date:'short' }}</p>
+          <p>Entrega: {{ pedido.metodoEntrega === 'retiro' ? 'Retiro en el local' : 'Envío a domicilio' }}</p>
+          <p>Pago: {{ pedido.metodoPago === 'transferencia' ? 'Transferencia bancaria' : 'Mercado Pago' }}</p>
+          <p *ngIf="pedido.envio">Destino: {{ pedido.envio.direccion }}, {{ pedido.envio.ciudad }}</p>
           <small *ngFor="let item of pedido.items">
             {{ item.nombre }}<span *ngIf="item.talle"> · Talle {{ item.talle }}</span>
             <span *ngIf="item.color"> · {{ item.color }}</span> × {{ item.cantidad }}<br>
@@ -137,6 +143,11 @@
         <div>
           <strong>${{ pedido.total | number:'1.0-0' }}</strong>
           <span class="estado-pedido">{{ pedido.estado }}</span>
+          <button *ngIf="pedido.metodoPago === 'transferencia' && pedido.estado === 'pendiente'"
+            type="button" class="btn-confirmar-transferencia" [disabled]="pedido.confirmandoTransferencia"
+            (click)="confirmarTransferencia(pedido)">
+            {{ pedido.confirmandoTransferencia ? 'Confirmando...' : 'Confirmar transferencia recibida' }}
+          </button>
         </div>
       </article>
     </section>

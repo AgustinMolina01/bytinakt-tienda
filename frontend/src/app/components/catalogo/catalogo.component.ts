@@ -1,14 +1,21 @@
-import { Component, OnInit, OnDestroy, isDevMode } from '@angular/core';
+import { Component, OnDestroy, OnInit, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { Producto } from '../../models/producto.model';
 import { BannerService } from '../../services/banner.service';
 import { API_URL } from '../../services/api';
-import { AuthService } from '../../services/auth.service';
-import { CarritoService } from '../../services/carrito.service';
 import { PRODUCTOS_DEMO } from '../../services/productos-demo';
+import { CarritoService } from '../../services/carrito.service';
+import { CATEGORIAS_TIENDA } from '../site-header/site-header.component';
+import { SITE } from '../../config/site.config';
+
+const SIN_IMAGEN = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800"><rect width="600" height="800" fill="#f1e9e1"/>' +
+  '<text x="300" y="410" font-family="Georgia,serif" font-size="30" fill="#a89a90" text-anchor="middle">Sin imagen</text></svg>'
+);
 
 @Component({
   selector: 'app-catalogo',
@@ -19,98 +26,202 @@ import { PRODUCTOS_DEMO } from '../../services/productos-demo';
 })
 export class CatalogoComponent implements OnInit, OnDestroy {
   productos: Producto[] = [];
+  cargando = true;
   vistaDemo = false;
   errorCatalogo = '';
-  // ===== LOGICA Y TIEMPOS DE LA PRESENTACION DE CARGA =====
+  categoriaSeleccionada = '';
+  busqueda = '';
+
+  readonly site = SITE;
+  readonly letrasLogo = 'BYTINAKT'.split('');
   presentacionVisible = false;
   presentacionSaliendo = false;
-  private readonly imagenesProducto: Record<string, number> = {};
-  private temporizadorPresentacion?: ReturnType<typeof setTimeout>;
-  private temporizadorSalidaPresentacion?: ReturnType<typeof setTimeout>;
-  categoriaSeleccionada: string = 'TODAS';
-  menuAbierto: boolean = false;
-  
-  // Variable para conectar con el input [(ngModel)]="busqueda"
-  busqueda: string = '';
-
-  categoriasDisponibles: string[] = [
-    'REMERAS',
-    'BUZOS Y CAMPERAS',
-    'PANTALONES',
-    'ACCESORIOS'
-  ];
 
   imagenesBanner: string[] = [];
-  indiceBannerActual: number = 0;
-  intervaloBanner: any;
+  indiceBannerActual = 0;
+  bannerPausado = false;
+
+  readonly esqueletos = [1, 2, 3, 4, 5, 6, 7, 8];
+  private readonly imagenesProducto: Record<string, number> = {};
+  private intervaloBanner?: ReturnType<typeof setInterval>;
+  private temporizadorPresentacion?: ReturnType<typeof setTimeout>;
+  private temporizadorSalida?: ReturnType<typeof setTimeout>;
+  private suscripcionRuta?: Subscription;
+  private rutaInicializada = false;
 
   constructor(
     private http: HttpClient,
     private bannerService: BannerService,
-    readonly auth: AuthService,
-    readonly carrito: CarritoService
+    private route: ActivatedRoute,
+    private carrito: CarritoService
   ) {}
 
   ngOnInit(): void {
-    this.presentacionVisible = true;
-    this.temporizadorPresentacion = setTimeout(() => this.cerrarPresentacion(), 2200);
-
+    this.mostrarPresentacion();
     this.cargarProductos();
-    this.cargarBanners();
-    
-    // Cambia automáticamente cada 4 segundos
-    this.intervaloBanner = setInterval(() => {
-      this.siguienteBanner();
-    }, 4000);
+    this.imagenesBanner = this.bannerService.obtenerBanners();
+    this.iniciarBanner();
+
+    this.suscripcionRuta = this.route.queryParamMap.subscribe((params) => {
+      this.categoriaSeleccionada = params.get('categoria') || '';
+      this.busqueda = params.get('q') || '';
+      if (this.rutaInicializada && (this.categoriaSeleccionada || this.busqueda)) {
+        setTimeout(() => document.getElementById('coleccion')?.scrollIntoView({ behavior: 'smooth' }));
+      }
+      this.rutaInicializada = true;
+    });
   }
 
   ngOnDestroy(): void {
-    if (this.intervaloBanner) {
-      clearInterval(this.intervaloBanner);
+    clearInterval(this.intervaloBanner);
+    clearTimeout(this.temporizadorPresentacion);
+    clearTimeout(this.temporizadorSalida);
+    clearTimeout(this.temporizadorAviso);
+    this.suscripcionRuta?.unsubscribe();
+  }
+
+  // Presentación de carga: aparece cada vez que se abre el inicio.
+  private mostrarPresentacion(): void {
+    this.presentacionVisible = true;
+    this.temporizadorPresentacion = setTimeout(() => {
+      this.presentacionSaliendo = true;
+      this.temporizadorSalida = setTimeout(() => {
+        this.presentacionVisible = false;
+        this.presentacionSaliendo = false;
+      }, 750);
+    }, 3000);
+  }
+
+  // ---------- Agregar al carrito desde el catálogo ----------
+  abiertoId = '';
+  seleccion = { talle: '', color: '' };
+  errorSeleccion = '';
+  aviso = '';
+  avisoError = false;
+  private temporizadorAviso?: ReturnType<typeof setTimeout>;
+
+  tallesDe(producto: Producto): string[] {
+    if (producto.variantes?.length) {
+      return producto.variantes.map((variant) => variant.talle);
     }
-    if (this.temporizadorPresentacion) {
-      clearTimeout(this.temporizadorPresentacion);
+    const talles = producto.talle;
+    return Array.isArray(talles) ? talles : talles ? [talles] : [];
+  }
+
+  stockDe(producto: Producto, talle: string): number | null {
+    const variante = producto.variantes?.find((option) => option.talle === talle);
+    return variante ? variante.stock : null;
+  }
+
+  // Sin talles ni colores se agrega directo; si no, se abre el selector de la tarjeta.
+  agregarAlCarrito(producto: Producto): void {
+    const id = this.idDe(producto);
+    const talles = this.tallesDe(producto);
+    const colores = producto.colores || [];
+    if (!talles.length && !colores.length) {
+      this.confirmarAgregado(producto, '', '');
+      return;
     }
-    if (this.temporizadorSalidaPresentacion) {
-      clearTimeout(this.temporizadorSalidaPresentacion);
+    if (this.abiertoId === id) {
+      this.abiertoId = '';
+      return;
+    }
+    this.abiertoId = id;
+    this.errorSeleccion = '';
+    this.seleccion = {
+      talle: talles.length === 1 ? talles[0] : '',
+      color: colores.length === 1 ? colores[0] : ''
+    };
+  }
+
+  confirmarSeleccion(producto: Producto): void {
+    if (this.tallesDe(producto).length && !this.seleccion.talle) {
+      this.errorSeleccion = 'Elegí un talle.';
+      return;
+    }
+    if (producto.colores?.length && !this.seleccion.color) {
+      this.errorSeleccion = 'Elegí un color.';
+      return;
+    }
+    this.confirmarAgregado(producto, this.seleccion.talle, this.seleccion.color);
+  }
+
+  private confirmarAgregado(producto: Producto, talle: string, color: string): void {
+    try {
+      this.carrito.agregar(producto, talle, color);
+      this.abiertoId = '';
+      this.mostrarAviso(`${producto.nombre} se agregó al carrito.`, false);
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'No se pudo agregar al carrito.';
+      if (this.abiertoId) {
+        this.errorSeleccion = mensaje;
+      } else {
+        this.mostrarAviso(mensaje, true);
+      }
     }
   }
 
-  cerrarPresentacion(): void {
-    this.presentacionSaliendo = true;
-    this.temporizadorSalidaPresentacion = setTimeout(() => {
-      this.presentacionVisible = false;
-      this.presentacionSaliendo = false;
-    }, 550);
+  private mostrarAviso(mensaje: string, error: boolean): void {
+    this.aviso = mensaje;
+    this.avisoError = error;
+    clearTimeout(this.temporizadorAviso);
+    this.temporizadorAviso = setTimeout(() => (this.aviso = ''), 4500);
   }
 
-  // Cargar productos directamente desde MongoDB a través del Backend
   cargarProductos(): void {
-    this.http.get<Producto[]>(`${API_URL}/productos`)
-      .subscribe({
-        next: (data) => {
-          this.productos = data;
-          this.vistaDemo = false;
-          this.errorCatalogo = '';
-        },
-        error: (err) => {
-          console.error('Error al cargar productos de la base de datos:', err);
-          if (isDevMode()) {
-            this.productos = PRODUCTOS_DEMO;
-            this.vistaDemo = true;
-            return;
-          }
-          this.errorCatalogo = 'No se pudo cargar el catálogo. Intentá nuevamente más tarde.';
+    this.cargando = true;
+    this.errorCatalogo = '';
+    this.http.get<Producto[]>(`${API_URL}/productos`).subscribe({
+      next: (data) => {
+        this.productos = data;
+        this.vistaDemo = false;
+        this.cargando = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar productos de la base de datos:', err);
+        this.cargando = false;
+        if (isDevMode()) {
+          this.productos = PRODUCTOS_DEMO;
+          this.vistaDemo = true;
+          return;
         }
-      });
+        this.errorCatalogo = 'No se pudo cargar el catálogo. Intentá nuevamente en unos minutos.';
+      }
+    });
   }
 
-  cargarBanners(): void {
-    this.imagenesBanner = this.bannerService.obtenerBanners();
+  // ---------- Portada ----------
+  irABanner(indice: number): void {
+    this.indiceBannerActual = indice;
+    this.iniciarBanner();
   }
 
-  toggleMenu(): void {
-    this.menuAbierto = !this.menuAbierto;
+  moverBanner(delta: number): void {
+    const total = this.imagenesBanner.length;
+    if (total > 0) {
+      this.indiceBannerActual = (this.indiceBannerActual + delta + total) % total;
+      this.iniciarBanner();
+    }
+  }
+
+  private iniciarBanner(): void {
+    clearInterval(this.intervaloBanner);
+    if (this.imagenesBanner.length > 1) {
+      this.intervaloBanner = setInterval(() => {
+        if (!this.bannerPausado) {
+          this.siguienteBanner();
+        }
+      }, 6000);
+    }
+  }
+
+  // Cada categoría se ilustra con la primera prenda cargada en ella.
+  get categoriasPortada(): { nombre: string; cantidad: number; imagen: string }[] {
+    return CATEGORIAS_TIENDA.map((nombre) => {
+      const prendas = this.productos.filter((producto) => producto.categoria === nombre);
+      const imagen = prendas.map((producto) => this.imagenesDe(producto)[0]).find((url) => url && !url.startsWith('data:image/svg')) || '';
+      return { nombre, cantidad: prendas.length, imagen };
+    }).filter((categoria) => categoria.cantidad > 0);
   }
 
   siguienteBanner(): void {
@@ -129,38 +240,112 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.indiceBannerActual = index;
   }
 
-  filtrarCategoria(cat: string): void {
-    this.categoriaSeleccionada = cat;
-    if (this.menuAbierto) {
-      this.menuAbierto = false;
+  get tituloColeccion(): string {
+    if (this.busqueda) {
+      return `Resultados para “${this.busqueda}”`;
     }
+    return this.categoriaSeleccionada || 'Toda la colección';
   }
 
-  // Método que ejecuta el evento (input) del buscador
-  filtrarProductos(): void {
-    // La plantilla llama a este método para refrescar los resultados dinámicamente
-  }
+  // ---------- Filtros y orden ----------
+  orden: 'nuevos' | 'precio-asc' | 'precio-desc' | 'nombre' = 'nuevos';
+  filtrosAbiertos = false;
+  filtroTalles: string[] = [];
+  filtroColores: string[] = [];
+  precioMin: number | null = null;
+  precioMax: number | null = null;
+  private memoClave = '';
+  private memoLista: Producto[] = [];
 
-  // Método usado en el HTML (*ngFor="let producto of productosFiltrados()")
-  productosFiltrados(): Producto[] {
-    return this.productos.filter(producto => {
-      // 1. Filtrar por categoría
-      const coincideCategoria = this.categoriaSeleccionada === 'TODAS' || 
-                                producto.categoria === this.categoriaSeleccionada;
-      
-      // 2. Filtrar por texto ingresado en la lupa
-      const texto = this.busqueda.trim().toLowerCase();
-      const coincideBusqueda = !texto || 
-                               producto.nombre.toLowerCase().includes(texto) ||
-                               (producto.descripcion && producto.descripcion.toLowerCase().includes(texto));
+  private static readonly ORDEN_TALLES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ÚNICO'];
 
-      return coincideCategoria && coincideBusqueda;
+  get tallesCatalogo(): string[] {
+    const talles = new Set<string>();
+    this.productos.forEach((producto) => this.tallesDe(producto).forEach((talle) => talles.add(talle)));
+    const orden = CatalogoComponent.ORDEN_TALLES;
+    return [...talles].sort((a, b) => {
+      const ia = orden.indexOf(a);
+      const ib = orden.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
     });
   }
 
+  get coloresCatalogo(): string[] {
+    const colores = new Set<string>();
+    this.productos.forEach((producto) => (producto.colores || []).forEach((color) => colores.add(color)));
+    return [...colores].sort((a, b) => a.localeCompare(b));
+  }
+
+  private numeroOpcional(valor: number | null): number | null {
+    return valor === null || (valor as unknown) === '' || Number.isNaN(Number(valor)) ? null : Number(valor);
+  }
+
+  get filtrosActivos(): number {
+    return this.filtroTalles.length + this.filtroColores.length +
+      (this.numeroOpcional(this.precioMin) !== null ? 1 : 0) +
+      (this.numeroOpcional(this.precioMax) !== null ? 1 : 0);
+  }
+
+  alternarFiltro(lista: string[], valor: string): void {
+    const indice = lista.indexOf(valor);
+    if (indice >= 0) {
+      lista.splice(indice, 1);
+    } else {
+      lista.push(valor);
+    }
+  }
+
+  limpiarFiltrosExtra(): void {
+    this.filtroTalles = [];
+    this.filtroColores = [];
+    this.precioMin = null;
+    this.precioMax = null;
+  }
+
+  productosFiltrados(): Producto[] {
+    const clave = JSON.stringify([
+      this.productos.length, this.categoriaSeleccionada, this.busqueda, this.orden,
+      this.filtroTalles, this.filtroColores, this.precioMin, this.precioMax
+    ]);
+    if (clave === this.memoClave) {
+      return this.memoLista;
+    }
+    const texto = this.busqueda.trim().toLowerCase();
+    const min = this.numeroOpcional(this.precioMin);
+    const max = this.numeroOpcional(this.precioMax);
+    const lista = this.productos.filter((producto) => {
+      const coincideCategoria = !this.categoriaSeleccionada || producto.categoria === this.categoriaSeleccionada;
+      const coincideBusqueda = !texto ||
+        producto.nombre.toLowerCase().includes(texto) ||
+        (producto.descripcion || '').toLowerCase().includes(texto);
+      const coincideTalle = !this.filtroTalles.length ||
+        this.filtroTalles.some((talle) => this.tallesDe(producto).includes(talle) && this.stockDe(producto, talle) !== 0);
+      const coincideColor = !this.filtroColores.length ||
+        this.filtroColores.some((color) => (producto.colores || []).includes(color));
+      const coincidePrecio = (min === null || producto.precio >= min) && (max === null || producto.precio <= max);
+      return coincideCategoria && coincideBusqueda && coincideTalle && coincideColor && coincidePrecio;
+    });
+    const fecha = (producto: Producto) => (producto.createdAt ? Date.parse(producto.createdAt) : 0);
+    switch (this.orden) {
+      case 'precio-asc': lista.sort((a, b) => a.precio - b.precio); break;
+      case 'precio-desc': lista.sort((a, b) => b.precio - a.precio); break;
+      case 'nombre': lista.sort((a, b) => a.nombre.localeCompare(b.nombre)); break;
+      default: lista.sort((a, b) => fecha(b) - fecha(a));
+    }
+    this.memoClave = clave;
+    this.memoLista = lista;
+    return lista;
+  }
+
+  idDe(producto: Producto): string {
+    return producto._id || producto.id || '';
+  }
+
+  trackProducto = (_: number, producto: Producto): string => this.idDe(producto) || producto.nombre;
+
   imagenesDe(producto: Producto): string[] {
     const images = producto.imagenes?.filter(Boolean) || [];
-    return images.length ? images : [producto.imagenUrl || 'https://via.placeholder.com/600x900?text=Sin+Imagen'];
+    return images.length ? images : [producto.imagenUrl || SIN_IMAGEN];
   }
 
   estiloColor(color: string): string {
@@ -181,15 +366,14 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   }
 
   indiceImagen(producto: Producto): number {
-    const id = producto._id || producto.id || '';
-    const images = this.imagenesDe(producto);
-    return images.length ? (this.imagenesProducto[id] || 0) % images.length : 0;
+    const count = this.imagenesDe(producto).length;
+    return count ? (this.imagenesProducto[this.idDe(producto)] || 0) % count : 0;
   }
 
   cambiarImagen(producto: Producto, direccion: number, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    const id = producto._id || producto.id;
+    const id = this.idDe(producto);
     if (!id) {
       return;
     }
@@ -197,20 +381,20 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.imagenesProducto[id] = (this.indiceImagen(producto) + direccion + count) % count;
   }
 
-  agregarAlCarrito(producto: Producto): void {
-    try {
-      this.carrito.agregar(producto);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : 'No se pudo agregar el producto al carrito.');
+  imagenFallida(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img.src !== SIN_IMAGEN) {
+      img.src = SIN_IMAGEN;
     }
   }
 
-  estaAutenticado(): boolean {
-    return this.auth.autenticado;
+  irAColeccion(): void {
+    document.getElementById('coleccion')?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  obtenerNombreUsuario(): string {
-    return this.auth.usuario?.nombre.split(' ')[0] || 'MI CUENTA';
+  limpiarFiltros(): void {
+    this.categoriaSeleccionada = '';
+    this.busqueda = '';
+    this.limpiarFiltrosExtra();
   }
-
 }

@@ -4,7 +4,7 @@
   <p *ngIf="cargando" class="estado">Cargando producto...</p>
   <p *ngIf="error && !producto" class="estado error" role="alert">{{ error }}</p>
   <p *ngIf="esProductoDemo" class="aviso-demo-detalle">
-    Vista previa: esta prenda es ilustrativa. Podés probar talles y colores, pero no está disponible para compra real.
+    Vista previa: esta prenda es ilustrativa. Podés probar talles, colores y el carrito, pero no está disponible para compra real.
   </p>
 
   <section class="detalle-producto" *ngIf="producto as prenda">
@@ -68,8 +68,8 @@
       <ng-template #sinDescripcion><p class="descripcion">Consultanos si necesitás más información sobre esta prenda.</p></ng-template>
       <p *ngIf="mensaje" class="mensaje-exito" role="status">{{ mensaje }}</p>
       <p *ngIf="error && producto" class="error" role="alert">{{ error }}</p>
-      <button *ngIf="!esProductoDemo" type="button" class="agregar-carrito" (click)="agregarAlCarrito()">AGREGAR AL CARRITO</button>
-      <p *ngIf="esProductoDemo" class="nota-demo">Las opciones son solo para mostrar cómo se vería la ficha del producto.</p>
+      <button type="button" class="agregar-carrito" (click)="agregarAlCarrito()">AGREGAR AL CARRITO</button>
+      <p *ngIf="esProductoDemo" class="nota-demo">Es una prenda de muestra: podés agregarla para probar el carrito, pero no se puede comprar.</p>
       <a routerLink="/carrito" class="ir-carrito">Ir al carrito</a>
     </div>
   </section>

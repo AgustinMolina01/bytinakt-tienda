@@ -30,10 +30,10 @@
           <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.15a11 11 0 0 0 0 9.88l3.69-2.84z"/>
           <path fill="#EA4335" d="M12 4.36c1.62 0 3.06.56 4.21 1.64l3.15-3.15A10.53 10.53 0 0 0 12 0 11 11 0 0 0 2.15 7.06L5.84 9.9C6.71 7.3 9.14 5.36 12 5.36z"/>
         </svg>
-        Continuar con Google
+        {{ isRegisterMode ? 'Registrarme con Google' : 'Continuar con Google' }}
       </button>
 
-      <div class="auth-separador" aria-hidden="true"><span>o con tu correo</span></div>
+      <div class="auth-separador" aria-hidden="true"><span>{{ isRegisterMode ? 'o registrate con tu correo' : 'o con tu correo' }}</span></div>
 
       <form (ngSubmit)="onSubmit()">
         <div *ngIf="isRegisterMode && !codigoEnviado">

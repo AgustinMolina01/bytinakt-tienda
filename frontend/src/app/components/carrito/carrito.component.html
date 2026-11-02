@@ -1,56 +1,246 @@
-<main class="checkout">
-  <a routerLink="/" class="volver">← Seguir mirando</a>
-  <h1>Tu carrito</h1>
+<main class="checkout contenedor">
+  <header class="checkout-cabecera">
+    <a routerLink="/" class="volver">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+      Seguir comprando
+    </a>
+    <h1>{{ etapa === 1 ? 'Tu carrito' : etapa === 2 ? 'Entrega' : 'Pago' }}</h1>
+  </header>
 
-  <p class="vacio" *ngIf="carrito.items().length === 0">
-    Todavía no agregaste productos al carrito.
-    <a routerLink="/">Volver al catálogo</a>
-  </p>
+  <nav class="pasos" aria-label="Pasos de compra">
+    <ol>
+      <li [class.activo]="etapa === 1" [class.completado]="etapa > 1">
+        <button type="button" (click)="volverA(1)" [disabled]="etapa === 1 || procesando" [attr.aria-current]="etapa === 1 ? 'step' : null">
+          <span class="numero"><svg *ngIf="etapa > 1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><ng-container *ngIf="etapa === 1">1</ng-container></span>
+          <span class="nombre">Carrito</span>
+        </button>
+      </li>
+      <li [class.activo]="etapa === 2" [class.completado]="etapa > 2">
+        <button type="button" (click)="volverA(2)" [disabled]="etapa !== 3 || procesando" [attr.aria-current]="etapa === 2 ? 'step' : null">
+          <span class="numero"><svg *ngIf="etapa > 2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><ng-container *ngIf="etapa <= 2">2</ng-container></span>
+          <span class="nombre">Entrega</span>
+        </button>
+      </li>
+      <li [class.activo]="etapa === 3">
+        <div [attr.aria-current]="etapa === 3 ? 'step' : null">
+          <span class="numero">3</span>
+          <span class="nombre">Pago</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="numero">4</span>
+          <span class="nombre">Confirmación</span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Carrito vacío -->
+  <section class="carrito-vacio" *ngIf="carrito.items().length === 0">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+    </svg>
+    <h2>Tu carrito está vacío</h2>
+    <p>Todavía no agregaste prendas. Mirá la colección y encontrá tu próximo favorito.</p>
+    <a routerLink="/" class="btn">Ver colección</a>
+  </section>
 
   <div class="checkout-layout" *ngIf="carrito.items().length > 0">
-    <section class="items-carrito">
-      <article class="item-carrito" *ngFor="let item of carrito.items()">
-        <img [src]="item.producto.imagenUrl || item.producto.imagenes?.[0] || 'https://via.placeholder.com/120'" [alt]="item.producto.nombre">
-        <div class="datos-item">
-          <h2>{{ item.producto.nombre }}</h2>
-          <p>{{ item.producto.categoria }}</p>
-          <p *ngIf="item.talle">Talle: {{ item.talle }}</p>
-          <p *ngIf="item.color">Color: {{ item.color }}</p>
-          <strong>${{ item.producto.precio | number:'1.0-0' }}</strong>
-        </div>
-        <label class="cantidad">
-          Cantidad
-          <input type="number" min="1" max="20" [ngModel]="item.cantidad"
-            (ngModelChange)="carrito.cambiarCantidad(carrito.claveItem(item), $event)">
+    <section class="checkout-paso">
+
+      <!-- PASO 1: carrito -->
+      <ng-container *ngIf="etapa === 1">
+        <ul class="lista-items">
+          <li class="item" *ngFor="let item of carrito.items()">
+            <a class="item-foto" [routerLink]="['/producto', item.producto._id || item.producto.id]">
+              <img [src]="imagenDe(item)" [alt]="item.producto.nombre" width="96" height="120" loading="lazy">
+            </a>
+            <div class="item-datos">
+              <h3><a [routerLink]="['/producto', item.producto._id || item.producto.id]">{{ item.producto.nombre }}</a></h3>
+              <p class="item-variante" *ngIf="item.talle || item.color">
+                <span *ngIf="item.talle">Talle <strong>{{ item.talle }}</strong></span>
+                <span *ngIf="item.color">Color <strong>{{ item.color }}</strong></span>
+              </p>
+              <p class="item-unitario">${{ item.producto.precio | number:'1.0-0' }} c/u</p>
+              <div class="item-acciones">
+                <div class="cantidad" role="group" [attr.aria-label]="'Cantidad de ' + item.producto.nombre">
+                  <button type="button" (click)="cambiarCantidad(item, -1)" [disabled]="item.cantidad <= 1" aria-label="Quitar una unidad">−</button>
+                  <output [attr.aria-live]="'polite'">{{ item.cantidad }}</output>
+                  <button type="button" (click)="cambiarCantidad(item, 1)" [disabled]="item.cantidad >= 20" aria-label="Agregar una unidad">+</button>
+                </div>
+                <button type="button" class="quitar" (click)="carrito.quitar(carrito.claveItem(item))">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+                  Quitar
+                </button>
+              </div>
+            </div>
+            <p class="item-total">${{ item.producto.precio * item.cantidad | number:'1.0-0' }}</p>
+          </li>
+        </ul>
+
+        <p class="aviso-transferencia">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.4"/><circle cx="17" cy="17" r="2.4"/></svg>
+          <span>Pagando con transferencia bancaria tenés <strong>{{ descuentoPorcentaje }}% OFF</strong> sobre tus prendas.</span>
+        </p>
+
+        <p *ngIf="hayMuestras" class="mensaje mensaje-info" role="status">
+          <span>Hay prendas de muestra en tu carrito. Son ilustrativas y no se pueden comprar.</span>
+          <button type="button" class="enlace" (click)="quitarMuestras()">Quitar prendas de muestra</button>
+        </p>
+        <p *ngIf="error" class="mensaje mensaje-error" role="alert">
+          {{ error }}
+          <button *ngIf="configError" type="button" class="enlace" (click)="cargarConfig()">Reintentar</button>
+        </p>
+      </ng-container>
+
+      <!-- PASO 2: entrega -->
+      <form *ngIf="etapa === 2 && config as opciones" #formEntrega="ngForm" (ngSubmit)="continuarAlPago(formEntrega)" novalidate>
+        <p class="dato-contacto">Comprás como <strong>{{ auth.usuario?.email }}</strong></p>
+
+        <fieldset class="opciones">
+          <legend>¿Cómo querés recibir tu pedido?</legend>
+          <label class="opcion" [class.elegida]="metodoEntrega === 'retiro'">
+            <input type="radio" name="metodoEntrega" [(ngModel)]="metodoEntrega" value="retiro">
+            <span class="opcion-cuerpo">
+              <strong>Retirar en el local <em class="precio-opcion gratis">Gratis</em></strong>
+              <small>{{ opciones.pickup.address }} · CP {{ opciones.pickup.postalCode }}</small>
+            </span>
+          </label>
+          <label class="opcion opcion-deshabilitada" *ngIf="!opciones.homeDelivery.available">
+            <input type="radio" disabled>
+            <span class="opcion-cuerpo">
+              <strong>Envío a domicilio</strong>
+              <small>Estamos configurando las tarifas. Por ahora podés retirar en el local.</small>
+            </span>
+          </label>
+          <label class="opcion" *ngIf="opciones.homeDelivery.available" [class.elegida]="metodoEntrega === 'envio'">
+            <input type="radio" name="metodoEntrega" [(ngModel)]="metodoEntrega" value="envio">
+            <span class="opcion-cuerpo">
+              <strong>Envío a domicilio <em class="precio-opcion">${{ opciones.homeDelivery.cost | number:'1.0-0' }}</em></strong>
+              <small>Lo recibís en la puerta de tu casa. El costo se suma al total.</small>
+            </span>
+          </label>
+        </fieldset>
+
+        <h2 class="subtitulo">Datos de contacto</h2>
+        <label class="campo">Teléfono
+          <input name="telefono" [(ngModel)]="envio.telefono" required maxlength="30" autocomplete="tel" placeholder="Ej: 223 555 1234">
         </label>
-        <button type="button" class="quitar" (click)="carrito.quitar(carrito.claveItem(item))">Quitar</button>
-      </article>
-      <div class="total-carrito">
-        <span>Total de productos</span>
-        <strong>${{ carrito.total | number:'1.0-0' }}</strong>
-      </div>
+        <ng-container *ngIf="metodoEntrega === 'envio'">
+          <label class="campo">Dirección
+            <input name="direccion" [(ngModel)]="envio.direccion" required maxlength="160" autocomplete="street-address" placeholder="Calle y número">
+          </label>
+          <div class="campos-en-linea">
+            <label class="campo">Ciudad
+              <input name="ciudad" [(ngModel)]="envio.ciudad" required maxlength="100" autocomplete="address-level2">
+            </label>
+            <label class="campo">Código postal
+              <input name="codigoPostal" [(ngModel)]="envio.codigoPostal" required maxlength="20" autocomplete="postal-code">
+            </label>
+          </div>
+        </ng-container>
+
+        <p *ngIf="avisoPerfil" class="mensaje">{{ avisoPerfil }} <a routerLink="/perfil">Abrir mi perfil</a></p>
+        <p *ngIf="error" class="mensaje mensaje-error" role="alert">{{ error }}</p>
+        <div class="acciones-paso">
+          <button type="button" class="btn btn-borde" (click)="volverA(1)">Volver al carrito</button>
+          <button type="submit" class="btn">Continuar al pago</button>
+        </div>
+      </form>
+
+      <!-- PASO 3: pago -->
+      <section *ngIf="etapa === 3 && config as opciones" class="paso-pago">
+        <p class="resumen-entrega">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <span>
+            <strong>{{ metodoEntrega === 'retiro' ? 'Retiro en el local' : 'Envío a domicilio' }}</strong>
+            <span *ngIf="metodoEntrega === 'retiro'"> · {{ opciones.pickup.address }}</span>
+            <span *ngIf="metodoEntrega === 'envio'"> · {{ envio.direccion }}, {{ envio.ciudad }}</span>
+          </span>
+          <button type="button" class="enlace" (click)="volverA(2)" [disabled]="procesando">Cambiar</button>
+        </p>
+
+        <fieldset class="opciones">
+          <legend>¿Cómo querés pagar?</legend>
+          <label class="opcion" *ngIf="opciones.mercadopago.available" [class.elegida]="metodoPago === 'mercadopago'">
+            <input type="radio" name="metodoPago" [(ngModel)]="metodoPago" value="mercadopago">
+            <span class="opcion-cuerpo">
+              <strong>Mercado Pago</strong>
+              <small>Tarjetas de crédito y débito, dinero en cuenta y más. Hasta 3 cuotas sin interés.</small>
+            </span>
+          </label>
+          <label class="opcion" *ngIf="opciones.bankTransfer.available" [class.elegida]="metodoPago === 'transferencia'">
+            <input type="radio" name="metodoPago" [(ngModel)]="metodoPago" value="transferencia">
+            <span class="opcion-cuerpo">
+              <strong>Transferencia bancaria <em class="precio-opcion gratis">{{ opciones.bankTransfer.discountPercent }}% OFF</em></strong>
+              <small>{{ opciones.bankTransfer.bank }}. Te mostramos los datos para transferir al confirmar el pedido.</small>
+            </span>
+          </label>
+          <p *ngIf="!opciones.mercadopago.available && !opciones.bankTransfer.available" class="mensaje">
+            Los medios de pago todavía no están disponibles. Escribinos por Instagram para coordinar tu compra.
+          </p>
+        </fieldset>
+
+        <p *ngIf="error" class="mensaje mensaje-error" role="alert">{{ error }}</p>
+        <div class="acciones-paso">
+          <button type="button" class="btn btn-borde" (click)="volverA(2)" [disabled]="procesando">Volver</button>
+          <button type="button" class="btn" (click)="confirmarCompra()"
+            [disabled]="procesando || (!opciones.mercadopago.available && !opciones.bankTransfer.available)">
+            {{ procesando ? 'Procesando...' : metodoPago === 'transferencia' ? 'Confirmar pedido' : 'Ir a Mercado Pago' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Opciones de entrega y pago todavía cargando o con error -->
+      <p *ngIf="etapa !== 1 && !config" class="mensaje" role="status">Cargando opciones...</p>
     </section>
 
-    <form class="form-envio" #formEnvio="ngForm" (ngSubmit)="continuarAlPago()">
-      <h2>Datos para el envío</h2>
-      <p *ngIf="avisoPerfil" class="nota">{{ avisoPerfil }} <a routerLink="/perfil">Abrir mi perfil</a></p>
-      <label>Dirección
-        <input name="direccion" [(ngModel)]="envio.direccion" required maxlength="160" autocomplete="street-address">
-      </label>
-      <label>Ciudad
-        <input name="ciudad" [(ngModel)]="envio.ciudad" required maxlength="100" autocomplete="address-level2">
-      </label>
-      <label>Código postal
-        <input name="codigoPostal" [(ngModel)]="envio.codigoPostal" required maxlength="20" autocomplete="postal-code">
-      </label>
-      <label>Teléfono
-        <input name="telefono" [(ngModel)]="envio.telefono" required maxlength="30" autocomplete="tel">
-      </label>
-      <p *ngIf="!auth.autenticado" class="nota">Vas a iniciar sesión antes de confirmar el pedido.</p>
-      <p *ngIf="error" class="error">{{ error }}</p>
-      <button type="submit" [disabled]="!formEnvio.valid || procesando">
-        {{ procesando ? 'CONECTANDO CON MERCADO PAGO...' : 'CONTINUAR AL PAGO' }}
+    <!-- Resumen -->
+    <aside class="resumen" aria-label="Resumen de compra">
+      <h2>Resumen del pedido</h2>
+
+      <ul class="resumen-items" *ngIf="etapa > 1">
+        <li *ngFor="let item of carrito.items()">
+          <img [src]="imagenDe(item)" [alt]="" width="44" height="56">
+          <span class="resumen-nombre">{{ item.producto.nombre }}<small>{{ item.cantidad }} × ${{ item.producto.precio | number:'1.0-0' }}</small></span>
+          <span>${{ item.producto.precio * item.cantidad | number:'1.0-0' }}</span>
+        </li>
+      </ul>
+
+      <dl>
+        <div><dt>Subtotal · {{ subtotalItems }} {{ subtotalItems === 1 ? 'prenda' : 'prendas' }}</dt><dd>${{ carrito.total | number:'1.0-0' }}</dd></div>
+        <div>
+          <dt>Envío</dt>
+          <dd *ngIf="etapa === 1" class="suave">Se calcula en el siguiente paso</dd>
+          <dd *ngIf="etapa > 1">{{ costoEnvio ? ('$' + (costoEnvio | number:'1.0-0')) : 'Gratis' }}</dd>
+        </div>
+        <div class="descuento" *ngIf="descuentoTransferencia > 0">
+          <dt>Descuento por transferencia</dt><dd>−${{ descuentoTransferencia | number:'1.0-0' }}</dd>
+        </div>
+        <div class="total"><dt>Total</dt><dd>${{ totalFinal | number:'1.0-0' }}</dd></div>
+      </dl>
+
+      <button *ngIf="etapa === 1" type="button" class="btn btn-ancho" (click)="continuarAEntrega()"
+        [disabled]="(cargandoConfig && !config) || hayMuestras">
+        Continuar con la compra
       </button>
-    </form>
+      <p class="cuotas-resumen" *ngIf="etapa === 1">o 3 cuotas sin interés de <strong>${{ carrito.total / 3 | number:'1.0-0' }}</strong></p>
+
+      <ul class="garantias">
+        <li>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          Pago seguro
+        </li>
+        <li>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+          Envíos a todo el país
+        </li>
+        <li>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          Retiro en el local
+        </li>
+      </ul>
+    </aside>
   </div>
 </main>

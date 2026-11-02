@@ -11,4 +11,5 @@ export interface Producto {
   guiaTalles?: string;
   imagenUrl?: string;
   imagenes?: string[];
+  createdAt?: string;
 }

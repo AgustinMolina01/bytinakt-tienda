@@ -1,0 +1,91 @@
+<div class="barra-promociones" role="region" aria-label="Información de envíos y promociones">
+  <p class="solo-lectores">Envíos a todo el país. 20% OFF por transferencia. 3 cuotas sin interés.</p>
+  <div class="cinta" aria-hidden="true">
+    <div class="grupo" *ngFor="let copia of [1, 2]">
+      <span>Envíos a todo el país</span><i>✦</i>
+      <span>20% OFF por transferencia</span><i>✦</i>
+      <span>3 cuotas sin interés</span><i>✦</i>
+      <span>Retiro en el local</span><i>✦</i>
+    </div>
+  </div>
+</div>
+
+<header class="header">
+  <div class="header-barra contenedor">
+    <div class="lado lado-izq">
+      <button type="button" class="icono-btn menu-btn" (click)="menuAbierto = true"
+        aria-label="Abrir menú" aria-haspopup="dialog" [attr.aria-expanded]="menuAbierto">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 7h18M3 12h18M3 17h18"/>
+        </svg>
+      </button>
+
+      <form class="buscador" role="search" (submit)="enviarBusqueda($event)">
+        <label class="solo-lectores" for="buscador-tienda">Buscar prendas</label>
+        <input id="buscador-tienda" name="busqueda" type="search" placeholder="Buscar prendas"
+          autocomplete="off" [(ngModel)]="busqueda" (input)="buscar()">
+        <button type="submit" class="icono-btn buscador-btn" aria-label="Buscar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <a routerLink="/" class="logo" (click)="irAlInicio()" aria-label="BYTINAKT, ir al inicio">BYTINAKT<span>.</span></a>
+
+    <div class="lado lado-der">
+      <a *ngIf="!auth.autenticado" routerLink="/auth" class="accion" aria-label="Iniciar sesión">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>
+        </svg>
+        <span class="accion-texto">Ingresar</span>
+      </a>
+      <a *ngIf="auth.autenticado && !auth.administrador" routerLink="/perfil" class="accion" aria-label="Mi perfil">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>
+        </svg>
+        <span class="accion-texto">{{ nombreCorto }}</span>
+      </a>
+      <a *ngIf="auth.administrador" routerLink="/admin" class="accion" aria-label="Panel de administración">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        <span class="accion-texto">Panel</span>
+      </a>
+      <a routerLink="/carrito" class="accion" [attr.aria-label]="'Carrito, ' + carrito.cantidadTotal + ' productos'">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+        </svg>
+        <span class="accion-texto">Carrito</span>
+        <span class="contador" *ngIf="carrito.cantidadTotal > 0">{{ carrito.cantidadTotal }}</span>
+      </a>
+    </div>
+  </div>
+
+  <nav class="nav contenedor" aria-label="Categorías de la tienda">
+    <button type="button" [class.activo]="enInicio && !categoriaActiva" (click)="irACategoria('')">Ver todo</button>
+    <button type="button" *ngFor="let cat of categorias"
+      [class.activo]="enInicio && categoriaActiva === cat" (click)="irACategoria(cat)">{{ cat }}</button>
+  </nav>
+</header>
+
+<!-- Menú lateral para pantallas chicas -->
+<div class="cortina" *ngIf="menuAbierto" (click)="menuAbierto = false"></div>
+<aside class="cajon" [class.abierto]="menuAbierto" role="dialog" aria-label="Menú de navegación" [attr.aria-hidden]="!menuAbierto">
+  <div class="cajon-cabecera">
+    <span class="cajon-logo">BYTINAKT<span>.</span></span>
+    <button type="button" class="icono-btn" (click)="menuAbierto = false" aria-label="Cerrar menú">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <button type="button" [attr.tabindex]="menuAbierto ? 0 : -1" (click)="irACategoria('')">Ver toda la colección</button>
+  <button type="button" *ngFor="let cat of categorias" [attr.tabindex]="menuAbierto ? 0 : -1" (click)="irACategoria(cat)">{{ cat }}</button>
+  <hr>
+  <a routerLink="/carrito" [attr.tabindex]="menuAbierto ? 0 : -1">Mi carrito</a>
+  <a *ngIf="!auth.autenticado" routerLink="/auth" [attr.tabindex]="menuAbierto ? 0 : -1">Ingresar o crear cuenta</a>
+  <a *ngIf="auth.autenticado && !auth.administrador" routerLink="/pedidos" [attr.tabindex]="menuAbierto ? 0 : -1">Mis pedidos</a>
+  <a *ngIf="auth.autenticado && !auth.administrador" routerLink="/perfil" [attr.tabindex]="menuAbierto ? 0 : -1">Mi perfil</a>
+  <a routerLink="/ayuda" [attr.tabindex]="menuAbierto ? 0 : -1">Ayuda</a>
+  <a *ngIf="auth.administrador" routerLink="/admin" [attr.tabindex]="menuAbierto ? 0 : -1">Panel de administración</a>
+</aside>

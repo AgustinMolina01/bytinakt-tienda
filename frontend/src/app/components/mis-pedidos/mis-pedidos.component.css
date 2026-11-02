@@ -1,0 +1,257 @@
+:host {
+  display: block;
+  min-height: 70vh;
+  background: var(--color-crema);
+}
+
+.pedidos {
+  padding-block: clamp(20px, 3vw, 40px) 0;
+}
+
+.cabecera {
+  margin-bottom: 28px;
+}
+
+.migas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--color-suave);
+  font-size: 13px;
+}
+
+.migas a {
+  color: var(--color-suave);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--color-marca);
+}
+
+h1 {
+  font-size: clamp(30px, 4.5vw, 44px);
+}
+
+.cabecera p {
+  margin: 8px 0 0;
+  color: var(--color-suave);
+}
+
+.lista {
+  display: grid;
+  max-width: 860px;
+  gap: 18px;
+}
+
+.pedido {
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-grande);
+  background: #fff;
+}
+
+.pedido-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 18px clamp(16px, 3vw, 24px);
+  border-bottom: 1px solid var(--color-linea);
+}
+
+.pedido-cabecera h2 {
+  font-family: var(--fuente-texto);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pedido-cabecera p {
+  margin: 2px 0 0;
+  color: var(--color-suave);
+  font-size: 13px;
+}
+
+.estado {
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--color-crema-fuerte);
+  color: var(--color-marca);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.estado[data-estado='pagado'] {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito);
+}
+
+.estado[data-estado='cancelado'],
+.estado[data-estado='error_pago'] {
+  background: var(--color-error-fondo);
+  color: var(--color-error);
+}
+
+.items {
+  display: grid;
+  margin: 0;
+  padding: 6px clamp(16px, 3vw, 24px);
+  list-style: none;
+}
+
+.items li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+}
+
+.items li + li {
+  border-top: 1px solid var(--color-linea);
+}
+
+.items img {
+  width: 56px;
+  height: 70px;
+  border-radius: 4px;
+  object-fit: cover;
+  object-position: top;
+  background: var(--color-crema-fuerte);
+}
+
+.item-info {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.item-info strong {
+  color: var(--color-tinta);
+  font-size: 14.5px;
+}
+
+.item-info span {
+  color: var(--color-suave);
+  font-size: 13px;
+}
+
+.item-total {
+  color: var(--color-tinta);
+  font-weight: 700;
+}
+
+.pedido-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 16px clamp(16px, 3vw, 24px) 20px;
+  border-top: 1px solid var(--color-linea);
+  background: var(--color-crema);
+  border-radius: 0 0 var(--radio-grande) var(--radio-grande);
+}
+
+.pedido-pie dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.pedido-pie dl > div {
+  display: flex;
+  gap: 14px;
+  font-size: 13.5px;
+}
+
+dt {
+  min-width: 64px;
+  color: var(--color-suave);
+}
+
+dd {
+  margin: 0;
+  color: var(--color-texto);
+  font-weight: 600;
+}
+
+.total dt,
+.total dd {
+  color: var(--color-tinta);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.acciones .btn {
+  min-height: 42px;
+  padding: 0 18px;
+  font-size: 11.5px;
+}
+
+.esqueleto {
+  height: 210px;
+  border-radius: var(--radio-grande);
+  background: linear-gradient(100deg, var(--color-crema-fuerte) 30%, #f8f3ee 50%, var(--color-crema-fuerte) 70%);
+  background-size: 300% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes brillo {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+.vacio {
+  display: grid;
+  max-width: 860px;
+  justify-items: center;
+  gap: 12px;
+  padding: clamp(48px, 9vw, 88px) 20px;
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio-grande);
+  background: #fff;
+  color: var(--color-acento);
+  text-align: center;
+}
+
+.vacio h2 {
+  font-size: 26px;
+}
+
+.vacio p {
+  margin: 0 0 8px;
+  color: var(--color-suave);
+}
+
+.aviso {
+  display: flex;
+  max-width: 860px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--color-error);
+  border-radius: 0 var(--radio) var(--radio) 0;
+  background: var(--color-error-fondo);
+  color: var(--color-error);
+}
+
+.aviso .btn {
+  min-height: 38px;
+  padding: 0 18px;
+}
+
+@media (max-width: 520px) {
+  .acciones,
+  .acciones .btn {
+    width: 100%;
+  }
+}
