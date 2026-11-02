@@ -96,12 +96,17 @@ export class PagoResultadoComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Preparando, enviado y entregado son etapas posteriores al pago aprobado.
+  private normalizarEstado(estado: string): string {
+    return ['preparando', 'enviado', 'entregado'].includes(estado) ? 'pagado' : estado;
+  }
+
   private consultarPedidoTransferencia(): void {
     this.http.get<{ estado: string; total: number }>(`${API_URL}/pedidos/${this.pedidoId}`, {
       headers: this.auth.encabezadosAutenticados()
     }).subscribe({
       next: (order) => {
-        this.estado = order.estado;
+        this.estado = this.normalizarEstado(order.estado);
         this.totalPedido = order.total;
         if (this.estado === 'pagado') {
           this.carrito.vaciar();
@@ -133,7 +138,7 @@ export class PagoResultadoComponent implements OnInit, OnDestroy {
 
     request.subscribe({
       next: (order) => {
-        this.estado = order.estado;
+        this.estado = this.normalizarEstado(order.estado);
         if (this.estado === 'pagado') {
           this.carrito.vaciar();
           this.detenerConsulta();

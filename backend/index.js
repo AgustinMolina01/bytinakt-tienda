@@ -35,7 +35,9 @@ app.use(cors({
 // Solo la carga de productos acepta cuerpos grandes (imágenes en base64).
 const smallJson = express.json({ limit: '100kb' });
 const productJson = express.json({ limit: '20mb' });
-const isProductWrite = (req) => req.path.startsWith('/api/productos') && ['POST', 'PUT'].includes(req.method);
+const isProductWrite = (req) =>
+  (req.path.startsWith('/api/productos') && ['POST', 'PUT'].includes(req.method)) ||
+  (req.path === '/api/admin/banners' && req.method === 'POST');
 app.use((req, res, next) => (isProductWrite(req) ? productJson : smallJson)(req, res, next));
 
 const rateLimitMessage = { error: 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.' };
@@ -107,7 +109,14 @@ const productoSchema = new mongoose.Schema({
   }],
   colores: [{ type: String, trim: true }],
   guiaTalles: { type: String, trim: true, maxlength: 2000, default: '' },
-  imagenes: [String]
+  imagenes: [String],
+  precioOferta: { type: Number, min: 0, default: 0 },
+  publicado: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const bannerSchema = new mongoose.Schema({
+  imagen: { type: String, required: true },
+  orden: { type: Number, default: 0 }
 }, { timestamps: true });
 
 const pedidoSchema = new mongoose.Schema({
@@ -134,7 +143,17 @@ const pedidoSchema = new mongoose.Schema({
     imagen: { type: String, default: '' }
   }],
   total: { type: Number, required: true },
-  estado: { type: String, enum: ['pendiente', 'pagado', 'cancelado', 'error_pago'], default: 'pendiente' },
+  estado: {
+    type: String,
+    enum: ['pendiente', 'pagado', 'preparando', 'enviado', 'entregado', 'cancelado', 'error_pago'],
+    default: 'pendiente'
+  },
+  seguimiento: { type: String, trim: true, maxlength: 120, default: '' },
+  historial: [{
+    estado: { type: String, required: true },
+    fecha: { type: Date, default: Date.now },
+    _id: false
+  }],
   reservaStockActiva: { type: Boolean, default: false },
   reservaStockExpira: Date,
   preferenciaPago: String,
@@ -144,6 +163,25 @@ const pedidoSchema = new mongoose.Schema({
 const Usuario = mongoose.models.Usuario || mongoose.model('Usuario', usuarioSchema);
 const Producto = mongoose.models.Producto || mongoose.model('Producto', productoSchema);
 const Pedido = mongoose.models.Pedido || mongoose.model('Pedido', pedidoSchema);
+const Banner = mongoose.models.Banner || mongoose.model('Banner', bannerSchema);
+
+// Estados desde los que el administrador puede mover un pedido a cada estado.
+const TRANSICIONES_PEDIDO = {
+  pendiente: ['cancelado'],
+  pagado: ['preparando', 'enviado', 'entregado', 'cancelado'],
+  preparando: ['enviado', 'entregado', 'cancelado'],
+  enviado: ['entregado'],
+  entregado: [],
+  cancelado: [],
+  error_pago: []
+};
+const ESTADOS_VENTA = ['pagado', 'preparando', 'enviado', 'entregado'];
+
+// Precio que ve y paga el cliente: el de oferta cuando está cargado y es menor al de lista.
+function precioVigente(product) {
+  const oferta = Number(product.precioOferta);
+  return oferta > 0 && oferta < product.precio ? oferta : product.precio;
+}
 
 const emailVerificationSecret = process.env.AUTH_TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
 let firebaseAuth;
@@ -212,6 +250,105 @@ function getEmailTransporter() {
     secure: true,
     auth: { user: emailUser, pass: emailPassword.replace(/\s/g, '') }
   });
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+
+// Los avisos por correo nunca deben romper la operación principal: si no hay correo
+// configurado o falla el envío, solo se registra el error.
+async function enviarCorreo(to, subject, html) {
+  const transporter = getEmailTransporter();
+  if (!transporter || !to) {
+    return;
+  }
+  try {
+    await transporter.sendMail({ from: `Bytinakt <${process.env.EMAIL_USER}>`, to, subject, html });
+  } catch (error) {
+    console.error('No se pudo enviar el correo:', error.message);
+  }
+}
+
+function numeroDePedido(order) {
+  return `#${String(order._id).slice(-8).toUpperCase()}`;
+}
+
+function plantillaCorreo(titulo, parrafos, order) {
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:4200').split(',')[0].trim();
+  const items = order
+    ? `<ul style="padding-left:18px;color:#3a3330">${order.items.map((item) =>
+        `<li>${escapeHtml(item.nombre)}${item.talle ? ` · Talle ${escapeHtml(item.talle)}` : ''}${item.color ? ` · ${escapeHtml(item.color)}` : ''} × ${item.cantidad}</li>`).join('')}</ul>
+       <p style="color:#3a3330"><strong>Total: $${Number(order.total).toLocaleString('es-AR')}</strong></p>`
+    : '';
+  return `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;border:1px solid #e9e2dc">
+    <h2 style="font-family:Georgia,serif;color:#803a3a;margin:0 0 16px">BYTINAKT.</h2>
+    <h3 style="color:#211c1b;margin:0 0 12px">${escapeHtml(titulo)}</h3>
+    ${parrafos.map((texto) => `<p style="color:#3a3330;line-height:1.6">${texto}</p>`).join('')}
+    ${items}
+    <p><a href="${escapeHtml(frontendUrl)}/pedidos" style="color:#803a3a">Ver mis pedidos</a></p>
+  </div>`;
+}
+
+// evento: recibido | pagado | preparando | enviado | entregado | cancelado
+function notificarPedido(order, evento) {
+  const numero = numeroDePedido(order);
+  const retiro = order.metodoEntrega === 'retiro';
+  const mensajes = {
+    recibido: {
+      asunto: `Recibimos tu pedido ${numero}`,
+      titulo: 'Recibimos tu pedido',
+      parrafos: [`Hola ${escapeHtml(order.clienteNombre)}, tu pedido ${numero} quedó reservado. Cuando acreditemos tu transferencia te avisamos por este medio. La reserva dura 24 horas.`]
+    },
+    pagado: {
+      asunto: `Pago confirmado ${numero}`,
+      titulo: 'Confirmamos tu pago',
+      parrafos: [`Hola ${escapeHtml(order.clienteNombre)}, ya acreditamos el pago de tu pedido ${numero}. Empezamos a prepararlo.`]
+    },
+    preparando: {
+      asunto: `Estamos preparando tu pedido ${numero}`,
+      titulo: 'Estamos preparando tu pedido',
+      parrafos: [`Hola ${escapeHtml(order.clienteNombre)}, tu pedido ${numero} se está preparando.`]
+    },
+    enviado: {
+      asunto: retiro ? `Tu pedido ${numero} está listo para retirar` : `Tu pedido ${numero} fue enviado`,
+      titulo: retiro ? 'Tu pedido está listo para retirar' : 'Tu pedido está en camino',
+      parrafos: retiro
+        ? [`Hola ${escapeHtml(order.clienteNombre)}, podés pasar a retirar tu pedido ${numero} por el local.`]
+        : [`Hola ${escapeHtml(order.clienteNombre)}, despachamos tu pedido ${numero}.`,
+            ...(order.seguimiento ? [`Código de seguimiento: <strong>${escapeHtml(order.seguimiento)}</strong>`] : [])]
+    },
+    entregado: {
+      asunto: `Pedido ${numero} entregado`,
+      titulo: '¡Gracias por tu compra!',
+      parrafos: [`Hola ${escapeHtml(order.clienteNombre)}, tu pedido ${numero} fue entregado. Esperamos que lo disfrutes.`]
+    },
+    cancelado: {
+      asunto: `Pedido ${numero} cancelado`,
+      titulo: 'Tu pedido fue cancelado',
+      parrafos: [`Hola ${escapeHtml(order.clienteNombre)}, tu pedido ${numero} fue cancelado. Si tenés dudas, escribinos.`]
+    }
+  };
+  const mensaje = mensajes[evento];
+  if (mensaje && !(evento === 'recibido' && order.metodoPago !== 'transferencia')) {
+    enviarCorreo(order.email, mensaje.asunto, plantillaCorreo(mensaje.titulo, mensaje.parrafos, order));
+  }
+
+  // Aviso a la tienda cuando entra una compra: al recibir una transferencia, o al aprobarse Mercado Pago.
+  const avisarTienda = (evento === 'recibido' && order.metodoPago === 'transferencia') ||
+    (evento === 'pagado' && order.metodoPago === 'mercadopago');
+  const destinoTienda = process.env.ADMIN_NOTIFY_EMAIL || process.env.EMAIL_USER;
+  if (avisarTienda && destinoTienda) {
+    enviarCorreo(
+      destinoTienda,
+      `Nuevo pedido ${numero} de ${order.clienteNombre}`,
+      plantillaCorreo('Entró un pedido nuevo', [
+        `${escapeHtml(order.clienteNombre)} (${escapeHtml(order.email)}) hizo el pedido ${numero}.`,
+        `Pago: ${order.metodoPago === 'transferencia' ? 'transferencia (hay que confirmarla en el panel)' : 'Mercado Pago, ya cobrado'}. Entrega: ${retiro ? 'retiro en el local' : 'envío a domicilio'}.`
+      ], order)
+    );
+  }
 }
 
 function getFirebaseAuth() {
@@ -515,12 +652,17 @@ function publicBaseUrl(req) {
   return (process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 }
 
-function withImageUrls(req, product) {
+// Con aplicarOferta (vista de la tienda) `precio` pasa a ser el vigente y el de lista queda en
+// `precioLista`; el panel de administración recibe los dos precios tal como se cargaron.
+function withImageUrls(req, product, aplicarOferta = false) {
   const imagenes = (product.imagenesRef || []).map((ref, index) =>
     ref || `${publicBaseUrl(req)}/api/productos/${product._id}/imagen/${index}?v=${new Date(product.updatedAt || 0).getTime()}`
   );
   const { imagenesRef, ...rest } = product;
-  return { ...rest, imagenes, imagenUrl: imagenes[0] || '' };
+  const vigente = precioVigente(product);
+  const conOferta = aplicarOferta && vigente < product.precio;
+  const precios = conOferta ? { precio: vigente, precioLista: product.precio } : {};
+  return { ...rest, ...precios, imagenes, imagenUrl: imagenes[0] || '' };
 }
 
 const productImageProjection = {
@@ -536,12 +678,13 @@ const productImageProjection = {
 app.get('/api/productos', async (req, res) => {
   try {
     const productos = await Producto.aggregate([
+      { $match: { publicado: { $ne: false } } },
       { $sort: { createdAt: -1 } },
       { $addFields: productImageProjection },
       { $project: { imagenes: 0 } }
     ]);
     res.set('Cache-Control', 'public, max-age=30');
-    return res.json(productos.map((producto) => withImageUrls(req, producto)));
+    return res.json(productos.map((producto) => withImageUrls(req, producto, true)));
   } catch (error) {
     console.error('Error al consultar productos:', error.message);
     return sendError(res, 500, 'No se pudieron consultar los productos.');
@@ -561,7 +704,14 @@ app.get('/api/productos/:id', async (req, res) => {
     if (!product) {
       return sendError(res, 404, 'No se encontró el producto.');
     }
-    return res.json(withImageUrls(req, product));
+    if (product.publicado === false) {
+      const authorization = req.get('authorization') || '';
+      const session = verifyToken(authorization.startsWith('Bearer ') ? authorization.slice(7) : '');
+      if (session?.role !== 'admin') {
+        return sendError(res, 404, 'No se encontró el producto.');
+      }
+    }
+    return res.json(withImageUrls(req, product, true));
   } catch (error) {
     console.error('Error al consultar el producto:', error.message);
     return sendError(res, 500, 'No se pudo consultar el producto.');
@@ -608,9 +758,12 @@ function parseProductBody(body) {
     variantes = [],
     colores = [],
     guiaTalles = '',
-    imagenes = []
+    imagenes = [],
+    precioOferta = 0,
+    publicado = true
   } = body || {};
   const numericPrice = Number(precio);
+  const numericOffer = Number(precioOferta || 0);
   const validVariants = Array.isArray(variantes) && variantes.every((variant) =>
     variant && typeof variant.talle === 'string' && variant.talle.trim().length > 0 &&
     variant.talle.trim().length <= 20 && Number.isInteger(variant.stock) &&
@@ -621,6 +774,8 @@ function parseProductBody(body) {
   if (typeof nombre !== 'string' || !nombre.trim() || nombre.trim().length > 120 ||
       typeof categoria !== 'string' || !PRODUCT_CATEGORIES.includes(categoria.trim()) ||
       !Number.isFinite(numericPrice) || numericPrice <= 0 ||
+      !Number.isFinite(numericOffer) || numericOffer < 0 || (numericOffer > 0 && numericOffer >= numericPrice) ||
+      typeof publicado !== 'boolean' ||
       !Array.isArray(talle) || talle.length > 10 ||
       !talle.every((size) => typeof size === 'string' && size.length <= 20) ||
       !validVariants || variantSizes.length > 10 || new Set(variantSizes).size !== variantSizes.length ||
@@ -630,7 +785,7 @@ function parseProductBody(body) {
       !Array.isArray(imagenes) || imagenes.length > 3 ||
       !imagenes.every((image) => typeof image === 'string' && image.length <= 5 * 1024 * 1024) ||
       typeof descripcion !== 'string' || descripcion.length > 2000) {
-    return { error: 'Revisá el nombre, categoría, precio, talles, stock, colores e imágenes.' };
+    return { error: 'Revisá el nombre, categoría, precio (la oferta debe ser menor al precio), talles, stock, colores e imágenes.' };
   }
 
   return {
@@ -638,6 +793,8 @@ function parseProductBody(body) {
       nombre: nombre.trim(),
       descripcion: descripcion.trim(),
       precio: numericPrice,
+      precioOferta: numericOffer,
+      publicado,
       categoria: categoria.trim(),
       talle: variantSizes.length ? variantSizes : talle.map((size) => size.trim().toUpperCase()),
       variantes: variantes.map((variant) => ({
@@ -677,7 +834,7 @@ app.put('/api/productos/:id', requireAuth, requireAdmin, async (req, res) => {
     }
     const keptImages = (Array.isArray(req.body?.imagenes) ? req.body.imagenes : []).map((image) => {
       const match = typeof image === 'string'
-        ? new RegExp(`/api/productos/${req.params.id}/imagen/(\d)(?:\?|$)`).exec(image)
+        ? new RegExp(`/api/productos/${req.params.id}/imagen/(\\d)(?:\\?|$)`).exec(image)
         : null;
       return match ? existing.imagenes?.[Number(match[1])] || '' : image;
     }).filter(Boolean);
@@ -706,6 +863,152 @@ app.delete('/api/productos/:id', requireAuth, requireAdmin, async (req, res) => 
   } catch (error) {
     console.error('Error al eliminar producto:', error.message);
     return sendError(res, 500, 'No se pudo eliminar el producto.');
+  }
+});
+
+// ---------- Administración de productos ----------
+app.get('/api/admin/productos', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const productos = await Producto.aggregate([
+      { $sort: { createdAt: -1 } },
+      { $addFields: productImageProjection },
+      { $project: { imagenes: 0 } }
+    ]);
+    return res.json(productos.map((producto) => withImageUrls(req, producto)));
+  } catch (error) {
+    console.error('Error al consultar productos para administración:', error.message);
+    return sendError(res, 500, 'No se pudieron consultar los productos.');
+  }
+});
+
+app.patch('/api/admin/productos/:id/publicado', requireAuth, requireAdmin, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id) || typeof req.body?.publicado !== 'boolean') {
+    return sendError(res, 400, 'Los datos del producto no son válidos.');
+  }
+  try {
+    const product = await Producto.findByIdAndUpdate(
+      req.params.id, { $set: { publicado: req.body.publicado } }, { new: true }
+    ).select('publicado');
+    if (!product) {
+      return sendError(res, 404, 'No se encontró el producto.');
+    }
+    return res.json({ publicado: product.publicado });
+  } catch (error) {
+    console.error('Error al cambiar la visibilidad del producto:', error.message);
+    return sendError(res, 500, 'No se pudo cambiar la visibilidad del producto.');
+  }
+});
+
+app.patch('/api/admin/productos/:id/stock', requireAuth, requireAdmin, async (req, res) => {
+  const talle = typeof req.body?.talle === 'string' ? req.body.talle.trim().toUpperCase() : '';
+  const stock = Number(req.body?.stock);
+  if (!mongoose.isValidObjectId(req.params.id) || !talle || !Number.isInteger(stock) || stock < 0 || stock > 10000) {
+    return sendError(res, 400, 'Indicá un talle y un stock entre 0 y 10000.');
+  }
+  try {
+    const product = await Producto.findOneAndUpdate(
+      { _id: req.params.id, 'variantes.talle': talle },
+      { $set: { 'variantes.$.stock': stock } },
+      { new: true }
+    ).select('variantes');
+    if (!product) {
+      return sendError(res, 404, 'No se encontró el producto o el talle.');
+    }
+    return res.json({ variantes: product.variantes });
+  } catch (error) {
+    console.error('Error al actualizar el stock:', error.message);
+    return sendError(res, 500, 'No se pudo actualizar el stock.');
+  }
+});
+
+app.post('/api/admin/productos/:id/duplicar', requireAuth, requireAdmin, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return sendError(res, 400, 'El identificador del producto no es válido.');
+  }
+  try {
+    const original = await Producto.findById(req.params.id).lean();
+    if (!original) {
+      return sendError(res, 404, 'No se encontró el producto.');
+    }
+    const { _id, createdAt, updatedAt, __v, ...datos } = original;
+    const copia = await Producto.create({
+      ...datos,
+      nombre: `${original.nombre} (copia)`.slice(0, 120),
+      publicado: false
+    });
+    return res.status(201).json({ message: 'Producto duplicado. Quedó pausado hasta que lo publiques.', id: copia._id });
+  } catch (error) {
+    console.error('Error al duplicar producto:', error.message);
+    return sendError(res, 500, 'No se pudo duplicar el producto.');
+  }
+});
+
+// ---------- Portada (carrusel) ----------
+app.get('/api/banners', async (req, res) => {
+  try {
+    const banners = await Banner.find().select('_id updatedAt').sort({ orden: 1, createdAt: 1 }).lean();
+    res.set('Cache-Control', 'public, max-age=30');
+    return res.json(banners.map((banner) => ({
+      id: banner._id,
+      url: `${publicBaseUrl(req)}/api/banners/${banner._id}/imagen?v=${new Date(banner.updatedAt || 0).getTime()}`
+    })));
+  } catch (error) {
+    console.error('Error al consultar la portada:', error.message);
+    return sendError(res, 500, 'No se pudo consultar la portada.');
+  }
+});
+
+app.get('/api/banners/:id/imagen', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.sendStatus(404);
+    }
+    const banner = await Banner.findById(req.params.id).select('imagen').lean();
+    const match = /^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,(.+)$/s.exec(banner?.imagen || '');
+    if (!match) {
+      return res.sendStatus(404);
+    }
+    res.set({
+      'Content-Type': match[1],
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff'
+    });
+    return res.send(Buffer.from(match[2], 'base64'));
+  } catch (error) {
+    console.error('Error al servir la imagen de portada:', error.message);
+    return res.sendStatus(500);
+  }
+});
+
+app.post('/api/admin/banners', requireAuth, requireAdmin, async (req, res) => {
+  const imagen = req.body?.imagen;
+  if (typeof imagen !== 'string' || imagen.length > 6 * 1024 * 1024 ||
+      !/^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/.test(imagen)) {
+    return sendError(res, 400, 'Subí una imagen válida de hasta 6 MB.');
+  }
+  try {
+    const cantidad = await Banner.countDocuments();
+    if (cantidad >= 8) {
+      return sendError(res, 409, 'La portada admite hasta 8 imágenes. Eliminá alguna para agregar otra.');
+    }
+    const banner = await Banner.create({ imagen, orden: cantidad });
+    return res.status(201).json({ id: banner._id });
+  } catch (error) {
+    console.error('Error al guardar la imagen de portada:', error.message);
+    return sendError(res, 500, 'No se pudo guardar la imagen de portada.');
+  }
+});
+
+app.delete('/api/admin/banners/:id', requireAuth, requireAdmin, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return sendError(res, 400, 'El identificador de la imagen no es válido.');
+  }
+  try {
+    const eliminado = await Banner.findByIdAndDelete(req.params.id);
+    return eliminado ? res.json({ message: 'Imagen eliminada.' }) : sendError(res, 404, 'No se encontró la imagen.');
+  } catch (error) {
+    console.error('Error al eliminar la imagen de portada:', error.message);
+    return sendError(res, 500, 'No se pudo eliminar la imagen.');
   }
 });
 
@@ -791,6 +1094,9 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
     if (products.length !== productIds.length) {
       return sendError(res, 400, 'Uno o más productos ya no están disponibles.');
     }
+    if (products.some((product) => product.publicado === false)) {
+      return sendError(res, 400, 'Uno o más productos ya no están disponibles.');
+    }
     const productsById = new Map(products.map((product) => [String(product._id), product]));
 
     for (const line of requestedLines) {
@@ -823,7 +1129,7 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
         nombre: product.nombre,
         talle: line.talle,
         color: line.color,
-        precio: product.precio,
+        precio: precioVigente(product),
         cantidad: line.cantidad,
         imagen: product.imagenes?.[0] && !product.imagenes[0].startsWith('data:') ? product.imagenes[0] : ''
       };
@@ -875,6 +1181,7 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
       descuentoTransferencia,
       items: orderItems,
       total: subtotal + costoEnvio - descuentoTransferencia,
+      historial: [{ estado: 'pendiente', fecha: new Date() }],
       reservaStockActiva: reservas.length > 0,
       reservaStockExpira
     });
@@ -886,6 +1193,7 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
     }
 
     if (metodoPago === 'transferencia') {
+      notificarPedido(order, 'recibido');
       return res.status(201).json({
         pedidoId: order._id,
         estado: order.estado,
@@ -968,6 +1276,8 @@ app.get('/api/pedidos/mios', requireAuth, async (req, res) => {
       descuentoTransferencia: order.descuentoTransferencia,
       total: order.total,
       createdAt: order.createdAt,
+      seguimiento: order.seguimiento || '',
+      historial: order.historial || [],
       reservaStockExpira: order.reservaStockExpira,
       items: order.items.map((item) => ({
         producto: item.producto,
@@ -1033,10 +1343,11 @@ async function updatePaymentStatus(paymentId, expectedOrderId = '') {
     // Se "reclama" el pedido de forma atómica: si el webhook y /pagos/estado llegan a la vez,
     // solo uno pasa de no-pagado a pagado y descuenta stock una única vez.
     const previous = await Pedido.findOneAndUpdate(
-      { _id: order._id, estado: { $ne: 'pagado' } },
+      { _id: order._id, estado: { $nin: ESTADOS_VENTA } },
       {
         $set: { estado: 'pagado', pagoId: String(payment.id), reservaStockActiva: false },
-        $unset: { reservaStockExpira: '' }
+        $unset: { reservaStockExpira: '' },
+        $push: { historial: { estado: 'pagado', fecha: new Date() } }
       },
       { new: false }
     );
@@ -1073,9 +1384,11 @@ async function updatePaymentStatus(paymentId, expectedOrderId = '') {
         return Pedido.findByIdAndUpdate(order._id, { $set: { estado: 'error_pago' } }, { new: true });
       }
     }
-    return Pedido.findById(order._id);
+    const pagado = await Pedido.findById(order._id);
+    notificarPedido(pagado, 'pagado');
+    return pagado;
   } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
-    if (order.estado === 'pagado') {
+    if (ESTADOS_VENTA.includes(order.estado)) {
       return order;
     }
     if (order.reservaStockActiva) {
@@ -1144,11 +1457,98 @@ app.patch('/api/admin/pedidos/:id/confirmar-transferencia', requireAuth, require
     order.estado = 'pagado';
     order.reservaStockActiva = false;
     order.reservaStockExpira = undefined;
+    order.historial.push({ estado: 'pagado', fecha: new Date() });
     await order.save();
+    notificarPedido(order, 'pagado');
     return res.json({ message: 'Transferencia confirmada.', estado: order.estado });
   } catch (error) {
     console.error('Error al confirmar transferencia:', error.message);
     return sendError(res, 500, 'No se pudo confirmar la transferencia.');
+  }
+});
+
+app.patch('/api/admin/pedidos/:id/estado', requireAuth, requireAdmin, async (req, res) => {
+  const nuevoEstado = req.body?.estado;
+  const seguimiento = typeof req.body?.seguimiento === 'string' ? req.body.seguimiento.trim().slice(0, 120) : '';
+  if (!mongoose.isValidObjectId(req.params.id) || !['preparando', 'enviado', 'entregado', 'cancelado'].includes(nuevoEstado)) {
+    return sendError(res, 400, 'El pedido o el estado indicado no es válido.');
+  }
+  try {
+    const desde = Object.keys(TRANSICIONES_PEDIDO).filter((estado) => TRANSICIONES_PEDIDO[estado].includes(nuevoEstado));
+    const set = { estado: nuevoEstado };
+    if (nuevoEstado === 'enviado') {
+      set.seguimiento = seguimiento;
+    }
+    const update = { $set: set, $push: { historial: { estado: nuevoEstado, fecha: new Date() } } };
+    if (nuevoEstado === 'cancelado') {
+      set.reservaStockActiva = false;
+      update.$unset = { reservaStockExpira: '' };
+    }
+    // El cambio es atómico: si dos personas tocan el mismo pedido, solo una transición se aplica.
+    const previous = await Pedido.findOneAndUpdate({ _id: req.params.id, estado: { $in: desde } }, update, { new: false });
+    if (!previous) {
+      return sendError(res, 409, 'Ese pedido no puede pasar a ese estado desde su estado actual.');
+    }
+    if (nuevoEstado === 'cancelado' && (previous.reservaStockActiva || previous.estado !== 'pendiente')) {
+      await devolverStock(previous.items);
+    }
+    const order = await Pedido.findById(previous._id);
+    notificarPedido(order, nuevoEstado);
+    return res.json({ estado: order.estado, seguimiento: order.seguimiento || '', historial: order.historial });
+  } catch (error) {
+    console.error('Error al cambiar el estado del pedido:', error.message);
+    return sendError(res, 500, 'No se pudo cambiar el estado del pedido.');
+  }
+});
+
+app.get('/api/admin/resumen', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0, 0, 0, 0);
+    const [ventas, pendientesPago, porPreparar, preparando, enCamino, productos] = await Promise.all([
+      Pedido.aggregate([
+        { $match: { estado: { $in: ESTADOS_VENTA }, createdAt: { $gte: inicioMes } } },
+        { $group: { _id: null, total: { $sum: '$total' }, cantidad: { $sum: 1 } } }
+      ]),
+      Pedido.countDocuments({ estado: 'pendiente' }),
+      Pedido.countDocuments({ estado: 'pagado' }),
+      Pedido.countDocuments({ estado: 'preparando' }),
+      Pedido.countDocuments({ estado: 'enviado' }),
+      Producto.aggregate([{
+        $project: {
+          nombre: 1,
+          publicado: 1,
+          conVariantes: { $gt: [{ $size: { $ifNull: ['$variantes', []] } }, 0] },
+          stockTotal: { $sum: '$variantes.stock' }
+        }
+      }])
+    ]);
+    const conStock = productos.filter((producto) => producto.conVariantes);
+    const agotados = conStock.filter((producto) => producto.stockTotal === 0);
+    const stockBajo = conStock.filter((producto) => producto.stockTotal > 0 && producto.stockTotal <= 3);
+    return res.json({
+      ventasMes: ventas[0]?.total || 0,
+      pedidosMes: ventas[0]?.cantidad || 0,
+      pendientesPago,
+      porPreparar,
+      preparando,
+      enCamino,
+      productos: {
+        total: productos.length,
+        publicados: productos.filter((producto) => producto.publicado !== false).length,
+        agotados: agotados.length,
+        stockBajo: stockBajo.length
+      },
+      alertas: [...agotados, ...stockBajo].slice(0, 10).map((producto) => ({
+        id: producto._id,
+        nombre: producto.nombre,
+        stock: producto.stockTotal
+      }))
+    });
+  } catch (error) {
+    console.error('Error al armar el resumen:', error.message);
+    return sendError(res, 500, 'No se pudo armar el resumen.');
   }
 });
 

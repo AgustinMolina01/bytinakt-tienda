@@ -18,7 +18,8 @@ interface ItemPedido {
 
 interface Pedido {
   _id: string;
-  estado: 'pendiente' | 'pagado' | 'cancelado' | 'error_pago';
+  estado: 'pendiente' | 'pagado' | 'preparando' | 'enviado' | 'entregado' | 'cancelado' | 'error_pago';
+  seguimiento?: string;
   metodoPago: 'mercadopago' | 'transferencia';
   metodoEntrega: 'retiro' | 'envio';
   costoEnvio: number;
@@ -75,10 +76,25 @@ export class MisPedidosComponent implements OnInit {
   etiquetaEstado(pedido: Pedido): string {
     switch (pedido.estado) {
       case 'pagado': return 'Pagado';
+      case 'preparando': return 'Preparando tu pedido';
+      case 'enviado': return pedido.metodoEntrega === 'retiro' ? 'Listo para retirar' : 'En camino';
+      case 'entregado': return 'Entregado';
       case 'cancelado': return 'Cancelado';
       case 'error_pago': return 'Pago no completado';
       default: return pedido.metodoPago === 'transferencia' ? 'Esperando transferencia' : 'Pago pendiente';
     }
+  }
+
+  // Etapas del avance; las que ya se alcanzaron quedan marcadas.
+  etapas(pedido: Pedido): { nombre: string; hecha: boolean }[] {
+    const orden = ['pagado', 'preparando', 'enviado', 'entregado'];
+    const actual = orden.indexOf(pedido.estado);
+    const enviado = pedido.metodoEntrega === 'retiro' ? 'Para retirar' : 'En camino';
+    return ['Pagado', 'Preparando', enviado, 'Entregado'].map((nombre, i) => ({ nombre, hecha: i <= actual }));
+  }
+
+  conAvance(pedido: Pedido): boolean {
+    return ['pagado', 'preparando', 'enviado', 'entregado'].includes(pedido.estado);
   }
 
   cantidadPrendas(pedido: Pedido): number {

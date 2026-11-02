@@ -35,6 +35,13 @@
         <span class="estado" [attr.data-estado]="pedido.estado">{{ etiquetaEstado(pedido) }}</span>
       </header>
 
+      <ol class="avance" *ngIf="conAvance(pedido)" aria-label="Avance del pedido">
+        <li *ngFor="let etapa of etapas(pedido)" [class.hecho]="etapa.hecha">{{ etapa.nombre }}</li>
+      </ol>
+      <p class="seguimiento" *ngIf="pedido.estado === 'enviado' && pedido.seguimiento">
+        Código de seguimiento: <strong>{{ pedido.seguimiento }}</strong>
+      </p>
+
       <ul class="items">
         <li *ngFor="let item of pedido.items">
           <img [src]="item.imagen" [alt]="item.nombre" width="56" height="70" loading="lazy" (error)="imagenFallida($event)">

@@ -3,6 +3,9 @@ export interface Producto {
   id?: string;
   nombre: string;
   precio: number;
+  precioLista?: number;
+  precioOferta?: number;
+  publicado?: boolean;
   categoria: 'REMERAS' | 'BUZOS Y CAMPERAS' | 'PANTALONES' | 'ACCESORIOS' | string;
   descripcion?: string;
   talle?: string | string[];

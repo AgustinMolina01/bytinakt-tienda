@@ -206,7 +206,11 @@
               <span *ngFor="let color of producto.colores!.slice(0, 4)" [style.background-color]="estiloColor(color)" [title]="color"></span>
             </div>
           </div>
-          <p class="precio">${{ producto.precio | number:'1.0-0' }}</p>
+          <p class="precio">
+            <s class="precio-lista" *ngIf="producto.precioLista">${{ producto.precioLista | number:'1.0-0' }}</s>
+            ${{ producto.precio | number:'1.0-0' }}
+            <span class="etiqueta-oferta" *ngIf="producto.precioLista">-{{ (1 - producto.precio / producto.precioLista) * 100 | number:'1.0-0' }}%</span>
+          </p>
           <p class="cuotas">3 cuotas sin interés de ${{ producto.precio / 3 | number:'1.0-0' }}</p>
 
           <button type="button" class="btn-agregar" (click)="agregarAlCarrito(producto)"

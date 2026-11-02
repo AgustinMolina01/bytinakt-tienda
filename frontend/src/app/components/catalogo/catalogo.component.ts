@@ -59,8 +59,15 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.mostrarPresentacion();
     this.cargarProductos();
-    this.imagenesBanner = this.bannerService.obtenerBanners();
+    this.imagenesBanner = this.bannerService.imagenesPorDefecto;
     this.iniciarBanner();
+    this.bannerService.obtenerBanners().subscribe((imagenes) => {
+      if (imagenes.length > 0 && imagenes.join() !== this.imagenesBanner.join()) {
+        this.imagenesBanner = imagenes;
+        this.indiceBannerActual = 0;
+        this.iniciarBanner();
+      }
+    });
 
     this.suscripcionRuta = this.route.queryParamMap.subscribe((params) => {
       this.categoriaSeleccionada = params.get('categoria') || '';

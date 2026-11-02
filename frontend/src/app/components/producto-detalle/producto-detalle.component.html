@@ -22,7 +22,11 @@
     <div class="informacion-producto">
       <p class="categoria">{{ prenda.categoria }}</p>
       <h1>{{ prenda.nombre }}</h1>
-      <p class="precio">${{ prenda.precio | number:'1.0-0' }}</p>
+      <p class="precio">
+        <s class="precio-lista" *ngIf="prenda.precioLista">${{ prenda.precioLista | number:'1.0-0' }}</s>
+        ${{ prenda.precio | number:'1.0-0' }}
+        <span class="etiqueta-oferta" *ngIf="prenda.precioLista">-{{ (1 - prenda.precio / prenda.precioLista) * 100 | number:'1.0-0' }}%</span>
+      </p>
       <p class="cuotas">3 cuotas de ${{ (prenda.precio / 3) | number:'1.0-0' }}</p>
       <section class="selector-opcion" *ngIf="tallesDisponibles().length">
         <div class="etiqueta-opcion">

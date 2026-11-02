@@ -75,6 +75,25 @@
   font-weight: 500;
 }
 
+.precio-lista {
+  margin-right: 8px;
+  color: var(--color-suave);
+  font-size: .6em;
+  font-weight: 400;
+}
+
+.etiqueta-oferta {
+  margin-left: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-marca);
+  color: #fff;
+  font-family: var(--fuente-texto);
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: 3px;
+}
+
 .precio {
   margin: 0;
   font-size: 24px;

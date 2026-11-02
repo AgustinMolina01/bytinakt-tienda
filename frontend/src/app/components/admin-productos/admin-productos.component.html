@@ -1,186 +1,322 @@
-<div class="admin-container">
-  <h2>Panel de Administración - Bytinakt</h2>
+<div class="admin contenedor">
+  <header class="admin-cabecera">
+    <div>
+      <p class="sobretitulo">Panel de administración</p>
+      <h1>BYTINAKT<span>.</span></h1>
+    </div>
+    <a routerLink="/" class="btn btn-borde">Ver la tienda</a>
+  </header>
 
-  <!-- Formulario para agregar producto -->
-  <form (ngSubmit)="agregarProducto()" class="form-producto" id="form-producto">
-    <h3>{{ editandoId ? 'Editar producto' : 'Agregar Nuevo Producto' }}</h3>
-    
-    <div class="form-group">
-      <label>Nombre:</label>
-      <input type="text" [(ngModel)]="nuevoProducto.nombre" name="nombre" required placeholder="Ej: Remera Oversize">
+  <nav class="pestanas" role="tablist" aria-label="Secciones del panel">
+    <button type="button" role="tab" [class.activa]="pestana === 'resumen'" [attr.aria-selected]="pestana === 'resumen'" (click)="irA('resumen')">Resumen</button>
+    <button type="button" role="tab" [class.activa]="pestana === 'pedidos'" [attr.aria-selected]="pestana === 'pedidos'" (click)="irA('pedidos')">
+      Pedidos
+      <span class="insignia" *ngIf="contarPedidos('pendiente') + contarPedidos('pagado') > 0">{{ contarPedidos('pendiente') + contarPedidos('pagado') }}</span>
+    </button>
+    <button type="button" role="tab" [class.activa]="pestana === 'productos'" [attr.aria-selected]="pestana === 'productos'" (click)="irA('productos')">Productos</button>
+    <button type="button" role="tab" [class.activa]="pestana === 'portada'" [attr.aria-selected]="pestana === 'portada'" (click)="irA('portada')">Portada</button>
+  </nav>
+
+  <div class="aviso" *ngIf="aviso" [class.aviso-error]="aviso.tipo === 'error'" [attr.role]="aviso.tipo === 'error' ? 'alert' : 'status'">
+    {{ aviso.texto }}
+    <button type="button" (click)="aviso = null" aria-label="Cerrar aviso">×</button>
+  </div>
+
+  <!-- ================= RESUMEN ================= -->
+  <section *ngIf="pestana === 'resumen'" class="seccion">
+    <div class="estadisticas">
+      <article class="dato dato-principal">
+        <span>Ventas de este mes</span>
+        <strong>${{ (resumen?.ventasMes || 0) | number:'1.0-0' }}</strong>
+        <small>{{ resumen?.pedidosMes || 0 }} pedido(s) pagos</small>
+      </article>
+      <button type="button" class="dato dato-accion" [class.alerta]="(resumen?.pendientesPago || 0) > 0" (click)="irA('pedidos', 'pendiente')">
+        <span>Por confirmar</span>
+        <strong>{{ resumen?.pendientesPago || 0 }}</strong>
+        <small>Transferencias o pagos pendientes</small>
+      </button>
+      <button type="button" class="dato dato-accion" [class.alerta]="(resumen?.porPreparar || 0) > 0" (click)="irA('pedidos', 'pagado')">
+        <span>Por preparar</span>
+        <strong>{{ resumen?.porPreparar || 0 }}</strong>
+        <small>Pagados, esperando que los armes</small>
+      </button>
+      <button type="button" class="dato dato-accion" (click)="irA('pedidos', 'preparando')">
+        <span>En preparación</span>
+        <strong>{{ resumen?.preparando || 0 }}</strong>
+        <small>{{ resumen?.enCamino || 0 }} en camino o para retirar</small>
+      </button>
+      <button type="button" class="dato dato-accion" (click)="irA('productos')">
+        <span>Productos en la tienda</span>
+        <strong>{{ resumen?.productos?.publicados || 0 }}</strong>
+        <small>{{ resumen?.productos?.total || 0 }} cargados en total</small>
+      </button>
+      <button type="button" class="dato dato-accion" [class.alerta]="((resumen?.productos?.agotados || 0) + (resumen?.productos?.stockBajo || 0)) > 0" (click)="stockFiltro = 'bajo'; irA('productos')">
+        <span>Stock bajo o agotado</span>
+        <strong>{{ (resumen?.productos?.agotados || 0) + (resumen?.productos?.stockBajo || 0) }}</strong>
+        <small>{{ resumen?.productos?.agotados || 0 }} agotado(s)</small>
+      </button>
     </div>
 
-    <div class="form-group">
-      <label>Precio ($):</label>
-      <input type="number" [(ngModel)]="nuevoProducto.precio" name="precio" required placeholder="25000">
+    <div class="paneles">
+      <section class="panel">
+        <h2>Qué hacer ahora</h2>
+        <ul class="tareas">
+          <li *ngIf="(resumen?.pendientesPago || 0) > 0">
+            <span>Hay <strong>{{ resumen?.pendientesPago }}</strong> pedido(s) esperando pago. Confirmá las transferencias que ya llegaron.</span>
+            <button type="button" class="enlace" (click)="irA('pedidos', 'pendiente')">Ver</button>
+          </li>
+          <li *ngIf="(resumen?.porPreparar || 0) > 0">
+            <span>Hay <strong>{{ resumen?.porPreparar }}</strong> pedido(s) pagado(s) para preparar.</span>
+            <button type="button" class="enlace" (click)="irA('pedidos', 'pagado')">Ver</button>
+          </li>
+          <li *ngIf="(resumen?.productos?.agotados || 0) > 0">
+            <span><strong>{{ resumen?.productos?.agotados }}</strong> producto(s) sin stock. Se siguen viendo en la tienda pero no se pueden comprar.</span>
+            <button type="button" class="enlace" (click)="stockFiltro = 'agotados'; irA('productos')">Ver</button>
+          </li>
+          <li *ngIf="(resumen?.productos?.total || 0) === 0">
+            <span>Todavía no cargaste productos. Empezá con el primero.</span>
+            <button type="button" class="enlace" (click)="irA('productos'); abrirFormulario()">Agregar</button>
+          </li>
+          <li class="tarea-ok" *ngIf="resumen && !resumen.pendientesPago && !resumen.porPreparar && !resumen.productos.agotados && resumen.productos.total > 0">
+            Todo al día. No hay nada pendiente.
+          </li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Productos con poco stock</h2>
+        <p class="vacio" *ngIf="!resumen?.alertas?.length">Ningún producto está por agotarse.</p>
+        <ul class="alertas" *ngIf="resumen?.alertas?.length">
+          <li *ngFor="let alerta of resumen?.alertas">
+            <span>{{ alerta.nombre }}</span>
+            <span class="chip" [class.chip-error]="alerta.stock === 0">{{ alerta.stock === 0 ? 'Agotado' : alerta.stock + ' u.' }}</span>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <!-- ================= PEDIDOS ================= -->
+  <section *ngIf="pestana === 'pedidos'" class="seccion">
+    <div class="herramientas">
+      <input type="search" class="buscador" [(ngModel)]="busquedaPedido" name="busquedaPedido"
+        placeholder="Buscar por nombre, mail o número de pedido" aria-label="Buscar pedidos">
+    </div>
+    <div class="filtros" role="group" aria-label="Filtrar pedidos por estado">
+      <button type="button" *ngFor="let filtro of filtrosPedido" [class.activo]="filtroPedido === filtro.clave" (click)="filtroPedido = filtro.clave">
+        {{ filtro.nombre }} <span>{{ contarPedidos(filtro.clave) }}</span>
+      </button>
     </div>
 
-    <div class="form-group">
-      <label>Categoría:</label>
-      <select [(ngModel)]="nuevoProducto.categoria" name="categoria" required>
-        <option value="">Seleccionar categoría</option>
+    <p class="mensaje-error" *ngIf="errorPedidos" role="alert">{{ errorPedidos }}</p>
+    <p class="vacio" *ngIf="!errorPedidos && pedidosFiltrados().length === 0">No hay pedidos en esta vista.</p>
+
+    <div class="lista-pedidos">
+      <article class="pedido" *ngFor="let pedido of pedidosFiltrados(); trackBy: trackPedido">
+        <header class="pedido-cabecera">
+          <div>
+            <h3>{{ numero(pedido) }} · {{ pedido.clienteNombre }}</h3>
+            <p>{{ pedido.createdAt | date:'d/M/y, HH:mm' }} · {{ pedido.email }}</p>
+          </div>
+          <div class="pedido-total">
+            <strong>${{ pedido.total | number:'1.0-0' }}</strong>
+            <span class="estado" [attr.data-estado]="pedido.estado">{{ etiquetaEstado(pedido) }}</span>
+          </div>
+        </header>
+
+        <ul class="pedido-items">
+          <li *ngFor="let item of pedido.items">
+            {{ item.cantidad }} × {{ item.nombre }}<span *ngIf="item.talle"> · Talle {{ item.talle }}</span><span *ngIf="item.color"> · {{ item.color }}</span>
+          </li>
+        </ul>
+
+        <dl class="pedido-datos">
+          <div><dt>Entrega</dt><dd>{{ pedido.metodoEntrega === 'retiro' ? 'Retiro en el local' : 'Envío a domicilio' }}</dd></div>
+          <div><dt>Pago</dt><dd>{{ pedido.metodoPago === 'transferencia' ? 'Transferencia' : 'Mercado Pago' }}</dd></div>
+          <div *ngIf="pedido.envio && pedido.metodoEntrega !== 'retiro'"><dt>Destino</dt><dd>{{ pedido.envio.direccion }}, {{ pedido.envio.ciudad }} ({{ pedido.envio.codigoPostal }})</dd></div>
+          <div *ngIf="pedido.envio"><dt>Teléfono</dt><dd>{{ pedido.envio.telefono }}</dd></div>
+          <div *ngIf="pedido.seguimiento"><dt>Seguimiento</dt><dd>{{ pedido.seguimiento }}</dd></div>
+        </dl>
+
+        <footer class="pedido-acciones" *ngIf="(pedido.estado === 'pendiente' && pedido.metodoPago === 'transferencia') || accionesDe(pedido).length">
+          <button *ngIf="pedido.estado === 'pendiente' && pedido.metodoPago === 'transferencia'" type="button" class="btn"
+            [disabled]="pedido.procesando" (click)="confirmarTransferencia(pedido)">
+            {{ pedido.procesando ? 'Confirmando…' : 'Confirmar transferencia recibida' }}
+          </button>
+
+          <ng-container *ngFor="let accion of accionesDe(pedido)">
+            <input *ngIf="pideSeguimiento(pedido, accion)" type="text" class="seguimiento" maxlength="120"
+              [(ngModel)]="pedido.seguimientoTexto" [name]="'seg-' + pedido._id"
+              placeholder="Código de seguimiento (opcional)" aria-label="Código de seguimiento">
+            <button type="button" class="btn" [class.btn-borde]="!accion.peligro" [class.btn-peligro]="accion.peligro"
+              [disabled]="pedido.procesando" (click)="cambiarEstado(pedido, accion)">
+              {{ accion.texto }}
+            </button>
+          </ng-container>
+        </footer>
+      </article>
+    </div>
+  </section>
+
+  <!-- ================= PRODUCTOS ================= -->
+  <section *ngIf="pestana === 'productos'" class="seccion">
+    <div class="herramientas">
+      <input type="search" class="buscador" [(ngModel)]="busquedaProducto" name="busquedaProducto"
+        placeholder="Buscar producto por nombre" aria-label="Buscar productos">
+      <select [(ngModel)]="categoriaFiltro" name="categoriaFiltro" aria-label="Filtrar por categoría">
+        <option value="">Todas las categorías</option>
         <option *ngFor="let cat of categoriasDisponibles" [value]="cat">{{ cat }}</option>
       </select>
+      <button type="button" class="btn" (click)="abrirFormulario()">+ Nuevo producto</button>
+    </div>
+    <div class="filtros" role="group" aria-label="Filtrar productos">
+      <button type="button" *ngFor="let filtro of filtrosStock" [class.activo]="stockFiltro === filtro.clave" (click)="stockFiltro = filtro.clave">{{ filtro.nombre }}</button>
     </div>
 
-    <fieldset class="form-group opciones-talle">
-      <legend>Talles y stock disponible:</legend>
-      <div class="fila-talle" *ngFor="let talle of tallesDisponibles">
-        <label>
-          <input type="checkbox" [ngModel]="tieneTalle(talle)" [ngModelOptions]="{standalone: true}"
-            (ngModelChange)="cambiarTalle(talle, $event)">
-          {{ talle }}
+    <!-- Formulario de alta y edición -->
+    <form *ngIf="mostrarFormulario" (ngSubmit)="guardarProducto()" class="formulario" id="form-producto">
+      <div class="formulario-cabecera">
+        <h2>{{ editandoId ? 'Editar producto' : 'Nuevo producto' }}</h2>
+        <button type="button" class="enlace" (click)="cerrarFormulario()">Cerrar</button>
+      </div>
+
+      <div class="campos">
+        <label class="campo campo-ancho">Nombre
+          <input type="text" [(ngModel)]="nuevoProducto.nombre" name="nombre" required maxlength="120" placeholder="Ej: Remera oversize">
         </label>
-        <label *ngIf="tieneTalle(talle)" class="stock-talle">
-          Unidades
-          <input type="number" min="0" max="10000" [ngModel]="stockDelTalle(talle)"
-            [ngModelOptions]="{standalone: true}" (ngModelChange)="actualizarStock(talle, $event)">
+        <label class="campo">Precio ($)
+          <input type="number" min="1" [(ngModel)]="nuevoProducto.precio" name="precio" required placeholder="25000">
+        </label>
+        <label class="campo">Precio de oferta ($)
+          <input type="number" min="0" [(ngModel)]="nuevoProducto.precioOferta" name="precioOferta" placeholder="Vacío o 0 = sin oferta">
+          <small>Tiene que ser menor al precio. El normal se muestra tachado.</small>
+        </label>
+        <label class="campo">Categoría
+          <select [(ngModel)]="nuevoProducto.categoria" name="categoria" required>
+            <option value="">Seleccionar categoría</option>
+            <option *ngFor="let cat of categoriasDisponibles" [value]="cat">{{ cat }}</option>
+          </select>
+        </label>
+        <label class="campo">Colores
+          <input type="text" [(ngModel)]="nuevoProducto.coloresTexto" name="colores" placeholder="Ej: Negro, Blanco, Beige">
+          <small>Separados por comas.</small>
         </label>
       </div>
-      <small>El stock se reserva durante 30 minutos cuando el cliente inicia el pago.</small>
-    </fieldset>
 
-    <div class="form-group">
-      <label>Colores disponibles:</label>
-      <input type="text" [(ngModel)]="nuevoProducto.coloresTexto" name="colores"
-        placeholder="Ej: Negro, Blanco, Beige">
-      <small>Separá los colores con comas.</small>
-    </div>
+      <fieldset class="talles">
+        <legend>Talles y stock</legend>
+        <div class="fila-talle" *ngFor="let talle of tallesDisponibles">
+          <label class="check">
+            <input type="checkbox" [ngModel]="tieneTalle(talle)" [ngModelOptions]="{standalone: true}" (ngModelChange)="cambiarTalle(talle, $event)">
+            {{ talle }}
+          </label>
+          <label *ngIf="tieneTalle(talle)" class="stock-talle">
+            Unidades
+            <input type="number" min="0" max="10000" [ngModel]="stockDelTalle(talle)" [ngModelOptions]="{standalone: true}" (ngModelChange)="actualizarStock(talle, $event)">
+          </label>
+        </div>
+        <small>El stock se reserva 30 minutos (Mercado Pago) o 24 horas (transferencia) cuando el cliente confirma la compra.</small>
+      </fieldset>
 
-    <div class="form-group">
-      <label>Guía de talles para esta prenda (opcional):</label>
-      <textarea [(ngModel)]="nuevoProducto.guiaTalles" name="guiaTalles" maxlength="2000"
-        rows="3" placeholder="Agregá las medidas reales o cómo tomar las medidas para esta prenda."></textarea>
-    </div>
+      <label class="campo">Descripción
+        <textarea [(ngModel)]="nuevoProducto.descripcion" name="descripcion" maxlength="2000" rows="4" placeholder="Detalles, material y calce de la prenda."></textarea>
+      </label>
+      <label class="campo">Guía de talles (opcional)
+        <textarea [(ngModel)]="nuevoProducto.guiaTalles" name="guiaTalles" maxlength="2000" rows="3" placeholder="Medidas reales o cómo tomarlas para esta prenda."></textarea>
+      </label>
 
-    <div class="form-group">
-      <label>Descripción:</label>
-      <textarea [(ngModel)]="nuevoProducto.descripcion" name="descripcion" maxlength="2000"
-        rows="4" placeholder="Contá los detalles, el material y el calce de la prenda."></textarea>
-    </div>
-
-    <div class="form-group">
-      <label>Imágenes de la prenda (hasta 3):</label>
-      <input type="file" (change)="onFilesSelected($event)" accept="image/*" multiple [disabled]="procesandoImagenes || nuevoProducto.imagenes.length >= 3">
-      <small>{{ nuevoProducto.imagenes.length }} de 3 imágenes seleccionadas</small>
-      <div class="imagenes-nuevo-producto" *ngIf="nuevoProducto.imagenes.length">
-        <div class="imagen-nueva" *ngFor="let imagen of nuevoProducto.imagenes; let i = index">
-          <img [src]="imagen" [alt]="'Vista previa de imagen ' + (i + 1)">
-          <button type="button" (click)="quitarImagen(i)" [attr.aria-label]="'Quitar imagen ' + (i + 1)">Quitar</button>
+      <div class="campo">
+        <span>Imágenes (hasta 3)</span>
+        <input type="file" (change)="onFilesSelected($event)" accept="image/*" multiple
+          [disabled]="procesandoImagenes || nuevoProducto.imagenes.length >= 3" aria-label="Subir imágenes">
+        <small>{{ nuevoProducto.imagenes.length }} de 3 imágenes. La primera es la que se ve en el catálogo.</small>
+        <div class="imagenes-form" *ngIf="nuevoProducto.imagenes.length">
+          <figure *ngFor="let imagen of nuevoProducto.imagenes; let i = index">
+            <img [src]="imagen" [alt]="'Vista previa de la imagen ' + (i + 1)">
+            <button type="button" (click)="quitarImagen(i)" [attr.aria-label]="'Quitar imagen ' + (i + 1)">Quitar</button>
+          </figure>
         </div>
       </div>
-    </div>
 
-    <button type="submit" class="btn-guardar" [disabled]="procesandoImagenes">
-      {{ procesandoImagenes ? 'PROCESANDO IMÁGENES...' : (editandoId ? 'Guardar cambios' : 'Guardar Producto') }}
-    </button>
-    <button type="button" class="btn-eliminar" *ngIf="editandoId" (click)="limpiarCampos()">Cancelar edición</button>
-  </form>
+      <label class="check check-publicado">
+        <input type="checkbox" [(ngModel)]="nuevoProducto.publicado" name="publicado">
+        Visible en la tienda
+      </label>
 
-  <hr class="divider">
+      <div class="formulario-acciones">
+        <button type="submit" class="btn" [disabled]="procesandoImagenes || guardando">
+          {{ procesandoImagenes ? 'Procesando imágenes…' : guardando ? 'Guardando…' : editandoId ? 'Guardar cambios' : 'Guardar producto' }}
+        </button>
+        <button type="button" class="btn btn-borde" (click)="cerrarFormulario()">Cancelar</button>
+      </div>
+    </form>
 
-  <!-- Listado y Filtros -->
-  <div class="listado-seccion">
-    <h3>Inventario de Productos</h3>
+    <p class="vacio" *ngIf="cargandoProductos">Cargando productos…</p>
+    <p class="vacio" *ngIf="!cargandoProductos && productosFiltrados().length === 0">
+      {{ productos.length === 0 ? 'Todavía no cargaste productos.' : 'Ningún producto coincide con la búsqueda.' }}
+    </p>
 
-    <!-- Botones de categorías fijas para filtrar la vista -->
-    <div class="botones-categorias-filtro">
-      <button 
-        type="button" 
-        class="btn-filtro" 
-        [class.activo]="categoriaSeleccionada === 'TODAS'" 
-        (click)="filtrarCategoria('TODAS')">
-        TODAS
-      </button>
-      
-      <button 
-        type="button" 
-        class="btn-filtro" 
-        *ngFor="let cat of categoriasDisponibles" 
-        [class.activo]="categoriaSeleccionada === cat" 
-        (click)="filtrarCategoria(cat)">
-        {{ cat }}
-      </button>
-    </div>
+    <div class="lista-productos">
+      <article class="producto" *ngFor="let producto of productosFiltrados(); trackBy: trackProducto" [class.pausado]="producto.publicado === false">
+        <img [src]="producto.imagenUrl || producto.imagenes?.[0] || ''" [alt]="producto.nombre" loading="lazy" width="72" height="90"
+          (error)="$any($event.target).style.visibility = 'hidden'">
 
-    <!-- Grilla de productos filtrados -->
-    <div class="productos-grid">
-      <div *ngFor="let producto of productosFiltrados()" class="producto-card">
-        <img [src]="producto.imagenUrl || producto.imagenes?.[0] || 'https://via.placeholder.com/300'" [alt]="producto.nombre">
         <div class="producto-info">
-          <h4>{{ producto.nombre }}</h4>
-          <p class="precio">${{ producto.precio }}</p>
-          <p class="detalle">
-            {{ producto.categoria }} 
-            <span *ngIf="producto.variantes?.length">• {{ producto.variantes?.length }} talle(s)</span>
+          <h3>{{ producto.nombre }}</h3>
+          <p class="producto-linea">
+            {{ producto.categoria }} ·
+            <ng-container *ngIf="conOferta(producto); else sinOferta">
+              <s>${{ producto.precio | number:'1.0-0' }}</s> <strong>${{ producto.precioOferta | number:'1.0-0' }}</strong>
+            </ng-container>
+            <ng-template #sinOferta><strong>${{ producto.precio | number:'1.0-0' }}</strong></ng-template>
           </p>
-          <p *ngIf="producto.descripcion">{{ producto.descripcion }}</p>
-          <p *ngIf="producto.colores?.length">Colores: {{ producto.colores?.join(', ') }}</p>
-          <p *ngIf="producto.variantes?.length">Stock: {{ resumenStock(producto) }}</p>
-          <p *ngIf="producto.imagenes?.length">{{ producto.imagenes?.length }} imagen(es)</p>
-          <button type="button" class="btn-guardar" (click)="editarProducto(producto)">Editar</button>
-          <button type="button" class="btn-eliminar" (click)="eliminarProducto(producto)">Eliminar</button>
-        </div>
-      </div>
-    </div>
+          <div class="producto-chips">
+            <span class="chip chip-pausa" *ngIf="producto.publicado === false">Pausado</span>
+            <span class="chip chip-error" *ngIf="nivelStock(producto) === 'agotado'">Agotado</span>
+            <span class="chip chip-aviso" *ngIf="nivelStock(producto) === 'bajo'">Stock bajo</span>
+            <span class="chip" *ngIf="conOferta(producto)">En oferta</span>
+          </div>
 
-    <section class="pedidos-admin">
-      <h3>Pedidos recientes</h3>
-      <p *ngIf="errorPedidos" class="error-pedidos" role="alert">{{ errorPedidos }}</p>
-      <p *ngIf="pedidos.length === 0">Todavía no hay pedidos.</p>
-      <article class="pedido-admin" *ngFor="let pedido of pedidos">
-        <div>
-          <strong>{{ pedido.clienteNombre }}</strong> · {{ pedido.email }}
-          <p>{{ pedido.items.length }} producto(s) · {{ pedido.createdAt | date:'short' }}</p>
-          <p>Entrega: {{ pedido.metodoEntrega === 'retiro' ? 'Retiro en el local' : 'Envío a domicilio' }}</p>
-          <p>Pago: {{ pedido.metodoPago === 'transferencia' ? 'Transferencia bancaria' : 'Mercado Pago' }}</p>
-          <p *ngIf="pedido.envio">Destino: {{ pedido.envio.direccion }}, {{ pedido.envio.ciudad }}</p>
-          <small *ngFor="let item of pedido.items">
-            {{ item.nombre }}<span *ngIf="item.talle"> · Talle {{ item.talle }}</span>
-            <span *ngIf="item.color"> · {{ item.color }}</span> × {{ item.cantidad }}<br>
-          </small>
+          <div class="stock-rapido" *ngIf="producto.variantes?.length">
+            <label *ngFor="let variante of producto.variantes">
+              <span>{{ variante.talle }}</span>
+              <input type="number" min="0" max="10000" [value]="variante.stock"
+                (change)="guardarStock(producto, variante.talle, $any($event.target).value)"
+                [attr.aria-label]="'Stock del talle ' + variante.talle + ' de ' + producto.nombre">
+            </label>
+          </div>
         </div>
-        <div>
-          <strong>${{ pedido.total | number:'1.0-0' }}</strong>
-          <span class="estado-pedido">{{ pedido.estado }}</span>
-          <button *ngIf="pedido.metodoPago === 'transferencia' && pedido.estado === 'pendiente'"
-            type="button" class="btn-confirmar-transferencia" [disabled]="pedido.confirmandoTransferencia"
-            (click)="confirmarTransferencia(pedido)">
-            {{ pedido.confirmandoTransferencia ? 'Confirmando...' : 'Confirmar transferencia recibida' }}
-          </button>
+
+        <div class="producto-acciones">
+          <button type="button" class="btn btn-borde" (click)="editarProducto(producto)">Editar</button>
+          <button type="button" class="btn btn-borde" (click)="alternarPublicado(producto)">{{ producto.publicado === false ? 'Publicar' : 'Pausar' }}</button>
+          <button type="button" class="btn btn-borde" (click)="duplicarProducto(producto)">Duplicar</button>
+          <button type="button" class="btn btn-peligro" (click)="eliminarProducto(producto)">Eliminar</button>
         </div>
       </article>
-    </section>
-
-<!-- SECCIÓN DE GESTIÓN DE BANNERS -->
-<div class="seccion-admin-banner" style="margin-top: 40px; background: #ebe4db; padding: 25px; border-radius: 8px; border: 1px solid #d5cec5;">
-  <h3 style="font-family: 'Playfair Display', serif; color: #803A3A; margin-top: 0;">Gestión de Carrusel / Banner Principal</h3>
-  
-  <div style="margin-bottom: 20px;">
-    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333; font-size: 13px;">
-      Seleccionar nueva imagen desde tu equipo:
-    </label>
-    <input 
-      type="file" 
-      accept="image/*" 
-      (change)="onBannerSelected($event)" 
-      style="padding: 8px; background: white; border-radius: 4px; border: 1px solid #ccc; width: 100%; cursor: pointer;" 
-    />
-  </div>
-
-  <div class="lista-banners">
-    <div *ngFor="let img of imagenesBanner; let i = index" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #e0e0e0;">
-      <!-- Muestra una miniatura de la imagen -->
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <img [src]="img" alt="Banner {{i}}" style="width: 80px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />
-        <span style="font-size: 12px; color: #666;">Imagen {{ i + 1 }}</span>
-      </div>
-      <button (click)="eliminarBanner(i)" style="background-color: #c94a4a; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
-        Eliminar
-      </button>
     </div>
-  </div>
-</div>
+  </section>
 
-  </div>
+  <!-- ================= PORTADA ================= -->
+  <section *ngIf="pestana === 'portada'" class="seccion">
+    <section class="panel">
+      <h2>Imágenes de la portada</h2>
+      <p class="ayuda">Se muestran en el carrusel de la página principal, para todos los clientes. Usá fotos horizontales (por ejemplo 1600×900) y hasta 8 imágenes. Si no cargás ninguna, se usa la imagen por defecto.</p>
+      <label class="subir">
+        <input type="file" accept="image/*" (change)="onBannerSelected($event)" [disabled]="subiendoBanner" aria-label="Agregar imagen a la portada">
+        <span class="btn">{{ subiendoBanner ? 'Subiendo…' : '+ Agregar imagen' }}</span>
+      </label>
+
+      <p class="vacio" *ngIf="banners.length === 0">No hay imágenes cargadas: se muestra la portada por defecto.</p>
+      <div class="lista-banners">
+        <figure class="banner" *ngFor="let banner of banners; let i = index">
+          <img [src]="banner.url" [alt]="'Imagen de portada ' + (i + 1)" loading="lazy">
+          <figcaption>
+            <span>Imagen {{ i + 1 }}</span>
+            <button type="button" class="btn btn-peligro" (click)="eliminarBanner(banner)">Eliminar</button>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+  </section>
 </div>
