@@ -325,17 +325,52 @@
 }
 
 @media (max-width: 639px) {
+  /* En celular la foto va arriba, entera, y el texto debajo sobre fondo oscuro */
   .portada {
-    align-items: flex-end;
-    height: clamp(520px, 82vh, 640px);
+    display: block;
+    height: auto;
+  }
+
+  .portada-imagenes {
+    position: relative;
+    inset: auto;
+    height: clamp(280px, 88vw, 440px);
+  }
+
+  .portada-imagen {
+    background-position: 70% 25%;
   }
 
   .portada-velo {
-    background: linear-gradient(0deg, rgb(24 14 12 / 88%) 0%, rgb(24 14 12 / 55%) 50%, rgb(24 14 12 / 18%) 100%);
+    inset: 0 0 auto;
+    height: clamp(280px, 88vw, 440px);
+    background: linear-gradient(0deg, var(--color-profundo) 0%, transparent 60%);
   }
 
   .portada-contenido {
-    padding-block: 40px 96px;
+    padding-block: 4px 88px;
+  }
+
+  .portada-etiqueta {
+    margin-bottom: 14px;
+    font-size: 10.5px;
+    letter-spacing: 2.8px;
+  }
+
+  .portada h1 {
+    font-size: clamp(38px, 11.5vw, 52px);
+  }
+
+  .portada-texto {
+    margin: 16px 0 24px;
+  }
+
+  .portada-botones {
+    flex-direction: column;
+  }
+
+  .portada-botones .btn {
+    width: 100%;
   }
 
   .portada-contador {
@@ -989,10 +1024,6 @@
 }
 
 @media (max-width: 639px) {
-  .portada-velo {
-    background: rgb(0 0 0 / 32%);
-  }
-
   .portada-contenido {
     padding-inline: 24px;
   }
