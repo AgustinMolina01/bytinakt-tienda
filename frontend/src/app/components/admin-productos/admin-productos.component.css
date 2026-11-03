@@ -1298,3 +1298,81 @@
     grid-template-columns: 3fr 2fr;
   }
 }
+
+/* ---------- Envíos ---------- */
+.formulario-envios {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.formulario-envios h2 {
+  margin-bottom: 0;
+}
+
+.formulario-envios .ayuda {
+  margin: -8px 0 0;
+}
+
+.aviso-info {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radio);
+  background: #fdf3df;
+  color: #6d4a0c;
+  font-size: 13.5px;
+}
+
+.zonas {
+  display: grid;
+  gap: 12px;
+}
+
+.zona {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-linea);
+  border-radius: var(--radio);
+  background: var(--color-crema);
+}
+
+.zona-acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.zona-acciones .btn {
+  min-height: 42px;
+  padding-inline: 14px;
+}
+
+.subtitulo-envio {
+  margin: 4px 0 -6px;
+  font-family: var(--fuente-texto);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.prueba-envio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.prueba-envio .buscador {
+  flex: 1 1 160px;
+}
+
+.resultado-prueba {
+  margin: 14px 0 0;
+  font-size: 15px;
+}
+
+@media (min-width: 960px) {
+  .zona {
+    grid-template-columns: minmax(160px, 2fr) 1fr 1fr 1fr minmax(140px, 1.4fr) auto;
+    align-items: end;
+  }
+}

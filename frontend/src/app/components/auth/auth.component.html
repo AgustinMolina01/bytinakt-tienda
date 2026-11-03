@@ -7,10 +7,10 @@
   <div class="auth-shell">
     <section class="auth-card">
       <div class="auth-card-heading">
-        <span class="auth-kicker">{{ isRegisterMode ? 'SUMATE A BYTINAKT' : 'TU ESPACIO PERSONAL' }}</span>
-        <h2>{{ isRegisterMode ? 'Creá tu cuenta' : 'BYTINAKT' }}</h2>
+        <span class="auth-kicker">{{ recuperando ? 'RECUPERAR ACCESO' : isRegisterMode ? 'SUMATE A BYTINAKT' : 'TU ESPACIO PERSONAL' }}</span>
+        <h2>{{ recuperando ? 'Cambiá tu contraseña' : isRegisterMode ? 'Creá tu cuenta' : 'BYTINAKT' }}</h2>
         <p class="auth-subtitulo">
-          {{ isRegisterMode ? 'Completá tus datos para empezar.' : 'Ingresá a tu cuenta y seguí donde lo dejaste.' }}
+          {{ recuperando ? (codigoRecuperacionEnviado ? 'Ingresá el código que te mandamos y elegí una contraseña nueva.' : 'Escribí tu correo y te mandamos un código para elegir una contraseña nueva.') : isRegisterMode ? 'Completá tus datos para empezar.' : 'Ingresá a tu cuenta y seguí donde lo dejaste.' }}
         </p>
       </div>
 
@@ -22,7 +22,7 @@
         {{ mensajeExito }}
       </div>
 
-      <button type="button" class="btn-google" (click)="iniciarConGoogle()" [disabled]="cargando">
+      <button type="button" class="btn-google" *ngIf="!recuperando" (click)="iniciarConGoogle()" [disabled]="cargando">
         <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
           role="img" aria-label="Google">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -33,7 +33,7 @@
         {{ isRegisterMode ? 'Registrarme con Google' : 'Continuar con Google' }}
       </button>
 
-      <div class="auth-separador" aria-hidden="true"><span>{{ isRegisterMode ? 'o registrate con tu correo' : 'o con tu correo' }}</span></div>
+      <div class="auth-separador" *ngIf="!recuperando" aria-hidden="true"><span>{{ isRegisterMode ? 'o registrate con tu correo' : 'o con tu correo' }}</span></div>
 
       <form (ngSubmit)="onSubmit()">
         <div *ngIf="isRegisterMode && !codigoEnviado">
@@ -65,15 +65,19 @@
         <div class="campo-grupo">
           <label for="email">Correo electrónico</label>
           <input id="email" type="email" [(ngModel)]="email" name="email"
-            placeholder="correo@ejemplo.com" autocomplete="email" required [readonly]="codigoEnviado">
+            placeholder="correo@ejemplo.com" autocomplete="email" required [readonly]="codigoEnviado || codigoRecuperacionEnviado">
         </div>
 
-        <div class="campo-grupo" *ngIf="!codigoEnviado">
+        <div class="campo-grupo" *ngIf="!codigoEnviado && !recuperando">
           <label for="password">Contraseña</label>
           <input id="password" [type]="mostrarPassword ? 'text' : 'password'"
             [(ngModel)]="password" name="password" placeholder="Ingresá tu contraseña"
             [attr.autocomplete]="isRegisterMode ? 'new-password' : 'current-password'" required>
         </div>
+
+        <button type="button" class="btn-link olvide-password" *ngIf="!isRegisterMode && !recuperando" (click)="iniciarRecuperacion()">
+          ¿Olvidaste tu contraseña?
+        </button>
 
         <div class="campo-grupo" *ngIf="isRegisterMode && !codigoEnviado">
           <label for="confirmPassword">Confirmar contraseña</label>
@@ -82,20 +86,32 @@
             autocomplete="new-password" required>
         </div>
 
-        <div class="campo-grupo" *ngIf="codigoEnviado">
+        <div class="campo-grupo" *ngIf="codigoEnviado || codigoRecuperacionEnviado">
           <label for="codigo">Código enviado a tu correo</label>
           <input id="codigo" type="text" [(ngModel)]="codigo" name="codigo"
             placeholder="Ingresá los 6 dígitos" inputmode="numeric" autocomplete="one-time-code"
             maxlength="6" pattern="[0-9]{6}" required>
         </div>
 
-        <label class="label-checkbox" *ngIf="!codigoEnviado">
+        <div class="campo-grupo" *ngIf="recuperando && codigoRecuperacionEnviado">
+          <label for="nuevaPassword">Contraseña nueva</label>
+          <input id="nuevaPassword" [type]="mostrarPassword ? 'text' : 'password'" [(ngModel)]="password"
+            name="nuevaPassword" placeholder="Al menos 10 caracteres" autocomplete="new-password" required>
+        </div>
+
+        <div class="campo-grupo" *ngIf="recuperando && codigoRecuperacionEnviado">
+          <label for="repetirNuevaPassword">Repetí la contraseña nueva</label>
+          <input id="repetirNuevaPassword" [type]="mostrarPassword ? 'text' : 'password'" [(ngModel)]="confirmPassword"
+            name="repetirNuevaPassword" placeholder="Repetí tu contraseña" autocomplete="new-password" required>
+        </div>
+
+        <label class="label-checkbox" *ngIf="!codigoEnviado && (!recuperando || codigoRecuperacionEnviado)">
           <input type="checkbox" [(ngModel)]="mostrarPassword" name="mostrarPassword">
           <span>Mostrar contraseña</span>
         </label>
 
         <button type="submit" class="btn-submit" [disabled]="cargando">
-          {{ cargando ? 'CONECTANDO...' : codigoEnviado ? 'VERIFICAR CÓDIGO' : isRegisterMode ? 'ENVIAR CÓDIGO' : 'INGRESAR A MI CUENTA' }}
+          {{ textoBoton }}
           <span aria-hidden="true">→</span>
         </button>
       </form>
@@ -105,7 +121,16 @@
         Volver a enviar código
       </button>
 
-      <div class="auth-footer">
+      <button type="button" class="btn-reenviar" *ngIf="recuperando && codigoRecuperacionEnviado"
+        (click)="pedirCodigoRecuperacion()" [disabled]="cargando">
+        Volver a enviar código
+      </button>
+
+      <div class="auth-footer" *ngIf="recuperando">
+        <button type="button" class="btn-link" (click)="cancelarRecuperacion()">← Volver a iniciar sesión</button>
+      </div>
+
+      <div class="auth-footer" *ngIf="!recuperando">
         <span>{{ isRegisterMode ? (codigoEnviado ? '¿Querés usar otra cuenta?' : '¿Ya tenés una cuenta?') : '¿Es tu primera vez por acá?' }}</span>
         <button type="button" class="btn-link" (click)="toggleMode()">
           {{ isRegisterMode ? 'Iniciá sesión' : 'Crear una cuenta' }}

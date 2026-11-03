@@ -9,7 +9,7 @@ import { API_URL } from '../../services/api';
 import { AuthService } from '../../services/auth.service';
 import { GoogleAuthService } from '../../services/google-auth.service';
 
-type Pestana = 'resumen' | 'pedidos' | 'ventas' | 'productos' | 'portada';
+type Pestana = 'resumen' | 'pedidos' | 'ventas' | 'productos' | 'envios' | 'portada';
 type EstadoPedido = 'pendiente' | 'pagado' | 'preparando' | 'enviado' | 'entregado' | 'cancelado' | 'error_pago';
 type FiltroStock = 'todos' | 'publicados' | 'pausados' | 'bajo' | 'agotados';
 
@@ -20,6 +20,31 @@ interface Resumen {
   enCamino: number;
   productos: { total: number; publicados: number; agotados: number; stockBajo: number };
   alertas: { id: string; nombre: string; stock: number }[];
+}
+
+interface ZonaEnvio {
+  nombre: string;
+  desde: number | null;
+  hasta: number | null;
+  costo: number | null;
+  plazo: string;
+}
+
+interface ConfigEnvio {
+  zonas: ZonaEnvio[];
+  costoGeneral: number | null;
+  plazoGeneral: string;
+  gratisDesde: number | null;
+  guardada: boolean;
+}
+
+interface PruebaEnvio {
+  disponible: boolean;
+  costo?: number;
+  gratis?: boolean;
+  zona?: string;
+  plazo?: string;
+  mensaje?: string;
 }
 
 interface VentaMes {
@@ -200,6 +225,13 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
   readonly nombresMes = NOMBRES_MES;
   readonly zonaHoraria = '-0300';
 
+  // Envíos
+  envioConfig: ConfigEnvio = { zonas: [], costoGeneral: 0, plazoGeneral: '', gratisDesde: 0, guardada: true };
+  cargandoEnvio = true;
+  guardandoEnvio = false;
+  cpPrueba = '';
+  pruebaEnvio: PruebaEnvio | null = null;
+
   // Productos
   productos: Producto[] = [];
   cargandoProductos = true;
@@ -248,6 +280,7 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.cargarResumen();
     this.cargarVentas();
+    this.cargarEnvios();
     this.cargarPedidos();
     this.cargarProductos();
     this.cargarBanners();
@@ -277,6 +310,7 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
   }
 
   trackPedido = (_: number, pedido: PedidoAdmin): string => pedido._id;
+  trackIndice = (indice: number): number => indice;
   trackBanner = (_: number, banner: BannerPortada): string => banner.id;
   trackProducto = (_: number, producto: Producto): string => this.idDe(producto);
 
@@ -441,6 +475,82 @@ export class AdminProductosComponent implements OnInit, OnDestroy {
   nombreDia(dia: string): string {
     const texto = new Date(`${dia}T12:00:00`).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
     return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  // ---------- Envíos ----------
+  cargarEnvios(): void {
+    this.http.get<ConfigEnvio>(`${API_URL}/admin/envios`, { headers: this.encabezados }).subscribe({
+      next: (config) => {
+        this.envioConfig = config;
+        this.cargandoEnvio = false;
+      },
+      error: (error) => {
+        this.cargandoEnvio = false;
+        this.mostrarAviso(this.mensajeError(error, 'No se pudieron cargar las tarifas de envío.'), 'error');
+      }
+    });
+  }
+
+  agregarZona(): void {
+    this.envioConfig.zonas = [...this.envioConfig.zonas, { nombre: '', desde: null, hasta: null, costo: null, plazo: '' }];
+  }
+
+  quitarZona(indice: number): void {
+    this.envioConfig.zonas = this.envioConfig.zonas.filter((_, i) => i !== indice);
+  }
+
+  moverZona(indice: number, direccion: -1 | 1): void {
+    const destino = indice + direccion;
+    if (destino < 0 || destino >= this.envioConfig.zonas.length) {
+      return;
+    }
+    const zonas = [...this.envioConfig.zonas];
+    [zonas[indice], zonas[destino]] = [zonas[destino], zonas[indice]];
+    this.envioConfig.zonas = zonas;
+  }
+
+  guardarEnvios(): void {
+    const config = this.envioConfig;
+    for (const zona of config.zonas) {
+      const desde = Number(zona.desde);
+      const hasta = Number(zona.hasta);
+      if (!zona.nombre.trim() || !(desde >= 1000 && desde <= 9999) || !(hasta >= 1000 && hasta <= 9999) || desde > hasta ||
+          zona.costo === null || zona.costo === undefined || Number(zona.costo) < 0) {
+        this.mostrarAviso(`Revisá la zona "${zona.nombre || 'sin nombre'}": completá el nombre, los códigos postales (4 números, "desde" menor o igual a "hasta") y el costo.`, 'error');
+        return;
+      }
+    }
+    this.guardandoEnvio = true;
+    this.http.put<ConfigEnvio>(`${API_URL}/admin/envios`, {
+      zonas: config.zonas.map((zona) => ({ ...zona, desde: Number(zona.desde), hasta: Number(zona.hasta), costo: Number(zona.costo) })),
+      costoGeneral: Number(config.costoGeneral) || 0,
+      plazoGeneral: config.plazoGeneral,
+      gratisDesde: Number(config.gratisDesde) || 0
+    }, { headers: this.encabezados }).subscribe({
+      next: (guardada) => {
+        this.envioConfig = guardada;
+        this.guardandoEnvio = false;
+        this.mostrarAviso('Tarifas de envío guardadas. Ya se aplican en la tienda.');
+        if (this.cpPrueba) {
+          this.probarCodigoPostal();
+        }
+      },
+      error: (error) => {
+        this.guardandoEnvio = false;
+        this.mostrarAviso(this.mensajeError(error, 'No se pudieron guardar las tarifas.'), 'error');
+      }
+    });
+  }
+
+  probarCodigoPostal(): void {
+    if (!/\d{4}/.test(this.cpPrueba)) {
+      this.pruebaEnvio = { disponible: false, mensaje: 'Escribí un código postal de 4 números.' };
+      return;
+    }
+    this.http.get<PruebaEnvio>(`${API_URL}/envio/cotizar`, { params: { cp: this.cpPrueba, subtotal: 0 } }).subscribe({
+      next: (resultado) => (this.pruebaEnvio = resultado),
+      error: () => (this.pruebaEnvio = { disponible: false, mensaje: 'No se pudo hacer la prueba.' })
+    });
   }
 
   // ---------- Resumen ----------

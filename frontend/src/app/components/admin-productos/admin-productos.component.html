@@ -18,6 +18,7 @@
     </button>
     <button type="button" role="tab" [class.activa]="pestana === 'ventas'" [attr.aria-selected]="pestana === 'ventas'" (click)="irA('ventas')">Ventas</button>
     <button type="button" role="tab" [class.activa]="pestana === 'productos'" [attr.aria-selected]="pestana === 'productos'" (click)="irA('productos')">Productos</button>
+    <button type="button" role="tab" [class.activa]="pestana === 'envios'" [attr.aria-selected]="pestana === 'envios'" (click)="irA('envios')">Envíos</button>
     <button type="button" role="tab" [class.activa]="pestana === 'portada'" [attr.aria-selected]="pestana === 'portada'" (click)="irA('portada')">Portada</button>
   </nav>
 
@@ -402,6 +403,89 @@
         </div>
       </article>
     </div>
+  </section>
+
+  <!-- ================= ENVÍOS ================= -->
+  <section *ngIf="pestana === 'envios'" class="seccion">
+    <form class="panel formulario-envios" (ngSubmit)="guardarEnvios()">
+      <h2>Costo de envío por código postal</h2>
+      <p class="ayuda">
+        El cliente escribe su código postal en el carrito y ve el costo y el plazo al instante.
+        Armá una zona por cada rango de códigos postales (por ejemplo "Mar del Plata", de 7600 a 7609).
+        Si un código entra en dos zonas, vale la que está más arriba en la lista.
+      </p>
+      <p class="aviso-info" *ngIf="!envioConfig.guardada">
+        Todavía no guardaste tarifas. Mientras tanto la tienda usa una tarifa única para todo el país (la variable
+        <code>SHIPPING_FLAT_RATE</code> de Render, si la cargaste). Al guardar acá, pasan a valer estas zonas.
+      </p>
+
+      <p class="vacio" *ngIf="cargandoEnvio">Cargando…</p>
+
+      <div class="zonas">
+        <article class="zona" *ngFor="let zona of envioConfig.zonas; let i = index; trackBy: trackIndice">
+          <label class="campo zona-nombre">Zona
+            <input type="text" [(ngModel)]="zona.nombre" [name]="'zona-nombre-' + i" maxlength="60" placeholder="Ej: Mar del Plata" required>
+          </label>
+          <label class="campo">CP desde
+            <input type="number" inputmode="numeric" min="1000" max="9999" [(ngModel)]="zona.desde" [name]="'zona-desde-' + i" placeholder="7600" required>
+          </label>
+          <label class="campo">CP hasta
+            <input type="number" inputmode="numeric" min="1000" max="9999" [(ngModel)]="zona.hasta" [name]="'zona-hasta-' + i" placeholder="7609" required>
+          </label>
+          <label class="campo">Costo ($)
+            <input type="number" inputmode="numeric" min="0" [(ngModel)]="zona.costo" [name]="'zona-costo-' + i" placeholder="3500" required>
+          </label>
+          <label class="campo">Plazo (opcional)
+            <input type="text" [(ngModel)]="zona.plazo" [name]="'zona-plazo-' + i" maxlength="60" placeholder="Ej: 24 a 48 hs">
+          </label>
+          <div class="zona-acciones">
+            <button type="button" class="btn btn-borde" [disabled]="i === 0" (click)="moverZona(i, -1)" aria-label="Subir zona">↑</button>
+            <button type="button" class="btn btn-borde" [disabled]="i === envioConfig.zonas.length - 1" (click)="moverZona(i, 1)" aria-label="Bajar zona">↓</button>
+            <button type="button" class="btn btn-peligro" (click)="quitarZona(i)">Quitar</button>
+          </div>
+        </article>
+      </div>
+
+      <div>
+        <button type="button" class="btn btn-borde" (click)="agregarZona()">+ Agregar zona</button>
+      </div>
+
+      <h3 class="subtitulo-envio">Resto del país y envío gratis</h3>
+      <div class="campos">
+        <label class="campo">Costo para el resto del país ($)
+          <input type="number" inputmode="numeric" min="0" [(ngModel)]="envioConfig.costoGeneral" name="costoGeneral" placeholder="0">
+          <small>Se cobra a los códigos postales que no están en ninguna zona. Con 0, no se envía fuera de las zonas.</small>
+        </label>
+        <label class="campo">Plazo para el resto del país (opcional)
+          <input type="text" [(ngModel)]="envioConfig.plazoGeneral" name="plazoGeneral" maxlength="60" placeholder="Ej: 3 a 7 días hábiles">
+        </label>
+        <label class="campo">Envío gratis en compras desde ($)
+          <input type="number" inputmode="numeric" min="0" [(ngModel)]="envioConfig.gratisDesde" name="gratisDesde" placeholder="0">
+          <small>Con 0, no hay envío gratis. El monto se compara con el total de las prendas.</small>
+        </label>
+      </div>
+
+      <div class="formulario-acciones">
+        <button type="submit" class="btn" [disabled]="guardandoEnvio">{{ guardandoEnvio ? 'Guardando…' : 'Guardar tarifas' }}</button>
+      </div>
+    </form>
+
+    <section class="panel">
+      <h2>Probar un código postal</h2>
+      <p class="ayuda">Escribí un código postal para ver cuánto se le cobraría a un cliente. Guardá las tarifas antes de probar.</p>
+      <div class="prueba-envio">
+        <input type="text" class="buscador" inputmode="numeric" maxlength="10" [(ngModel)]="cpPrueba" name="cpPrueba"
+          placeholder="Ej: 7600" aria-label="Código postal para probar" (keyup.enter)="probarCodigoPostal()">
+        <button type="button" class="btn btn-borde" (click)="probarCodigoPostal()">Calcular</button>
+      </div>
+      <p class="resultado-prueba" *ngIf="pruebaEnvio" role="status">
+        <ng-container *ngIf="pruebaEnvio.disponible">
+          <strong>{{ pruebaEnvio.zona }}:</strong> {{ pruebaEnvio.costo ? ('$' + (pruebaEnvio.costo | number:'1.0-0')) : 'Gratis' }}
+          <ng-container *ngIf="pruebaEnvio.plazo"> · {{ pruebaEnvio.plazo }}</ng-container>
+        </ng-container>
+        <span class="chip chip-error" *ngIf="!pruebaEnvio.disponible">{{ pruebaEnvio.mensaje }}</span>
+      </p>
+    </section>
   </section>
 
   <!-- ================= PORTADA ================= -->

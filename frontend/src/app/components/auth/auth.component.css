@@ -375,3 +375,10 @@
     transition: none;
   }
 }
+
+.olvide-password {
+  align-self: flex-start;
+  margin: -6px 0 14px;
+  padding: 0;
+  font-size: 13px;
+}

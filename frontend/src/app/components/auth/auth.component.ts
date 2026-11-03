@@ -24,6 +24,8 @@ export class AuthComponent {
   confirmPassword = '';
   codigo = '';
   codigoEnviado = false;
+  recuperando = false;
+  codigoRecuperacionEnviado = false;
   mostrarPassword = false;
   cargando = false;
   mensajeError = '';
@@ -40,6 +42,14 @@ export class AuthComponent {
   onSubmit(): void {
     this.limpiarMensajes();
     if (this.cargando) {
+      return;
+    }
+    if (this.recuperando) {
+      if (this.codigoRecuperacionEnviado) {
+        this.confirmarRecuperacion();
+      } else {
+        this.pedirCodigoRecuperacion();
+      }
       return;
     }
     if (this.isRegisterMode && this.codigoEnviado) {
@@ -169,8 +179,89 @@ export class AuthComponent {
     this.router.navigateByUrl(destination);
   }
 
+  get textoBoton(): string {
+    if (this.cargando) {
+      return 'CONECTANDO...';
+    }
+    if (this.recuperando) {
+      return this.codigoRecuperacionEnviado ? 'CAMBIAR CONTRASEÑA' : 'ENVIAR CÓDIGO';
+    }
+    return this.codigoEnviado ? 'VERIFICAR CÓDIGO' : this.isRegisterMode ? 'ENVIAR CÓDIGO' : 'INGRESAR A MI CUENTA';
+  }
+
+  // ---------- Recuperar contraseña ----------
+  iniciarRecuperacion(): void {
+    this.limpiarMensajes();
+    this.recuperando = true;
+    this.codigoRecuperacionEnviado = false;
+    this.isRegisterMode = false;
+    this.password = '';
+    this.confirmPassword = '';
+    this.codigo = '';
+  }
+
+  cancelarRecuperacion(): void {
+    this.limpiarMensajes();
+    this.recuperando = false;
+    this.codigoRecuperacionEnviado = false;
+    this.password = '';
+    this.confirmPassword = '';
+    this.codigo = '';
+  }
+
+  pedirCodigoRecuperacion(): void {
+    this.limpiarMensajes();
+    const email = this.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.mensajeError = 'Ingresá el correo con el que creaste tu cuenta.';
+      return;
+    }
+    this.cargando = true;
+    this.http.post<{ message: string }>(`${API_URL}/auth/recuperar/codigo`, { email }).subscribe({
+      next: (respuesta) => {
+        this.codigoRecuperacionEnviado = true;
+        this.mensajeExito = respuesta.message;
+        this.cargando = false;
+      },
+      error: (error) => {
+        this.mensajeError = error.error?.error || 'No se pudo enviar el código.';
+        this.cargando = false;
+      }
+    });
+  }
+
+  private confirmarRecuperacion(): void {
+    const email = this.email.trim().toLowerCase();
+    const code = this.codigo.trim();
+    if (!/^\d{6}$/.test(code)) {
+      this.mensajeError = 'Ingresá el código de 6 dígitos que recibiste por correo.';
+      return;
+    }
+    if (this.password.length < 10) {
+      this.mensajeError = 'La contraseña nueva debe tener al menos 10 caracteres.';
+      return;
+    }
+    if (this.password !== this.confirmPassword) {
+      this.mensajeError = 'Las contraseñas no coinciden.';
+      return;
+    }
+    this.cargando = true;
+    this.http.post<Sesion>(`${API_URL}/auth/recuperar/confirmar`, { email, code, password: this.password }).subscribe({
+      next: (session) => {
+        this.auth.guardarSesion(session);
+        this.navegarLuegoDeAutenticar(session);
+      },
+      error: (error) => {
+        this.mensajeError = error.error?.error || 'No se pudo cambiar la contraseña.';
+        this.cargando = false;
+      }
+    });
+  }
+
   toggleMode(): void {
     this.isRegisterMode = !this.isRegisterMode;
+    this.recuperando = false;
+    this.codigoRecuperacionEnviado = false;
     this.codigoEnviado = false;
     this.codigo = '';
     this.limpiarMensajes();

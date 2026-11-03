@@ -17,6 +17,7 @@ const {
   createResendCodeState
 } = require('./email-verification');
 const EmailVerification = require('./models/EmailVerification');
+const PasswordReset = require('./models/PasswordReset');
 
 const app = express();
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:4200')
@@ -56,8 +57,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/checkout/config', (req, res) => {
-  const shippingRate = Number(process.env.SHIPPING_FLAT_RATE);
+app.get('/api/checkout/config', async (req, res) => {
+  const envio = await obtenerConfigEnvio().catch(() => ({ zonas: [], costoGeneral: 0, gratisDesde: 0 }));
   const transferDiscountPercent = Number(process.env.TRANSFER_DISCOUNT_PERCENT || 20);
   const bankAlias = (process.env.BANK_TRANSFER_ALIAS || '').trim();
   const bankCbu = (process.env.BANK_TRANSFER_CBU || '').trim();
@@ -69,8 +70,10 @@ app.get('/api/checkout/config', (req, res) => {
       postalCode: process.env.LOCAL_PICKUP_POSTAL_CODE || '7600'
     },
     homeDelivery: {
-      available: Number.isFinite(shippingRate) && shippingRate > 0,
-      cost: Number.isFinite(shippingRate) && shippingRate > 0 ? shippingRate : null
+      available: envioDisponible(envio),
+      cost: null,
+      byPostalCode: true,
+      freeFrom: envio.gratisDesde || 0
     },
     mercadopago: { available: Boolean(process.env.MP_ACCESS_TOKEN) },
     bankTransfer: {
@@ -175,6 +178,23 @@ const Producto = mongoose.models.Producto || mongoose.model('Producto', producto
 const Pedido = mongoose.models.Pedido || mongoose.model('Pedido', pedidoSchema);
 const Banner = mongoose.models.Banner || mongoose.model('Banner', bannerSchema);
 
+// Tarifas de envío por código postal. Un solo documento; las zonas se evalúan en orden y gana la primera que coincide.
+const envioConfigSchema = new mongoose.Schema({
+  clave: { type: String, default: 'principal', unique: true },
+  zonas: [{
+    nombre: { type: String, required: true, trim: true, maxlength: 60 },
+    desde: { type: Number, required: true, min: 1000, max: 9999 },
+    hasta: { type: Number, required: true, min: 1000, max: 9999 },
+    costo: { type: Number, required: true, min: 0, max: 10_000_000 },
+    plazo: { type: String, trim: true, maxlength: 60, default: '' },
+    _id: false
+  }],
+  costoGeneral: { type: Number, min: 0, max: 10_000_000, default: 0 },
+  plazoGeneral: { type: String, trim: true, maxlength: 60, default: '' },
+  gratisDesde: { type: Number, min: 0, max: 100_000_000, default: 0 }
+}, { timestamps: true });
+const EnvioConfig = mongoose.models.EnvioConfig || mongoose.model('EnvioConfig', envioConfigSchema);
+
 // Estados desde los que el administrador puede mover un pedido a cada estado.
 const TRANSICIONES_PEDIDO = {
   pendiente: ['cancelado'],
@@ -186,6 +206,50 @@ const TRANSICIONES_PEDIDO = {
   error_pago: []
 };
 const ESTADOS_VENTA = ['pagado', 'preparando', 'enviado', 'entregado'];
+
+// Si el panel todavía no guardó tarifas, se usa SHIPPING_FLAT_RATE como tarifa única para todo el país.
+async function obtenerConfigEnvio() {
+  const guardada = await EnvioConfig.findOne({ clave: 'principal' }).lean();
+  if (guardada) {
+    return {
+      zonas: guardada.zonas || [],
+      costoGeneral: guardada.costoGeneral || 0,
+      plazoGeneral: guardada.plazoGeneral || '',
+      gratisDesde: guardada.gratisDesde || 0,
+      guardada: true
+    };
+  }
+  const tarifa = Number(process.env.SHIPPING_FLAT_RATE);
+  return { zonas: [], costoGeneral: Number.isFinite(tarifa) && tarifa > 0 ? tarifa : 0, plazoGeneral: '', gratisDesde: 0, guardada: false };
+}
+
+function envioDisponible(config) {
+  return config.zonas.length > 0 || config.costoGeneral > 0;
+}
+
+// Acepta 7600 o el formato nuevo B7600ABC: lo que cuenta son los 4 números.
+function codigoPostalNumerico(valor) {
+  const coincidencia = /(\d{4})/.exec(String(valor ?? ''));
+  return coincidencia ? Number(coincidencia[1]) : null;
+}
+
+function cotizarEnvio(config, codigoPostal, subtotal = 0) {
+  const cp = codigoPostalNumerico(codigoPostal);
+  if (cp === null) {
+    return { disponible: false, mensaje: 'Ingresá un código postal de 4 números, por ejemplo 7600.' };
+  }
+  const zona = config.zonas.find((candidata) => cp >= candidata.desde && cp <= candidata.hasta);
+  let datos;
+  if (zona) {
+    datos = { costo: zona.costo, zona: zona.nombre, plazo: zona.plazo || '' };
+  } else if (config.costoGeneral > 0) {
+    datos = { costo: config.costoGeneral, zona: 'Resto del país', plazo: config.plazoGeneral || '' };
+  } else {
+    return { disponible: false, mensaje: 'Por ahora no enviamos a ese código postal. Podés retirar en el local o escribirnos por WhatsApp.' };
+  }
+  const gratis = config.gratisDesde > 0 && subtotal >= config.gratisDesde && datos.costo > 0;
+  return { disponible: true, costo: gratis ? 0 : datos.costo, costoLista: datos.costo, gratis, zona: datos.zona, plazo: datos.plazo };
+}
 
 // Precio que ve y paga el cliente: el de oferta cuando está cargado y es menor al de lista.
 function precioVigente(product) {
@@ -523,6 +587,96 @@ app.post('/api/auth/registro/verificar', authLimiter, async (req, res) => {
     }
     console.error('Error al verificar código de registro:', error.message);
     return sendError(res, 500, 'No se pudo verificar el código.');
+  }
+});
+
+// ---------- Recuperar contraseña ----------
+const secretoRecuperacion = () => `${emailVerificationSecret}:recuperar`;
+
+app.post('/api/auth/recuperar/codigo', codeLimiter, async (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  if (!validEmail(email)) {
+    return sendError(res, 400, 'Ingresá un correo válido.');
+  }
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    return sendError(res, 503, 'El envío de códigos por correo todavía no está configurado.');
+  }
+  // La respuesta es la misma exista o no la cuenta, para no revelar quién está registrado.
+  const respuesta = { message: 'Si ese correo tiene una cuenta, te enviamos un código para cambiar la contraseña. Revisá también la carpeta de correo no deseado.' };
+  try {
+    if (!(await Usuario.exists({ email }))) {
+      return res.json(respuesta);
+    }
+    const existente = await PasswordReset.findOne({ email });
+    if (!createResendCodeState(existente?.lastSentAt?.getTime()).allowed) {
+      return res.json(respuesta);
+    }
+    const code = createVerificationCode();
+    const ahora = new Date();
+    await PasswordReset.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          codeHash: hashVerificationCode(email, code, secretoRecuperacion()).toString('hex'),
+          attempts: 0,
+          expiresAt: new Date(ahora.getTime() + 10 * 60_000),
+          lastSentAt: ahora
+        }
+      },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+    await transporter.sendMail({
+      from: `Bytinakt <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Tu código para cambiar la contraseña de Bytinakt',
+      text: `Tu código para cambiar la contraseña es ${code}. Vence en 10 minutos. Si no lo pediste, ignorá este correo: tu contraseña no cambia.`,
+      html: `<p>Tu código para cambiar la contraseña de Bytinakt es:</p><p style="font-size:24px;font-weight:bold;letter-spacing:5px">${code}</p><p>Vence en 10 minutos. Si no lo pediste, ignorá este correo: tu contraseña no cambia.</p>`
+    });
+    return res.json(respuesta);
+  } catch (error) {
+    await PasswordReset.deleteOne({ email }).catch(() => undefined);
+    console.error('Error al enviar el código de recuperación:', error.message);
+    return sendError(res, 500, 'No se pudo enviar el código. Intentá de nuevo en unos minutos.');
+  }
+});
+
+app.post('/api/auth/recuperar/confirmar', authLimiter, async (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  if (!validEmail(email) || !/^\d{6}$/.test(code)) {
+    return sendError(res, 400, 'Ingresá el correo y el código de 6 dígitos.');
+  }
+  if (password.length < 10 || password.length > 200) {
+    return sendError(res, 400, 'La contraseña nueva debe tener al menos 10 caracteres.');
+  }
+  try {
+    const pedido = await PasswordReset.findOne({ email });
+    if (!pedido || pedido.expiresAt <= new Date()) {
+      return sendError(res, 400, 'El código venció o no existe. Pedí uno nuevo.');
+    }
+    if (!verificationCodeMatches(email, code, pedido.codeHash, secretoRecuperacion())) {
+      pedido.attempts += 1;
+      if (pedido.attempts >= 5) {
+        await pedido.deleteOne();
+        return sendError(res, 429, 'Se agotaron los intentos. Pedí un código nuevo.');
+      }
+      await pedido.save();
+      return sendError(res, 400, 'El código no es correcto.');
+    }
+    const user = await Usuario.findOneAndUpdate({ email }, { $set: { password: await hashPassword(password) } }, { new: true });
+    await pedido.deleteOne();
+    if (!user) {
+      return sendError(res, 400, 'El código venció o no existe. Pedí uno nuevo.');
+    }
+    enviarCorreo(email, 'Cambiaste tu contraseña de Bytinakt', plantillaCorreo('Tu contraseña fue cambiada', [
+      `Hola ${escapeHtml(user.nombre)}, acabamos de cambiar la contraseña de tu cuenta. Si no fuiste vos, escribinos cuanto antes.`
+    ]));
+    return issueSession(res, user);
+  } catch (error) {
+    console.error('Error al cambiar la contraseña:', error.message);
+    return sendError(res, 500, 'No se pudo cambiar la contraseña.');
   }
 });
 
@@ -1108,6 +1262,68 @@ app.delete('/api/admin/banners/:id', requireAuth, requireAdmin, async (req, res)
   }
 });
 
+// ---------- Envíos por código postal ----------
+app.get('/api/envio/cotizar', async (req, res) => {
+  try {
+    const subtotal = Number(req.query.subtotal);
+    const cotizacion = cotizarEnvio(await obtenerConfigEnvio(), req.query.cp, Number.isFinite(subtotal) ? subtotal : 0);
+    return res.json(cotizacion);
+  } catch (error) {
+    console.error('Error al cotizar el envío:', error.message);
+    return sendError(res, 500, 'No se pudo calcular el envío.');
+  }
+});
+
+app.get('/api/admin/envios', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    return res.json(await obtenerConfigEnvio());
+  } catch (error) {
+    console.error('Error al consultar las tarifas de envío:', error.message);
+    return sendError(res, 500, 'No se pudieron consultar las tarifas de envío.');
+  }
+});
+
+app.put('/api/admin/envios', requireAuth, requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  const entero = (valor) => Number.isInteger(Number(valor)) ? Number(valor) : NaN;
+  const dinero = (valor) => (valor === '' || valor === null || valor === undefined) ? 0 : Number(valor);
+  const zonasEntrada = Array.isArray(body.zonas) ? body.zonas : null;
+  if (!zonasEntrada || zonasEntrada.length > 30) {
+    return sendError(res, 400, 'Cargá hasta 30 zonas de envío.');
+  }
+  const zonas = [];
+  for (const zona of zonasEntrada) {
+    const nombre = typeof zona?.nombre === 'string' ? zona.nombre.trim() : '';
+    const desde = entero(zona?.desde);
+    const hasta = entero(zona?.hasta);
+    const costo = dinero(zona?.costo);
+    const plazo = typeof zona?.plazo === 'string' ? zona.plazo.trim() : '';
+    if (!nombre || nombre.length > 60 || !(desde >= 1000 && desde <= 9999) || !(hasta >= 1000 && hasta <= 9999) ||
+        desde > hasta || !Number.isFinite(costo) || costo < 0 || costo > 10_000_000 || plazo.length > 60) {
+      return sendError(res, 400, `Revisá la zona "${nombre || 'sin nombre'}": el nombre, los códigos postales (de 4 números, "desde" menor o igual a "hasta") y el costo.`);
+    }
+    zonas.push({ nombre, desde, hasta, costo, plazo });
+  }
+  const costoGeneral = dinero(body.costoGeneral);
+  const gratisDesde = dinero(body.gratisDesde);
+  const plazoGeneral = typeof body.plazoGeneral === 'string' ? body.plazoGeneral.trim() : '';
+  if (!Number.isFinite(costoGeneral) || costoGeneral < 0 || costoGeneral > 10_000_000 ||
+      !Number.isFinite(gratisDesde) || gratisDesde < 0 || gratisDesde > 100_000_000 || plazoGeneral.length > 60) {
+    return sendError(res, 400, 'Revisá el costo del resto del país, el plazo y el monto del envío gratis.');
+  }
+  try {
+    await EnvioConfig.findOneAndUpdate(
+      { clave: 'principal' },
+      { $set: { zonas, costoGeneral, plazoGeneral, gratisDesde } },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+    return res.json(await obtenerConfigEnvio());
+  } catch (error) {
+    console.error('Error al guardar las tarifas de envío:', error.message);
+    return sendError(res, 500, 'No se pudieron guardar las tarifas de envío.');
+  }
+});
+
 app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res) => {
   if (req.sessionUser.role !== 'cliente') {
     return sendError(res, 403, 'Solo las cuentas de cliente pueden crear pedidos.');
@@ -1122,14 +1338,14 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
   const bankAlias = (process.env.BANK_TRANSFER_ALIAS || '').trim();
   const bankCbu = (process.env.BANK_TRANSFER_CBU || '').trim();
   const accountHolder = (process.env.BANK_ACCOUNT_HOLDER || '').trim();
-  const shippingRate = Number(process.env.SHIPPING_FLAT_RATE);
   if (metodoPago === 'mercadopago' && !accessToken) {
     return sendError(res, 503, 'Falta configurar MP_ACCESS_TOKEN en backend/.env para habilitar pagos con Mercado Pago.');
   }
   if (metodoPago === 'transferencia' && !(accountHolder && (bankAlias || bankCbu))) {
     return sendError(res, 503, 'Faltan configurar los datos de la cuenta bancaria para habilitar transferencias.');
   }
-  if (metodoEntrega === 'envio' && (!Number.isFinite(shippingRate) || shippingRate <= 0)) {
+  const configEnvio = await obtenerConfigEnvio();
+  if (metodoEntrega === 'envio' && !envioDisponible(configEnvio)) {
     return sendError(res, 503, 'El envío a domicilio todavía no está configurado. Elegí retiro en el local.');
   }
 
@@ -1231,6 +1447,17 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
       };
     });
 
+    // El costo de envío se calcula acá con el código postal: nunca se confía en lo que informe el navegador.
+    const subtotal = orderItems.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+    let costoEnvio = 0;
+    if (metodoEntrega === 'envio') {
+      const cotizacion = cotizarEnvio(configEnvio, envioPedido.codigoPostal, subtotal);
+      if (!cotizacion.disponible) {
+        return sendError(res, 400, cotizacion.mensaje);
+      }
+      costoEnvio = cotizacion.costo;
+    }
+
     const reservas = [];
     for (const line of requestedLines) {
       if (!line.talle) {
@@ -1259,8 +1486,6 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
     const reservaStockExpira = reservas.length > 0
       ? new Date(Date.now() + (metodoPago === 'transferencia' ? 24 * 60 * 60 * 1000 : 30 * 60 * 1000))
       : undefined;
-    const subtotal = orderItems.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
-    const costoEnvio = metodoEntrega === 'envio' ? shippingRate : 0;
     const configuredDiscount = Number(process.env.TRANSFER_DISCOUNT_PERCENT || 20);
     const discountPercent = metodoPago === 'transferencia'
       ? (Number.isFinite(configuredDiscount) ? Math.max(0, Math.min(100, configuredDiscount)) : 20)
@@ -1268,7 +1493,7 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
     const descuentoTransferencia = Math.round(subtotal * discountPercent / 100);
     const order = new Pedido({
       cliente: buyer.id,
-      clienteNombre: buyer.nombre,
+      clienteNombre: buyer.name,
       email: buyer.email,
       envio: envioPedido,
       metodoEntrega,
@@ -1322,7 +1547,7 @@ app.post('/api/pedidos/checkout', checkoutLimiter, requireAuth, async (req, res)
             currency_id: 'ARS'
           }] : [])
         ],
-        payer: { name: buyer.nombre, email: buyer.email },
+        payer: { name: buyer.name, email: buyer.email },
         external_reference: String(order._id),
         ...(reservaStockExpira ? {
           expires: true,

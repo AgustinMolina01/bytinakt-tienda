@@ -9,7 +9,7 @@ import { CarritoService, ItemCarrito } from '../../services/carrito.service';
 
 interface CheckoutConfig {
   pickup: { address: string; postalCode: string };
-  homeDelivery: { available: boolean; cost: number | null };
+  homeDelivery: { available: boolean; cost: number | null; byPostalCode?: boolean; freeFrom?: number };
   mercadopago: { available: boolean };
   bankTransfer: {
     available: boolean;
@@ -19,6 +19,16 @@ interface CheckoutConfig {
     accountHolder: string;
     discountPercent: number;
   };
+}
+
+interface CotizacionEnvio {
+  disponible: boolean;
+  costo?: number;
+  costoLista?: number;
+  gratis?: boolean;
+  zona?: string;
+  plazo?: string;
+  mensaje?: string;
 }
 
 type MetodoEntrega = 'retiro' | 'envio';
@@ -42,6 +52,9 @@ export class CarritoComponent implements OnInit {
   metodoEntrega: MetodoEntrega = 'retiro';
   metodoPago: MetodoPago = 'mercadopago';
   config: CheckoutConfig | null = null;
+  cotizacion: CotizacionEnvio | null = null;
+  cotizando = false;
+  private temporizadorCotizacion?: ReturnType<typeof setTimeout>;
 
   constructor(
     readonly carrito: CarritoService,
@@ -118,6 +131,7 @@ export class CarritoComponent implements OnInit {
           codigoPostal: perfil.codigoPostal || '',
           telefono: perfil.telefono || ''
         };
+        this.cotizar(this.envio.codigoPostal, true);
       },
       error: () => {
         this.avisoPerfil = 'No pudimos cargar tus datos guardados. Podés completarlos manualmente.';
@@ -126,7 +140,7 @@ export class CarritoComponent implements OnInit {
   }
 
   get costoEnvio(): number {
-    return this.metodoEntrega === 'envio' ? this.config?.homeDelivery.cost || 0 : 0;
+    return this.metodoEntrega === 'envio' && this.cotizacion?.disponible ? this.cotizacion.costo || 0 : 0;
   }
 
   get descuentoTransferencia(): number {
@@ -154,6 +168,40 @@ export class CarritoComponent implements OnInit {
       return;
     }
     this.etapa = 2;
+    this.cotizar(this.envio.codigoPostal, true);
+  }
+
+  private tieneCodigoPostal(valor: string): boolean {
+    return /\d{4}/.test(valor || '');
+  }
+
+  // Calcula el costo de envío según el código postal. Con `ahora` no espera a que termine de escribir.
+  cotizar(codigoPostal: string, ahora = false): void {
+    clearTimeout(this.temporizadorCotizacion);
+    if (this.metodoEntrega !== 'envio' || !this.tieneCodigoPostal(codigoPostal)) {
+      this.cotizacion = null;
+      this.cotizando = false;
+      return;
+    }
+    this.cotizando = true;
+    this.temporizadorCotizacion = setTimeout(() => {
+      this.http.get<CotizacionEnvio>(`${API_URL}/envio/cotizar`, {
+        params: { cp: codigoPostal, subtotal: this.carrito.total }
+      }).subscribe({
+        next: (cotizacion) => {
+          this.cotizacion = cotizacion;
+          this.cotizando = false;
+        },
+        error: () => {
+          this.cotizacion = null;
+          this.cotizando = false;
+        }
+      });
+    }, ahora ? 0 : 400);
+  }
+
+  cambiarEntrega(): void {
+    this.cotizar(this.envio.codigoPostal, true);
   }
 
   continuarAlPago(form: NgForm): void {
@@ -164,6 +212,28 @@ export class CarritoComponent implements OnInit {
     }
     if (form.invalid) {
       form.control.markAllAsTouched();
+      return;
+    }
+    if (this.metodoEntrega === 'envio') {
+      // Se vuelve a cotizar al confirmar para no seguir con un costo viejo.
+      this.cotizando = true;
+      this.http.get<CotizacionEnvio>(`${API_URL}/envio/cotizar`, {
+        params: { cp: this.envio.codigoPostal, subtotal: this.carrito.total }
+      }).subscribe({
+        next: (cotizacion) => {
+          this.cotizacion = cotizacion;
+          this.cotizando = false;
+          if (cotizacion.disponible) {
+            this.etapa = 3;
+          } else {
+            this.error = cotizacion.mensaje || 'No pudimos calcular el envío a ese código postal.';
+          }
+        },
+        error: () => {
+          this.cotizando = false;
+          this.error = 'No pudimos calcular el envío. Intentá de nuevo.';
+        }
+      });
       return;
     }
     this.etapa = 3;

@@ -101,7 +101,7 @@
         <fieldset class="opciones">
           <legend>¿Cómo querés recibir tu pedido?</legend>
           <label class="opcion" [class.elegida]="metodoEntrega === 'retiro'">
-            <input type="radio" name="metodoEntrega" [(ngModel)]="metodoEntrega" value="retiro">
+            <input type="radio" name="metodoEntrega" [(ngModel)]="metodoEntrega" value="retiro" (change)="cambiarEntrega()">
             <span class="opcion-cuerpo">
               <strong>Retirar en el local <em class="precio-opcion gratis">Gratis</em></strong>
               <small>{{ opciones.pickup.address }} · CP {{ opciones.pickup.postalCode }}</small>
@@ -115,10 +115,13 @@
             </span>
           </label>
           <label class="opcion" *ngIf="opciones.homeDelivery.available" [class.elegida]="metodoEntrega === 'envio'">
-            <input type="radio" name="metodoEntrega" [(ngModel)]="metodoEntrega" value="envio">
+            <input type="radio" name="metodoEntrega" [(ngModel)]="metodoEntrega" value="envio" (change)="cambiarEntrega()">
             <span class="opcion-cuerpo">
-              <strong>Envío a domicilio <em class="precio-opcion">${{ opciones.homeDelivery.cost | number:'1.0-0' }}</em></strong>
-              <small>Lo recibís en la puerta de tu casa. El costo se suma al total.</small>
+              <strong>Envío a domicilio <em class="precio-opcion">Según tu código postal</em></strong>
+              <small>
+                Lo recibís en la puerta de tu casa. El costo se calcula con tu código postal.
+                <ng-container *ngIf="opciones.homeDelivery.freeFrom">Envío gratis en compras desde ${{ opciones.homeDelivery.freeFrom | number:'1.0-0' }}.</ng-container>
+              </small>
             </span>
           </label>
         </fieldset>
@@ -136,16 +139,27 @@
               <input name="ciudad" [(ngModel)]="envio.ciudad" required maxlength="100" autocomplete="address-level2">
             </label>
             <label class="campo">Código postal
-              <input name="codigoPostal" [(ngModel)]="envio.codigoPostal" required maxlength="20" autocomplete="postal-code">
+              <input name="codigoPostal" [(ngModel)]="envio.codigoPostal" (ngModelChange)="cotizar($event)" required maxlength="20" autocomplete="postal-code" inputmode="text">
             </label>
           </div>
+
+          <p class="cotizacion" aria-live="polite">
+            <ng-container *ngIf="cotizando">Calculando el envío…</ng-container>
+            <ng-container *ngIf="!cotizando && cotizacion?.disponible">
+              Envío a {{ cotizacion?.zona }}:
+              <strong>{{ cotizacion?.gratis ? 'Gratis' : ('$' + (cotizacion?.costo | number:'1.0-0')) }}</strong>
+              <ng-container *ngIf="cotizacion?.plazo"> · llega en {{ cotizacion?.plazo }}</ng-container>
+            </ng-container>
+            <span class="cotizacion-error" *ngIf="!cotizando && cotizacion && !cotizacion.disponible">{{ cotizacion.mensaje }}</span>
+            <ng-container *ngIf="!cotizando && !cotizacion">Ingresá tu código postal para calcular el envío.</ng-container>
+          </p>
         </ng-container>
 
         <p *ngIf="avisoPerfil" class="mensaje">{{ avisoPerfil }} <a routerLink="/perfil">Abrir mi perfil</a></p>
         <p *ngIf="error" class="mensaje mensaje-error" role="alert">{{ error }}</p>
         <div class="acciones-paso">
           <button type="button" class="btn btn-borde" (click)="volverA(1)">Volver al carrito</button>
-          <button type="submit" class="btn">Continuar al pago</button>
+          <button type="submit" class="btn" [disabled]="cotizando">Continuar al pago</button>
         </div>
       </form>
 
@@ -213,7 +227,7 @@
         <div>
           <dt>Envío</dt>
           <dd *ngIf="etapa === 1" class="suave">Se calcula en el siguiente paso</dd>
-          <dd *ngIf="etapa > 1">{{ costoEnvio ? ('$' + (costoEnvio | number:'1.0-0')) : 'Gratis' }}</dd>
+          <dd *ngIf="etapa > 1">{{ metodoEntrega === 'envio' && !cotizacion?.disponible ? 'A calcular' : costoEnvio ? ('$' + (costoEnvio | number:'1.0-0')) : 'Gratis' }}</dd>
         </div>
         <div class="descuento" *ngIf="descuentoTransferencia > 0">
           <dt>Descuento por transferencia</dt><dd>−${{ descuentoTransferencia | number:'1.0-0' }}</dd>

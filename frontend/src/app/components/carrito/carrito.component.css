@@ -688,3 +688,20 @@
     width: 100%;
   }
 }
+
+.cotizacion {
+  margin: 4px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radio);
+  background: var(--color-crema);
+  color: var(--color-texto);
+  font-size: 14px;
+}
+
+.cotizacion strong {
+  color: var(--color-tinta);
+}
+
+.cotizacion-error {
+  color: var(--color-error);
+}
