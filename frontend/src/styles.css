@@ -204,9 +204,19 @@ router-outlet + * {
   overflow: hidden;
   background: radial-gradient(circle at 50% 42%, #5f3d39 0%, var(--color-profundo) 60%, #2f1d1b 100%);
   color: #fff;
+  contain: layout paint;
+  will-change: transform;
 }
 
+/* Las animaciones esperan a que la tipografía del logo esté lista, para que las letras no salten a mitad de camino */
+.presentacion-tienda:not(.lista) *,
+.presentacion-tienda:not(.lista)::before {
+  animation-play-state: paused !important;
+}
+
+/* La salida solo mueve la capa (GPU). La curva del borde es fija: animar border-radius en pantalla completa trababa. */
 .presentacion-tienda.saliendo {
+  border-radius: 0 0 50% 50% / 0 0 12vh 12vh;
   pointer-events: none;
   animation: splash-salir .75s cubic-bezier(.76, 0, .24, 1) both;
 }
@@ -222,6 +232,7 @@ router-outlet + * {
   background: radial-gradient(circle, rgb(201 162 126 / 22%) 0%, transparent 68%);
   content: '';
   transform: translate(-50%, -50%);
+  will-change: transform, opacity;
   animation: splash-halo 3s ease-in-out infinite;
 }
 
@@ -257,6 +268,7 @@ router-outlet + * {
   display: inline-block;
   margin: 0 .04em;
   opacity: 0;
+  will-change: transform, opacity;
   animation: splash-letra .85s cubic-bezier(.2, .7, .2, 1) both;
   animation-delay: calc(.3s + var(--i) * .08s);
 }
@@ -288,8 +300,8 @@ router-outlet + * {
 }
 
 @keyframes splash-letra {
-  from { opacity: 0; transform: translateY(45%) scale(.92); filter: blur(10px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
+  from { opacity: 0; transform: translate3d(0, 45%, 0) scale(.9); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes splash-punto {
@@ -313,8 +325,8 @@ router-outlet + * {
 }
 
 @keyframes splash-salir {
-  from { transform: none; border-radius: 0; }
-  to { transform: translateY(-100%); border-radius: 0 0 50% 50% / 0 0 12vh 12vh; }
+  from { transform: none; }
+  to { transform: translate3d(0, -100%, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {

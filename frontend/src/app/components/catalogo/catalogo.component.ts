@@ -36,6 +36,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   readonly letrasLogo = 'BYTINAKT'.split('');
   presentacionVisible = false;
   presentacionSaliendo = false;
+  presentacionLista = false;
 
   banners: BannerPortada[] = [];
   cargandoPortada = true;
@@ -83,18 +84,21 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.suscripcionRuta?.unsubscribe();
   }
 
-  // Presentación de carga: aparece una vez por sesión (no cada vez que se vuelve al inicio) y se puede saltar tocándola.
+  // Presentación de carga: aparece cada vez que se abre el inicio y se puede saltar tocándola.
+  // La animación arranca cuando la tipografía del logo ya cargó (como mucho a los 0,9 s), así no se traba ni salta.
   private mostrarPresentacion(): void {
-    try {
-      if (sessionStorage.getItem('bytina_bienvenida') === '1') {
+    this.presentacionVisible = true;
+    this.presentacionLista = false;
+    const iniciar = () => {
+      if (this.presentacionLista || !this.presentacionVisible) {
         return;
       }
-      sessionStorage.setItem('bytina_bienvenida', '1');
-    } catch {
-      // Sin almacenamiento: se muestra igual.
-    }
-    this.presentacionVisible = true;
-    this.temporizadorPresentacion = setTimeout(() => this.cerrarPresentacion(), 2400);
+      this.presentacionLista = true;
+      this.temporizadorPresentacion = setTimeout(() => this.cerrarPresentacion(), 3000);
+    };
+    const tipografia = document.fonts?.load('italic 700 40px "Playfair Display"').catch(() => undefined) ?? Promise.resolve();
+    const limite = new Promise<void>((resolver) => setTimeout(resolver, 900));
+    Promise.race([tipografia, limite]).then(iniciar);
   }
 
   cerrarPresentacion(): void {
@@ -106,7 +110,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.temporizadorSalida = setTimeout(() => {
       this.presentacionVisible = false;
       this.presentacionSaliendo = false;
-    }, 600);
+    }, 750);
   }
 
   // ---------- Agregar al carrito desde el catálogo ----------
