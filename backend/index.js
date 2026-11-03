@@ -882,27 +882,65 @@ app.get('/api/productos/:id', async (req, res) => {
   }
 });
 
+// Las fotos se guardan como data URI en la base. Para no volver a leerlas y decodificarlas en cada visita,
+// se guardan ya decodificadas en memoria (con tope de tamaño). La clave incluye ?v=, que cambia cuando la foto cambia.
+const CACHE_IMAGENES_MAX_BYTES = 40 * 1024 * 1024;
+const cacheImagenes = new Map();
+let bytesCacheImagenes = 0;
+
+function guardarEnCacheDeImagenes(clave, imagen) {
+  if (imagen.datos.length > CACHE_IMAGENES_MAX_BYTES / 4) {
+    return;
+  }
+  cacheImagenes.set(clave, imagen);
+  bytesCacheImagenes += imagen.datos.length;
+  for (const [antigua, valor] of cacheImagenes) {
+    if (bytesCacheImagenes <= CACHE_IMAGENES_MAX_BYTES) {
+      break;
+    }
+    cacheImagenes.delete(antigua);
+    bytesCacheImagenes -= valor.datos.length;
+  }
+}
+
+// `cargar` devuelve el texto de la imagen guardada (o vacío) leyendo de la base solo lo necesario.
+async function servirImagenGuardada(req, res, cargar) {
+  const version = /^\d{1,15}$/.test(String(req.query.v || '')) ? String(req.query.v) : '';
+  const clave = version ? `${req.path}?v=${version}` : '';
+  let imagen = clave ? cacheImagenes.get(clave) : undefined;
+  if (!imagen) {
+    const guardada = await cargar();
+    if (!guardada) {
+      return res.sendStatus(404);
+    }
+    const coincidencia = /^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,(.+)$/s.exec(guardada);
+    if (!coincidencia) {
+      return /^https?:\/\//.test(guardada) ? res.redirect(guardada) : res.sendStatus(404);
+    }
+    imagen = { tipo: coincidencia[1], datos: Buffer.from(coincidencia[2], 'base64') };
+    if (clave) {
+      guardarEnCacheDeImagenes(clave, imagen);
+    }
+  }
+  res.set({
+    'Content-Type': imagen.tipo,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  return res.send(imagen.datos);
+}
+
 app.get('/api/productos/:id/imagen/:index', async (req, res) => {
   try {
     const index = Number(req.params.index);
     if (!mongoose.isValidObjectId(req.params.id) || !Number.isInteger(index) || index < 0 || index > 2) {
       return res.sendStatus(404);
     }
-    const product = await Producto.findById(req.params.id).select('imagenes').lean();
-    const image = product?.imagenes?.[index];
-    if (!image) {
-      return res.sendStatus(404);
-    }
-    const match = /^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,(.+)$/s.exec(image);
-    if (!match) {
-      return /^https?:\/\//.test(image) ? res.redirect(image) : res.sendStatus(404);
-    }
-    res.set({
-      'Content-Type': match[1],
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'X-Content-Type-Options': 'nosniff'
+    return await servirImagenGuardada(req, res, async () => {
+      // Se trae de la base solo la foto pedida, no las tres.
+      const product = await Producto.findById(req.params.id).select({ imagenes: { $slice: [index, 1] } }).lean();
+      return product?.imagenes?.[0];
     });
-    return res.send(Buffer.from(match[2], 'base64'));
   } catch (error) {
     console.error('Error al servir imagen de producto:', error.message);
     return res.sendStatus(500);
@@ -1154,17 +1192,10 @@ async function enviarImagenDePortada(req, res, campo) {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.sendStatus(404);
     }
-    const banner = await Banner.findById(req.params.id).select(campo).lean();
-    const match = /^data:(image\/(?:png|jpe?g|webp|gif|avif));base64,(.+)$/s.exec(banner?.[campo] || '');
-    if (!match) {
-      return res.sendStatus(404);
-    }
-    res.set({
-      'Content-Type': match[1],
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'X-Content-Type-Options': 'nosniff'
+    return await servirImagenGuardada(req, res, async () => {
+      const banner = await Banner.findById(req.params.id).select(campo).lean();
+      return banner?.[campo];
     });
-    return res.send(Buffer.from(match[2], 'base64'));
   } catch (error) {
     console.error('Error al servir la imagen de portada:', error.message);
     return res.sendStatus(500);
@@ -1994,6 +2025,13 @@ if (MONGO_URI && process.exitCode !== 1) {
       setInterval(() => {
         liberarReservasVencidas().catch((error) => console.error('No se pudieron liberar reservas vencidas:', error.message));
       }, 60_000).unref();
+      // Opcional: en el plan gratis de Render el servidor se duerme tras 15 minutos sin visitas y el primer cliente espera
+      // medio minuto. Con KEEP_ALIVE=true se consulta a sí mismo cada 10 minutos para mantenerse despierto.
+      if (process.env.KEEP_ALIVE === 'true' && process.env.RENDER_EXTERNAL_URL) {
+        setInterval(() => {
+          fetch(`${process.env.RENDER_EXTERNAL_URL}/api/health`).catch(() => undefined);
+        }, 10 * 60_000).unref();
+      }
       app.listen(PORT, () => console.log(`Servidor backend conectado a MongoDB y escuchando en http://localhost:${PORT}`));
       if (!process.env.MP_ACCESS_TOKEN) {
         console.warn('Configura MP_ACCESS_TOKEN en backend/.env para habilitar checkout de Mercado Pago.');

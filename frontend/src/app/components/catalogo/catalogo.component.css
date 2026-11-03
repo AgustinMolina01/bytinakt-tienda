@@ -1121,3 +1121,22 @@
     display: none;
   }
 }
+
+/* Marcador de la portada mientras el servidor responde */
+.portada-cargando {
+  height: clamp(300px, 56vw, 560px);
+  background: linear-gradient(100deg, var(--color-profundo) 30%, #5a3d39 50%, var(--color-profundo) 70%);
+  background-size: 200% 100%;
+  animation: portada-brillo 1.6s linear infinite;
+}
+
+@keyframes portada-brillo {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portada-cargando {
+    animation: none;
+  }
+}

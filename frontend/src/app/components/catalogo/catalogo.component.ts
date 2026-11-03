@@ -38,6 +38,8 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   presentacionSaliendo = false;
 
   banners: BannerPortada[] = [];
+  cargandoPortada = true;
+  private temporizadorPortada?: ReturnType<typeof setTimeout>;
   indiceBannerActual = 0;
   bannerPausado = false;
 
@@ -60,18 +62,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.mostrarPresentacion();
     this.cargarProductos();
-    this.banners = this.bannerService.portadaPorDefecto;
-    this.iniciarBanner();
-    this.bannerService.listar().subscribe({
-      next: (banners) => {
-        if (banners.length > 0) {
-          this.banners = banners;
-          this.indiceBannerActual = 0;
-          this.iniciarBanner();
-        }
-      },
-      error: () => undefined
-    });
+    this.cargarPortada();
 
     this.suscripcionRuta = this.route.queryParamMap.subscribe((params) => {
       this.categoriaSeleccionada = params.get('categoria') || '';
@@ -88,19 +79,34 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     clearTimeout(this.temporizadorPresentacion);
     clearTimeout(this.temporizadorSalida);
     clearTimeout(this.temporizadorAviso);
+    clearTimeout(this.temporizadorPortada);
     this.suscripcionRuta?.unsubscribe();
   }
 
-  // Presentación de carga: aparece cada vez que se abre el inicio.
+  // Presentación de carga: aparece una vez por sesión (no cada vez que se vuelve al inicio) y se puede saltar tocándola.
   private mostrarPresentacion(): void {
+    try {
+      if (sessionStorage.getItem('bytina_bienvenida') === '1') {
+        return;
+      }
+      sessionStorage.setItem('bytina_bienvenida', '1');
+    } catch {
+      // Sin almacenamiento: se muestra igual.
+    }
     this.presentacionVisible = true;
-    this.temporizadorPresentacion = setTimeout(() => {
-      this.presentacionSaliendo = true;
-      this.temporizadorSalida = setTimeout(() => {
-        this.presentacionVisible = false;
-        this.presentacionSaliendo = false;
-      }, 750);
-    }, 3000);
+    this.temporizadorPresentacion = setTimeout(() => this.cerrarPresentacion(), 2400);
+  }
+
+  cerrarPresentacion(): void {
+    if (!this.presentacionVisible || this.presentacionSaliendo) {
+      return;
+    }
+    clearTimeout(this.temporizadorPresentacion);
+    this.presentacionSaliendo = true;
+    this.temporizadorSalida = setTimeout(() => {
+      this.presentacionVisible = false;
+      this.presentacionSaliendo = false;
+    }, 600);
   }
 
   // ---------- Agregar al carrito desde el catálogo ----------
@@ -202,6 +208,46 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   }
 
   // ---------- Portada ----------
+  // Primera visita: un marcador gris hasta que el servidor responde (así no aparece un instante la portada por
+  // defecto y después se cambia). Visitas siguientes: se muestra la última portada guardada y se actualiza por detrás.
+  private cargarPortada(): void {
+    const guardada = this.bannerService.leerCache();
+    if (guardada) {
+      this.banners = guardada.length > 0 ? guardada : this.bannerService.portadaPorDefecto;
+      this.cargandoPortada = false;
+      this.iniciarBanner();
+    }
+    // Si el servidor tarda (por ejemplo, recién despertando), a los 5 segundos se muestra la portada por defecto.
+    this.temporizadorPortada = setTimeout(() => {
+      if (this.cargandoPortada) {
+        this.banners = this.bannerService.portadaPorDefecto;
+        this.cargandoPortada = false;
+        this.iniciarBanner();
+      }
+    }, 5000);
+    this.bannerService.listar().subscribe({
+      next: (banners) => {
+        clearTimeout(this.temporizadorPortada);
+        this.bannerService.guardarCache(banners);
+        const nuevas = banners.length > 0 ? banners : this.bannerService.portadaPorDefecto;
+        if (nuevas.map((banner) => banner.id).join() !== this.banners.map((banner) => banner.id).join()) {
+          this.banners = nuevas;
+          this.indiceBannerActual = 0;
+          this.iniciarBanner();
+        }
+        this.cargandoPortada = false;
+      },
+      error: () => {
+        clearTimeout(this.temporizadorPortada);
+        if (this.banners.length === 0) {
+          this.banners = this.bannerService.portadaPorDefecto;
+          this.iniciarBanner();
+        }
+        this.cargandoPortada = false;
+      }
+    });
+  }
+
   irABanner(indice: number): void {
     this.indiceBannerActual = indice;
     this.iniciarBanner();

@@ -1,6 +1,6 @@
 <!-- ===== CONTENIDO HTML DE LA PRESENTACION DE CARGA ===== -->
 <section *ngIf="presentacionVisible" class="presentacion-tienda" [class.saliendo]="presentacionSaliendo"
-  role="dialog" aria-modal="true"
+  (click)="cerrarPresentacion()" role="dialog" aria-modal="true"
   aria-labelledby="titulo-presentacion">
   <div class="presentacion-contenido">
     <p class="presentacion-etiqueta" id="titulo-presentacion">Bienvenida a</p>
@@ -13,6 +13,9 @@
 </section>
 
 <main>
+  <!-- Marcador mientras llega la portada del servidor -->
+  <div class="portada-cargando" *ngIf="cargandoPortada" aria-hidden="true"></div>
+
   <!-- Portada -->
   <section class="portada" aria-label="Portada" *ngIf="banners.length > 0"
     (mouseenter)="bannerPausado = true" (mouseleave)="bannerPausado = false"
@@ -28,10 +31,10 @@
           [attr.rel]="esExterno(banner.enlace) ? 'noopener noreferrer' : null"
           [attr.tabindex]="i === indiceBannerActual ? 0 : -1"
           [attr.aria-label]="banner.titulo || 'Ver la promoción'" (click)="abrirEnlace($event, banner.enlace)">
-          <ng-container *ngTemplateOutlet="imagenPortada; context: { $implicit: banner }"></ng-container>
+          <ng-container *ngTemplateOutlet="imagenPortada; context: { $implicit: banner, i: i }"></ng-container>
         </a>
         <ng-template #imagenSola>
-          <ng-container *ngTemplateOutlet="imagenPortada; context: { $implicit: banner }"></ng-container>
+          <ng-container *ngTemplateOutlet="imagenPortada; context: { $implicit: banner, i: i }"></ng-container>
         </ng-template>
 
         <ng-container *ngIf="banner.mostrarTexto">
@@ -53,10 +56,11 @@
       </article>
     </div>
 
-    <ng-template #imagenPortada let-banner>
+    <ng-template #imagenPortada let-banner let-i="i">
       <picture>
         <source *ngIf="banner.urlMovil" media="(max-width: 639px)" [srcset]="banner.urlMovil">
-        <img [src]="banner.url" [alt]="banner.mostrarTexto ? '' : (banner.titulo || 'Promoción de la tienda')" decoding="async">
+        <img [src]="banner.url" [alt]="banner.mostrarTexto ? '' : (banner.titulo || 'Promoción de la tienda')" decoding="async"
+          [attr.fetchpriority]="i === 0 ? 'high' : 'low'">
       </picture>
     </ng-template>
 

@@ -29,7 +29,7 @@ export class BannerService {
   // Se muestra mientras no haya ninguna imagen cargada desde el panel.
   readonly portadaPorDefecto: BannerPortada[] = [{
     id: 'por-defecto',
-    url: '/imagen_de_la_portada.png',
+    url: '/portada-por-defecto.webp',
     mostrarTexto: true,
     etiqueta: 'Colección elegancia refinada',
     titulo: 'Vestite con',
@@ -42,6 +42,26 @@ export class BannerService {
   }];
 
   constructor(private http: HttpClient) {}
+
+  // La última portada recibida se guarda en el navegador: en las visitas siguientes se muestra al instante,
+  // sin esperar al servidor ni pasar por la imagen por defecto. Devuelve null si nunca se guardó.
+  leerCache(): BannerPortada[] | null {
+    try {
+      const guardada = localStorage.getItem('bytina_portada');
+      const lista = guardada ? JSON.parse(guardada) : null;
+      return Array.isArray(lista) ? lista : null;
+    } catch {
+      return null;
+    }
+  }
+
+  guardarCache(banners: BannerPortada[]): void {
+    try {
+      localStorage.setItem('bytina_portada', JSON.stringify(banners));
+    } catch {
+      // Sin almacenamiento (modo privado o lleno): la portada se pide al servidor cada vez.
+    }
+  }
 
   listar(): Observable<BannerPortada[]> {
     return this.http.get<BannerPortada[]>(`${API_URL}/banners`);
